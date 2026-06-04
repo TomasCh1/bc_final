@@ -1,0 +1,3636 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Tréningy - Admin - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/coach-nav.css">
+    <link rel="stylesheet" href="/css/admin-layout.css">
+    <link rel="stylesheet" href="/css/cancelled-training.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #FFFFFF; color: #2C2C2C; }
+        .dashboard-content { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+        .section-card {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+        .section-icon { width: 32px; height: 32px; }
+        .section-icon img { width: 100%; height: 100%; object-fit: contain; }
+        .section-title { font-size: 1.25rem; font-weight: 700; color: #2C2C2C; }
+        .section-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        .btn-add {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.6rem 1.25rem; background: #6B2C91; color: #FFFFFF; border: none; border-radius: 8px;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none;
+        }
+        .btn-add:hover { background: #5A2380; }
+        .btn-link {
+            padding: 0.5rem 1rem; color: #6B2C91; background: transparent; border: 1px solid #6B2C91; border-radius: 8px;
+            font-size: 0.9rem; text-decoration: none; cursor: pointer;
+        }
+        .btn-link:hover { background: #F5F0FF; }
+        .weekly-trainings-subtitle { font-size: 0.9rem; color: #6B7280; margin-top: 0.25rem; }
+        /* Weekly schedule - same look as Rozvrh týždňa (trainings only) */
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            background: #FFFFFF;
+            padding: 0.75rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .schedule-day {
+            min-height: 200px;
+            background: #F3F4F6;
+            border-radius: 8px;
+            padding: 0.5rem;
+            border: 1px solid #E5E7EB;
+        }
+        .schedule-day.today {
+            background: #F0F9FF;
+            border: 1px solid #BAE6FD;
+        }
+        .day-header {
+            text-align: center;
+            font-weight: 700;
+            color: #374151;
+            font-size: 1.3rem;
+            padding: 0.5rem 0.4rem;
+            background: #F3F4F6;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            width: fit-content;
+            min-width: fit-content;
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            white-space: nowrap;
+        }
+        .day-header.today {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+        .schedule-day .day-header { margin-bottom: 0.75rem; }
+        .day-events {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .event-card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            padding: 0.75rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 0.75rem;
+            border: 1px solid #E5E7EB;
+        }
+        .event-card.training {
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+        }
+        .event-time {
+            display: inline-block;
+            color: #6B21A8;
+            font-weight: 700;
+            font-size: 1.15rem;
+            background: #EDE9FE;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+        .event-team-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+        .event-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #6B7280;
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+            line-height: 1.4;
+        }
+        .event-detail-icon {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .event-detail-icon svg { width: 100%; height: 100%; }
+        .event-detail-icon svg path { fill: #6B7280; }
+        .event-card-actions {
+            margin-top: 0.75rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .event-card-actions .btn-edit {
+            background: #E5E7EB;
+            color: #374151;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            padding: 0.35rem 0.6rem;
+        }
+        .event-card-actions .btn-edit:hover { background: #D1D5DB; }
+        .event-card-actions .btn-attendance {
+            background: #6B2C91;
+            color: #FFF;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            padding: 0.35rem 0.6rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .event-card-actions .btn-attendance:hover { background: #5A2380; }
+        .no-training-text {
+            color: #9CA3AF;
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 0.5rem 0;
+        }
+        .trainings-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .training-row {
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;
+            padding: 1rem; background: #F9FAFB; border-radius: 8px; border: 1px solid #E5E7EB;
+        }
+        .training-row-info { flex: 1; min-width: 200px; }
+        .training-row-name { font-weight: 600; color: #111827; margin-bottom: 0.25rem; }
+        .training-row-meta { font-size: 0.85rem; color: #6B7280; }
+        .training-row-actions { display: flex; gap: 0.5rem; }
+        .training-row-actions a {
+            padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; text-decoration: none;
+        }
+
+        .loading { text-align: center; padding: 1.5rem; color: #6B7280; }
+        .no-trainings { text-align: center; padding: 2rem; color: #6B7280; }
+
+        /* Top stat cards - same look as trainer-dashboard */
+        .top-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: 2px 3px 8px 2px rgba(0, 0, 0, 0.05);
+        }
+        .stat-card-content { display: flex; flex-direction: column; flex: 1; }
+        .stat-card .stat-label { font-size: 0.9rem; color: #666666; font-weight: 500; }
+        .stat-value-wrapper { display: flex; align-items: center; gap: 0.75rem; justify-content: space-between; }
+        .stat-card .stat-value { font-size: 2rem; font-weight: 700; color: #2C2C2C; line-height: 1.2; }
+        .stat-card .stat-value.smaller { font-size: 1.35rem; }
+        .stat-card .stat-subtitle { font-size: 0.85rem; color: #999999; }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .stat-icon img, .stat-icon svg { width: 100%; height: 100%; object-fit: contain; }
+        .stat-card .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #E0E0E0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .stat-card .progress-fill {
+            height: 100%;
+            background-color: #28A745;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        @media (max-width: 900px) {
+            .top-stats { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .top-stats { grid-template-columns: 1fr; }
+        }
+
+        /* Training stats section - same look as trainings.html (Moje tréningy) */
+        .training-stats-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .training-stats-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .training-stats-title-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .training-stats-title-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .training-stats-title-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2C2C2C;
+        }
+        .training-stats-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .training-stats-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #2C2C2C;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        .training-stats-btn:hover {
+            background: #F9FAFB;
+        }
+        .training-stats-btn.active {
+            background: #2C2C2C;
+            color: #FFFFFF;
+            border-color: #2C2C2C;
+        }
+        .training-stats-btn-icon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .training-stats-btn-icon img,
+        .training-stats-btn-icon svg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .training-stats-btn-secondary {
+            background: #F9FAFB;
+        }
+        .training-stats-scroll-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            scrollbar-width: thin;
+            scrollbar-color: #E5E7EB transparent;
+        }
+        .training-stats-scroll-container::-webkit-scrollbar { height: 8px; }
+        .training-stats-scroll-container::-webkit-scrollbar-track { background: #F3F4F6; border-radius: 4px; }
+        .training-stats-scroll-container::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
+        .training-stats-cards-wrapper {
+            display: flex;
+            gap: 1rem;
+            min-width: min-content;
+        }
+        .stats-card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            border: 1px solid #E5E7EB;
+            padding: 1.25rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            min-width: 280px;
+            max-width: 280px;
+            flex-shrink: 0;
+        }
+        .stats-card.category-shooting { border-left: 4px solid #7C3AED; }
+        .stats-card.category-strength { border-left: 4px solid #DC2626; }
+        .stats-card.category-running { border-left: 4px solid #2563EB; }
+        .stats-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .stats-card-title {
+            font-weight: 700;
+            color: #6B2C91;
+            font-size: 1.15rem;
+            margin-bottom: 0;
+        }
+        .stats-card-category-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            line-height: 1.1;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+        .stats-card-category-badge.category-shooting {
+            color: #6D28D9;
+            background: #F3E8FF;
+            border-color: #DDD6FE;
+        }
+        .stats-card-category-badge.category-strength {
+            color: #B91C1C;
+            background: #FEE2E2;
+            border-color: #FECACA;
+        }
+        .stats-card-category-badge.category-running {
+            color: #1D4ED8;
+            background: #DBEAFE;
+            border-color: #BFDBFE;
+        }
+        .stats-card-meta {
+            font-size: 0.78rem;
+            color: #6B7280;
+            margin-bottom: 0.6rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            line-height: 1.35;
+        }
+        .stats-card-meta .meta-sep {
+            color: #D1D5DB;
+        }
+        .stats-card-stat {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.5;
+        }
+        .stats-card-stat-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            margin-top: 0.125rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .stats-card-stat-icon img,
+        .stats-card-stat-icon svg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: brightness(0);
+        }
+        .stats-card-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .stats-card-stat-text { flex: 1; }
+        .stats-card-date {
+            font-size: 0.85rem;
+            color: #6B7280;
+            margin-top: 0.75rem;
+        }
+        .stats-card-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #E5E7EB;
+        }
+        .stats-card-btn {
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid #E5E7EB;
+            background: #FFFFFF;
+            color: #374151;
+        }
+        .stats-card-btn:hover { background: #F9FAFB; }
+        .stats-card-btn-overview {
+            background: #6B2C91;
+            color: #FFFFFF;
+            border-color: #6B2C91;
+        }
+        .stats-card-btn-overview:hover { background: #5A2380; }
+        .training-stats-section .training-stats-summary { margin-bottom: 1rem; }
+        .training-stats-filters {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .training-stats-filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .training-stats-filter-group label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+        .training-stats-filter-group select,
+        .training-stats-filter-group input[type="date"] {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: 'Roboto', sans-serif;
+            min-width: 180px;
+        }
+        .training-stats-filter-group input[type="date"] { min-width: 170px; }
+        .training-stats-filter-actions { display: flex; align-items: flex-end; }
+        .training-stats-filter-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #6B2C91;
+            margin-bottom: 0.75rem;
+        }
+        .training-stats-figures {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+        }
+        .training-stats-figure {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .training-stats-figure-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #6B2C91;
+        }
+        .training-stats-figure-label { font-size: 0.9rem; color: #6B7280; }
+
+        /* Stats Detail Modal - same as trainings.html */
+        .stats-detail-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow: auto;
+        }
+        .stats-detail-modal-content {
+            background-color: #FFFFFF;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 1400px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .stats-detail-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #E0E0E0;
+        }
+        .stats-detail-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2C2C2C;
+        }
+        .stats-detail-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6B7280;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+        .stats-detail-close:hover { background: #F3F4F6; }
+        #trainerStatsChartsContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+        .trainer-chart-container {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .trainer-chart-container h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+        .trainer-chart-wrapper {
+            position: relative;
+            height: 280px;
+        }
+        /* Detail modal + charts: shrink on phone (e.g. 374px and below) */
+        @media (max-width: 480px) {
+            .stats-detail-modal-content {
+                margin: 0.75rem;
+                padding: 1rem;
+                max-height: calc(100vh - 1.5rem);
+                width: calc(100% - 1.5rem);
+                box-sizing: border-box;
+            }
+            #trainerStatsChartsContainer {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                min-width: 0;
+            }
+            .trainer-chart-container {
+                min-width: 0;
+                padding: 0.75rem;
+            }
+            .trainer-chart-wrapper {
+                height: 220px;
+                min-height: 180px;
+            }
+            .stats-detail-modal-title { font-size: 1.2rem; }
+        }
+        @media (max-width: 374px) {
+            .stats-detail-modal-content {
+                margin: 0.5rem;
+                padding: 0.75rem;
+                width: calc(100% - 1rem);
+            }
+            .trainer-chart-wrapper {
+                height: 200px;
+                min-height: 160px;
+            }
+        }
+
+        /* Stats overview modal (Prehľad) */
+        .stats-overview-player-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #6B2C91;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0;
+        }
+        .stats-overview-grid {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .stats-overview-row {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .stats-overview-label { font-weight: 600; color: #374151; min-width: 140px; }
+        .stats-overview-value { color: #6B7280; }
+        .stats-overview-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            padding-top: 1rem;
+            border-top: 1px solid #E0E0E0;
+        }
+        .stats-overview-actions .btn { padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 500; cursor: pointer; border: none; font-size: 0.9rem; }
+        .stats-overview-actions .btn-close { background: #E5E7EB; color: #374151; }
+        .stats-overview-actions .btn-close:hover { background: #D1D5DB; }
+        .stats-overview-actions .btn-edit { background: #6B2C91; color: #FFF; }
+        .stats-overview-actions .btn-edit:hover { background: #5A2380; }
+        .stats-overview-actions .btn-delete { background: #DC2626; color: #FFF; }
+        .stats-overview-actions .btn-delete:hover { background: #B91C1C; }
+        .stats-overview-edit-form .form-group { margin-bottom: 1rem; }
+        .stats-overview-edit-form .form-group label { display: block; margin-bottom: 0.35rem; font-weight: 500; color: #374151; font-size: 0.9rem; }
+        .stats-overview-edit-form .form-group input,
+        .stats-overview-edit-form .form-group select,
+        .stats-overview-edit-form .form-group textarea {
+            width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #E0E0E0; border-radius: 8px; font-size: 0.95rem; box-sizing: border-box;
+        }
+        .stats-overview-edit-form .category-fields { margin-bottom: 0.5rem; }
+        .stats-overview-list-body { overflow-y: auto; max-height: calc(85vh - 100px); }
+        .stats-overview-list-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+            padding: 0.75rem 1rem; border-bottom: 1px solid #E5E7EB; flex-wrap: wrap;
+        }
+        .stats-overview-list-row:hover { background: #F9FAFB; }
+        .stats-overview-list-info { flex: 1; min-width: 0; }
+        .stats-overview-list-player { font-weight: 600; color: #6B2C91; font-size: 0.95rem; margin-bottom: 0.2rem; }
+        .stats-overview-list-exercise { font-size: 0.9rem; color: #374151; }
+        .stats-overview-list-meta { font-size: 0.8rem; color: #6B7280; margin-top: 0.2rem; }
+        .stats-overview-list-row .stats-card-btn { flex-shrink: 0; }
+
+        @media (max-width: 768px) {
+            .schedule-grid {
+                grid-template-columns: repeat(7, minmax(110px, 1fr));
+                padding: 0.5rem;
+            }
+            .day-header {
+                font-size: 1.05rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .schedule-grid {
+                grid-template-columns: repeat(7, minmax(100px, 1fr));
+            }
+        }
+
+        /* Add Training modal */
+        .add-training-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 1rem;
+        }
+        .add-training-overlay.open { display: flex; }
+        .add-training-modal {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        .add-training-modal h2 { margin-bottom: 1.25rem; font-size: 1.25rem; color: #111827; }
+        .add-training-modal .form-group { margin-bottom: 1rem; }
+        .add-training-modal .form-group label { display: block; margin-bottom: 0.35rem; font-weight: 500; color: #374151; font-size: 0.9rem; }
+        .add-training-modal .form-group input,
+        .add-training-modal .form-group select,
+        .add-training-modal .form-group textarea {
+            width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #E0E0E0; border-radius: 8px;
+            font-size: 0.95rem; box-sizing: border-box;
+        }
+        .add-training-modal .form-group input:focus,
+        .add-training-modal .form-group select:focus,
+        .add-training-modal .form-group textarea:focus {
+            outline: none; border-color: #6B2C91;
+        }
+        .add-training-modal .recurring-box {
+            border: 1px solid #E5E7EB; padding: 1.25rem; border-radius: 10px; margin-bottom: 1rem; background: #F9FAFB;
+        }
+        .add-training-modal .recurring-box h3 { margin: 0 0 1rem 0; font-size: 1rem; font-weight: 600; color: #374151; }
+        /* Custom checkbox - matches app purple theme */
+        .add-training-modal .recurring-checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: #374151;
+            user-select: none;
+        }
+        .add-training-modal .recurring-checkbox-input {
+            position: absolute;
+            opacity: 0;
+            width: 22px;
+            height: 22px;
+            margin: 0;
+            cursor: pointer;
+        }
+        .add-training-modal .recurring-checkbox-box {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+            border: 2px solid #C4B5FD;
+            border-radius: 6px;
+            background: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .recurring-checkbox-box::after {
+            content: '';
+            width: 6px;
+            height: 11px;
+            border: solid #FFFFFF;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-bottom: 3px;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+        .add-training-modal .recurring-checkbox-input:checked + .recurring-checkbox-box {
+            background: #6B2C91;
+            border-color: #6B2C91;
+            box-shadow: 0 0 0 1px #6B2C91;
+        }
+        .add-training-modal .recurring-checkbox-input:checked + .recurring-checkbox-box::after {
+            opacity: 1;
+        }
+        .add-training-modal .recurring-checkbox-label:hover .recurring-checkbox-box {
+            border-color: #6B2C91;
+            background: #F5F0FF;
+        }
+        .add-training-modal .recurring-checkbox-input:focus-visible + .recurring-checkbox-box {
+            outline: 2px solid #6B2C91;
+            outline-offset: 2px;
+        }
+        .add-training-modal .recurring-details { display: none; margin-top: 0.75rem; }
+        .add-training-modal .recurring-details.show { display: block; }
+        .add-training-modal .interval-desc { font-size: 0.8rem; color: #6B7280; margin-top: 0.25rem; }
+        .add-training-modal .end-type-row { margin-bottom: 0.5rem; }
+        .add-training-modal .end-type-row label { display: inline-flex; align-items: center; margin-right: 1rem; font-weight: normal; }
+        .add-training-modal .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap; }
+        .add-training-modal .modal-actions .btn { padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 0.95rem; }
+        .add-training-modal .modal-actions .btn-primary { background: #6B2C91; color: #FFF; }
+        .add-training-modal .modal-actions .btn-primary:hover { background: #5A2380; }
+        .add-training-modal .modal-actions .btn-secondary { background: #F3F4F6; color: #374151; border: 1px solid #E5E7EB; }
+        .add-training-modal .modal-actions .btn-secondary:hover { background: #E5E7EB; }
+        .add-training-modal .msg { margin-bottom: 1rem; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.9rem; }
+        .add-training-modal .msg.error { background: #FEE2E2; color: #B91C1C; }
+        .add-training-modal .msg.success { background: #D1FAE5; color: #065F46; }
+        .add-training-modal #addRecurrenceEndDate,
+        .add-training-modal #addNumberOfOccurrences { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #E0E0E0; border-radius: 8px; box-sizing: border-box; }
+        .add-training-modal .location-wrap { position: relative; }
+        .add-training-modal .location-suggestions {
+            position: absolute; left: 0; right: 0; top: 100%; margin-top: 2px;
+            background: #FFF; border: 1px solid #E5E7EB; border-radius: 6px;
+            max-height: 160px; overflow-y: auto; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .add-training-modal .location-suggestions div {
+            padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.9rem; border-bottom: 1px solid #F3F4F6;
+        }
+        .add-training-modal .location-suggestions div:hover { background: #F8F9FA; }
+
+        /* Edit Event modal */
+        .edit-event-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 1rem;
+        }
+        .edit-event-overlay.open { display: flex; }
+        .edit-event-modal {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            max-width: 540px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        .edit-event-modal h2 { margin-bottom: 1.25rem; font-size: 1.25rem; color: #111827; }
+        .edit-event-modal .form-group { margin-bottom: 1rem; }
+        .edit-event-modal .form-group label { display: block; margin-bottom: 0.35rem; font-weight: 500; color: #374151; font-size: 0.9rem; }
+        .edit-event-modal .form-group input,
+        .edit-event-modal .form-group select,
+        .edit-event-modal .form-group textarea {
+            width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #E0E0E0; border-radius: 8px;
+            font-size: 0.95rem; box-sizing: border-box;
+        }
+        .edit-event-modal .edit-multiple-box {
+            border: 1px solid #E5E7EB; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: #F9FAFB;
+        }
+        .edit-event-modal .edit-multiple-box label { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; }
+        .edit-event-modal .edit-multiple-box small { display: block; margin-top: 0.5rem; color: #6B7280; font-size: 0.85rem; }
+        .edit-event-modal .location-wrap { position: relative; }
+        .edit-event-modal .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap; }
+        .edit-event-modal .modal-actions .btn { padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 0.95rem; }
+        .edit-event-modal .modal-actions .btn-primary { background: #6B2C91; color: #FFF; }
+        .edit-event-modal .modal-actions .btn-primary:hover { background: #5A2380; }
+        .edit-event-modal .modal-actions .btn-secondary { background: #F3F4F6; color: #374151; border: 1px solid #E5E7EB; }
+        .edit-event-modal .modal-actions .btn-secondary:hover { background: #E5E7EB; }
+        .edit-event-modal .modal-actions .btn-danger { background: #DC2626; color: #FFF; }
+        .edit-event-modal .modal-actions .btn-danger:hover { background: #B91C1C; }
+        .edit-event-modal .msg { margin-bottom: 1rem; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.9rem; }
+        .edit-event-modal .msg.error { background: #FEE2E2; color: #B91C1C; }
+        .edit-event-modal .msg.success { background: #D1FAE5; color: #065F46; }
+        .edit-event-modal .location-suggestions {
+            position: absolute; left: 0; right: 0; top: 100%; margin-top: 2px;
+            background: #FFF; border: 1px solid #E5E7EB; border-radius: 6px;
+            max-height: 160px; overflow-y: auto; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .edit-event-modal .location-suggestions div {
+            padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.9rem; border-bottom: 1px solid #F3F4F6;
+        }
+        .edit-event-modal .location-suggestions div:hover { background: #F8F9FA; }
+        .action-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2200;
+            padding: 1rem;
+        }
+        .action-modal-overlay.open { display: flex; }
+        .action-modal-box {
+            width: min(460px, 100%);
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+        }
+        .action-modal-box h3 { margin: 0 0 0.75rem 0; color: #111827; font-size: 1.05rem; }
+        .action-modal-box p { margin: 0 0 1rem 0; color: #374151; line-height: 1.45; }
+        .action-modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap; }
+        .action-modal-actions .btn {
+            padding: 0.6rem 1.1rem;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .action-modal-actions .btn-secondary { background: #F3F4F6; color: #374151; border-color: #E5E7EB; }
+        .action-modal-actions .btn-secondary:hover { background: #E5E7EB; }
+        .action-modal-actions .btn-primary { background: #6B2C91; color: #fff; }
+        .action-modal-actions .btn-primary:hover { background: #5A2380; }
+        .action-modal-actions .btn-danger { background: #DC2626; color: #fff; }
+        .action-modal-actions .btn-danger:hover { background: #B91C1C; }
+
+        /* Trainings calendar */
+        .trainings-calendar {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .trainings-calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .trainings-calendar .month-selector-wrapper {
+            display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+            max-width: 100%;
+        }
+        .trainings-calendar .calendar-month-selector { display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; font-weight: 600; color: #111827; padding: 0.35rem 0.8rem; border-radius: 999px; background: #EEF2FF; }
+        .trainings-calendar .calendar-today-btn {
+            padding: 0.35rem 0.75rem;
+            background: #EEF2FF;
+            border: 1px solid #C7D2FE;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4338CA;
+            transition: all 0.2s ease;
+        }
+        .trainings-calendar .calendar-today-btn:hover { background: #C7D2FE; color: #3730A3; }
+        .trainings-calendar .calendar-nav-btn {
+            padding: 0.35rem 0.75rem;
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+        .trainings-calendar .calendar-nav-btn:hover { background: #E5E7EB; }
+        .trainings-calendar .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
+        .trainings-calendar .calendar-day-header { text-align: center; font-weight: 600; color: #666666; font-size: 0.9rem; padding: 0.5rem; }
+        .trainings-calendar .calendar-day {
+            min-height: 280px;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            padding: 0.5rem;
+            background: #FFFFFF;
+            overflow-y: auto;
+            max-height: 320px;
+        }
+        .trainings-calendar .calendar-day.today { background: #F0F9FF; border: 1px solid #BAE6FD; }
+        .trainings-calendar .calendar-day.other-month { background: #F5F5F5; color: #999999; }
+        .trainings-calendar .calendar-day-number { font-weight: 600; font-size: 0.9rem; color: #2C2C2C; margin-bottom: 0.5rem; }
+        .trainings-calendar .day-events { display: flex; flex-direction: column; gap: 0.75rem; }
+
+        .training-calendar-card {
+            background: linear-gradient(180deg, #E8F5E9 0%, #E8D5FF 100%);
+            border-radius: 8px;
+            padding: 0.75rem;
+            box-shadow: 0 2px 6px rgba(107, 92, 246, 0.2);
+            margin-bottom: 0.75rem;
+            border: 1px solid #D8B4FE;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .training-calendar-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(107, 92, 246, 0.3);
+        }
+        .training-calendar-card.cancelled { opacity: 0.7; background: linear-gradient(180deg, #F5F5F5 0%, #E5E7EB 100%); border-color: #D1D5DB; }
+        .training-calendar-card.compact { padding: 0.4rem 0.5rem; margin-bottom: 0.35rem; border-radius: 6px; }
+        .training-calendar-card .training-time { display: inline-block; color: #6B21A8; font-weight: 700; font-size: 1.1rem; background: #EDE9FE; padding: 0.25rem 0.5rem; border-radius: 6px; margin-bottom: 0.5rem; }
+        .training-calendar-card .training-time.compact { font-size: 0.75rem; padding: 0.2rem 0.4rem; margin-bottom: 0.25rem; }
+        .training-calendar-card .training-name { font-size: 0.85rem; font-weight: 700; color: #1F2937; margin-bottom: 0.25rem; }
+        .training-calendar-card .training-location { font-size: 0.75rem; color: #6B7280; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.3rem; }
+        .training-location-link { color: inherit; text-decoration: none; }
+        .training-location-link:hover { text-decoration: underline; color: #6B2C91; }
+        .training-chip-meta .training-location-link { color: #6B7280; }
+        .training-chip-meta .training-location-link:hover { color: #6B2C91; }
+        .training-calendar-card .training-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(107, 33, 168, 0.3); }
+        .training-calendar-card .training-action-btn { padding: 0.25rem 0.5rem; font-size: 0.7rem; border-radius: 4px; cursor: pointer; border: none; background: #6B21A8; color: white; text-decoration: none; display: inline-block; }
+        .training-calendar-card .training-action-btn:hover { background: #5a2473; }
+
+        @media (max-width: 1024px) {
+            .trainings-calendar { padding: 1rem; }
+            .trainings-calendar .calendar-day { min-height: 120px; max-height: 150px; padding: 0.4rem; }
+            .trainings-calendar .calendar-day-number { font-size: 0.8rem; margin-bottom: 0.35rem; }
+            .trainings-calendar .day-events { gap: 0.35rem; }
+            .training-calendar-card { padding: 0.4rem 0.5rem; margin-bottom: 0.35rem; border-radius: 6px; }
+            .training-calendar-card .training-name,
+            .training-calendar-card .training-location,
+            .training-calendar-card .training-actions { display: none; }
+            .training-calendar-card .training-time { font-size: 0.75rem; padding: 0.2rem 0.4rem; margin-bottom: 0.25rem; }
+        }
+        @media (max-width: 768px) {
+            .trainings-calendar-header { align-items: flex-start; }
+            .trainings-calendar .month-selector-wrapper {
+                width: 100%;
+                justify-content: flex-start;
+                gap: 0.4rem;
+            }
+            .trainings-calendar .calendar-nav-btn,
+            .trainings-calendar .calendar-today-btn {
+                flex-shrink: 0;
+            }
+            .trainings-calendar .calendar-grid { grid-template-columns: repeat(7, 1fr); gap: 0.25rem; }
+            .trainings-calendar .calendar-day-header { font-size: 0.7rem; padding: 0.35rem 0.25rem; }
+            .trainings-calendar .calendar-day { min-height: 80px; max-height: 100px; padding: 0.3rem; border-radius: 4px; }
+            .trainings-calendar .calendar-day-number { font-size: 0.75rem; margin-bottom: 0.25rem; }
+            .trainings-calendar .day-events { gap: 0.25rem; }
+            .training-calendar-card { padding: 0.3rem 0.4rem; margin-bottom: 0.25rem; border-radius: 4px; }
+            .training-calendar-card .training-time { font-size: 0.7rem; padding: 0.15rem 0.3rem; margin-bottom: 0.2rem; }
+        }
+        @media (max-width: 672px) {
+            .trainings-calendar .calendar-day { min-height: 60px; max-height: 70px; padding: 0.25rem; position: relative; }
+            .trainings-calendar .calendar-day-number { font-size: 0.7rem; margin-bottom: 0.15rem; }
+            .trainings-calendar .day-events { display: flex; flex-direction: row; flex-wrap: wrap; gap: 0.3rem; justify-content: center; align-items: center; }
+            .training-calendar-card { display: none; }
+            .training-dot {
+                width: 20px; height: 20px; min-width: 20px; min-height: 20px;
+                border-radius: 50%; background: #6B2C91; cursor: pointer;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                box-shadow: 0 1px 3px rgba(107, 44, 145, 0.3); padding: 4px; margin: 2px; position: relative;
+            }
+            .training-dot::before { content: ''; position: absolute; top: -4px; left: -4px; right: -4px; bottom: -4px; }
+            .training-dot:hover, .training-dot:active { transform: scale(1.3); box-shadow: 0 2px 6px rgba(107, 44, 145, 0.5); }
+            .training-dot.cancelled { background: #9CA3AF; box-shadow: 0 1px 3px rgba(156, 163, 175, 0.3); }
+            .training-dot.cancelled:hover, .training-dot.cancelled:active { box-shadow: 0 2px 6px rgba(156, 163, 175, 0.5); }
+        }
+        /* Slide menu: sub-items under Tréningy */
+        .nav-slide-menu .nav-menu-group { margin-bottom: 0.5rem; }
+        .nav-slide-menu .nav-menu-sub {
+            padding-left: 1.25rem;
+            margin-top: 0.25rem;
+            margin-bottom: 0.5rem;
+            border-left: 2px solid #E8D5FF;
+        }
+        .nav-slide-menu .nav-pill-sub {
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</head>
+<body class="admin">
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav">
+                <a href="/pages/admin-dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                <a href="/pages/admin-matches.html" class="nav-pill">Zápasy</a>
+                <a href="/pages/admin-trainings.html" class="nav-pill active">Tréningy</a>
+                <a href="/pages/admin-users.html" class="nav-pill">User Management</a>
+                <a href="/pages/admin-categories.html" class="nav-pill">Kategórie</a>
+                <a href="/pages/trainer-attendance-charts.html" class="nav-pill">Grafy účasti</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="action-buttons-header">
+                <button type="button" class="btn-action primary" onclick="openAddTrainingModal()">+ Pridať tréning</button>
+                <a href="/pages/trainer-training-stats.html" class="btn-action secondary">Záznam štatistík</a>
+                <div class="quick-add-wrapper" id="quickAddWrapper">
+                    <button type="button" class="quick-add-btn" onclick="toggleQuickAddMenu(event)" aria-label="Rýchle pridanie">+</button>
+                    <div class="quick-add-menu" id="quickAddMenu">
+                        <button type="button" class="quick-add-item" onclick="closeQuickAddMenu(); openAddTrainingModal();">
+                            <span class="quick-add-icon">T</span>
+                            <span>Pridať tréning</span>
+                        </button>
+                        <a href="/pages/trainer-training-stats.html" class="quick-add-item" onclick="closeQuickAddMenu()">
+                            <span class="quick-add-icon">Š</span>
+                            <span>Záznam štatistík</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="category-filter" id="categoryFilter" onclick="toggleCategoryDropdown(event)">
+                <span class="category-filter-text" id="categoryFilterText">Kategórie: Všetky</span>
+                <div class="category-filter-caret">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <div class="category-dropdown" id="categoryDropdown">
+                    <input type="text" class="category-search" id="categorySearch" placeholder="Hľadať kategórie..." oninput="filterCategories()" onclick="event.stopPropagation()">
+                    <div class="category-options-container" id="categoryOptionsContainer"></div>
+                </div>
+            </div>
+            <div class="user-info" id="userInfo" data-initial="T" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">Admin</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <div class="nav-menu-profile">
+            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">T</div>
+            <div class="nav-menu-profile-info">
+                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                <div class="nav-menu-profile-role" id="navMenuProfileRole">Admin</div>
+            </div>
+        </div>
+        <div class="nav-menu-divider"></div>
+        <a href="/pages/admin-dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/admin-matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>
+        <div class="nav-menu-group">
+            <a href="/pages/admin-trainings.html" class="nav-pill active" onclick="closeNavMenu()">Tréningy</a>
+            <div class="nav-menu-sub">
+                <button type="button" class="nav-pill nav-pill-sub" onclick="closeNavMenu(); openAddTrainingModal();">+ Pridať tréning</button>
+                <a href="/pages/trainer-training-stats.html" class="nav-pill nav-pill-sub" onclick="closeNavMenu(); handleStatsFromMenu(event)">+ Záznam štatistík</a>
+                <a href="/pages/trainer-drill-mode.html" class="nav-pill nav-pill-sub" onclick="closeNavMenu()">+ Režim cvičenia</a>
+            </div>
+        </div>
+        <a href="/pages/admin-users.html" class="nav-pill" onclick="closeNavMenu()">User Management</a>
+        <a href="/pages/admin-categories.html" class="nav-pill" onclick="closeNavMenu()">Kategórie</a>
+        <a href="/pages/trainer-attendance-charts.html" class="nav-pill" onclick="closeNavMenu()">Grafy účasti</a>
+        <div class="nav-menu-divider"></div>
+        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>
+    </nav>
+
+    <div class="dashboard-content">
+        <!-- Top stat cards: progress / attendance for trainer -->
+        <div class="top-stats">
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Tréningy tento týždeň</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="statTrainingsThisWeek">-</div>
+                        <div class="stat-icon">
+                            <img src="/IMG/schedule-calendar-svgrepo-com.svg" alt="Týždeň">
+                        </div>
+                    </div>
+                    <div class="stat-subtitle" id="statTrainingsThisWeekSub">Načítava sa...</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Priemerná účasť (tento týždeň)</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="statAvgAttendance">-</div>
+                        <div class="stat-icon">
+                            <img src="/IMG/percentage-svgrepo-com (1).svg" alt="Účasť">
+                        </div>
+                    </div>
+                    <div class="stat-subtitle" id="statAvgAttendanceSub">-</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="statAvgAttendanceBar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Najbližší tréning</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="statNextTraining">-</div>
+                        <div class="stat-icon">
+                            <img src="/IMG/calendar-svgrepo-com (1).svg" alt="Kalendár">
+                        </div>
+                    </div>
+                    <div class="stat-subtitle" id="statNextTrainingSub">-</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Tréningy tento mesiac</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="statTrainingsThisMonth">-</div>
+                        <div class="stat-icon">
+                            <img src="/IMG/statistics-svgrepo-com (1).svg" alt="Mesiac">
+                        </div>
+                    </div>
+                    <div class="stat-subtitle" id="statTrainingsThisMonthSub">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training stats -->
+        <section class="section-card training-stats-section">
+            <div class="training-stats-header">
+                <div class="training-stats-title">
+                    <div class="training-stats-title-icon">
+                        <img src="/IMG/statistics-svgrepo-com (1).svg" alt="Štatistiky tréningov">
+                    </div>
+                    <h2 class="training-stats-title-text">Štatistiky tréningov (tím / hráč)</h2>
+                </div>
+                <div class="training-stats-actions">
+                    <a href="/pages/trainer-training-stats.html" class="training-stats-btn">
+                        <div class="training-stats-btn-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <span>Zapísať štatistiku</span>
+                    </a>
+                    <button type="button" class="training-stats-btn active" id="statsViewOverviewBtn" aria-pressed="true" onclick="openTrainerStatsOverviewListModal()">
+                        <div class="training-stats-btn-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 3H10V10H3V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M14 3H21V10H14V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M3 14H10V21H3V14Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M14 14H21V21H14V14Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <span>Prehľad</span>
+                    </button>
+                    <button type="button" class="training-stats-btn" id="statsDetailBtn" onclick="openTrainerStatsDetailModal()">
+                        <div class="training-stats-btn-icon">
+                            <img src="/IMG/chart-line-svgrepo-com.svg" alt="Detail">
+                        </div>
+                        <span>Detail</span>
+                    </button>
+                </div>
+            </div>
+            <div class="training-stats-summary">
+                <div class="training-stats-filters">
+                    <div class="training-stats-filter-group">
+                        <label for="statsFilterCategory">Kategória</label>
+                        <select id="statsFilterCategory">
+                            <option value="">Všetky kategórie</option>
+                        </select>
+                    </div>
+                    <div class="training-stats-filter-group">
+                        <label for="statsFilterPlayer">Hráč</label>
+                        <select id="statsFilterPlayer">
+                            <option value="">Celý tím</option>
+                        </select>
+                    </div>
+                    <div class="training-stats-filter-group">
+                        <label for="statsFilterType">Typ tréningu</label>
+                        <select id="statsFilterType">
+                            <option value="">Všetky</option>
+                            <option value="POSLNOVANIE">Posilňovanie</option>
+                            <option value="BEH">Beh</option>
+                            <option value="STRELBA">Streľba</option>
+                        </select>
+                    </div>
+                    <div class="training-stats-filter-group">
+                        <label for="statsFilterFrom">Od dátumu</label>
+                        <input type="date" id="statsFilterFrom">
+                    </div>
+                    <div class="training-stats-filter-group">
+                        <label for="statsFilterTo">Do dátumu</label>
+                        <input type="date" id="statsFilterTo">
+                    </div>
+                    <div class="training-stats-filter-actions">
+                        <button type="button" class="training-stats-btn training-stats-btn-secondary" id="statsFilterReset">Reset filtrov</button>
+                    </div>
+                </div>
+                <div class="training-stats-filter-label" id="statsFilterLabel">Celý tím</div>
+                <div class="training-stats-figures">
+                    <div class="training-stats-figure">
+                        <span class="training-stats-figure-value" id="statRecordsThisMonth">-</span>
+                        <span class="training-stats-figure-label" id="statRecordsPrimaryLabel">záznamov tento mesiac</span>
+                    </div>
+                    <div class="training-stats-figure">
+                        <span class="training-stats-figure-value" id="statRecordsLastMonth">-</span>
+                        <span class="training-stats-figure-label" id="statRecordsSecondaryLabel">minulý mesiac</span>
+                    </div>
+                </div>
+            </div>
+            <div class="training-stats-scroll-container">
+                <div class="training-stats-cards-wrapper" id="trainerStatsCardsWrapper">
+                    <!-- Training stats cards injected by JS -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Detail modal for training statistics (charts) - same as trainings.html -->
+        <div id="trainerStatsDetailModal" class="stats-detail-modal" onclick="if(event.target===this) closeTrainerStatsDetailModal()">
+            <div class="stats-detail-modal-content" onclick="event.stopPropagation()">
+                <div class="stats-detail-modal-header">
+                    <h2 class="stats-detail-modal-title">Detail štatistík tréningov</h2>
+                    <button type="button" class="stats-detail-close" onclick="closeTrainerStatsDetailModal()" aria-label="Zavrieť">&times;</button>
+                </div>
+                <div id="trainerStatsChartsContainer">
+                    <!-- Charts rendered by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Prehľad (top-right): list of all stats with player names, each row has Viac → single-stat overview -->
+        <div id="trainerStatsOverviewListModal" class="stats-detail-modal" onclick="if(event.target===this) closeTrainerStatsOverviewListModal()">
+            <div class="stats-detail-modal-content" style="max-width: 640px; max-height: 85vh;" onclick="event.stopPropagation()">
+                <div class="stats-detail-modal-header">
+                    <h2 class="stats-detail-modal-title">Prehľad štatistík</h2>
+                    <button type="button" class="stats-detail-close" onclick="closeTrainerStatsOverviewListModal()" aria-label="Zavrieť">&times;</button>
+                </div>
+                <div id="trainerStatsOverviewListBody" class="stats-overview-list-body">
+                    <!-- Rows filled by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview modal for a single stat (opened from Viac) - player name, overview, delete/modify -->
+        <div id="trainerStatsOverviewModal" class="stats-detail-modal" onclick="if(event.target===this) closeTrainerStatsOverviewModal()">
+            <div class="stats-detail-modal-content" style="max-width: 560px;" onclick="event.stopPropagation()">
+                <div class="stats-detail-modal-header">
+                    <h2 class="stats-detail-modal-title">Prehľad štatistiky</h2>
+                    <button type="button" class="stats-detail-close" onclick="closeTrainerStatsOverviewModal()" aria-label="Zavrieť">&times;</button>
+                </div>
+                <div id="trainerStatsOverviewBody">
+                    <div class="stats-overview-player-name" id="trainerStatsOverviewPlayerName"></div>
+                    <div class="stats-overview-grid" id="trainerStatsOverviewGrid"></div>
+                    <div class="stats-overview-actions">
+                        <button type="button" class="btn btn-close" onclick="closeTrainerStatsOverviewModal()">Zavrieť</button>
+                        <button type="button" class="btn btn-edit" id="trainerStatsOverviewBtnEdit">Upraviť</button>
+                        <button type="button" class="btn btn-delete" id="trainerStatsOverviewBtnDelete">Zmazať</button>
+                    </div>
+                </div>
+                <div id="trainerStatsOverviewEditForm" class="stats-overview-edit-form" style="display: none;">
+                    <form id="trainerStatsOverviewEditFormForm">
+                        <input type="hidden" id="trainerStatsOverviewEditId" name="id">
+                        <div class="form-group">
+                            <label for="trainerStatsOverviewEditWorkoutDate">Dátum tréningu *</label>
+                            <input type="date" id="trainerStatsOverviewEditWorkoutDate" name="workoutDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="trainerStatsOverviewEditExerciseName">Názov cvičenia *</label>
+                            <input type="text" id="trainerStatsOverviewEditExerciseName" name="exerciseName" maxlength="64" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="trainerStatsOverviewEditCategory">Kategória *</label>
+                            <select id="trainerStatsOverviewEditCategory" name="category" required>
+                                <option value="POSLNOVANIE">Poslňovanie</option>
+                                <option value="BEH">Beh</option>
+                                <option value="STRELBA">Streľba</option>
+                            </select>
+                        </div>
+                        <div id="trainerStatsOverviewEditPoslnovanie" class="category-fields">
+                            <div class="form-group">
+                                <label for="trainerStatsOverviewEditWeight">Váha (kg)</label>
+                                <input type="number" id="trainerStatsOverviewEditWeight" name="weight" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="trainerStatsOverviewEditRepetitions">Opakovania</label>
+                                <input type="number" id="trainerStatsOverviewEditRepetitions" name="repetitions" min="0">
+                            </div>
+                        </div>
+                        <div id="trainerStatsOverviewEditBeh" class="category-fields" style="display: none;">
+                            <div class="form-group">
+                                <label for="trainerStatsOverviewEditTime">Čas</label>
+                                <input type="text" id="trainerStatsOverviewEditTime" name="time" placeholder="hh:mm:ss, mm:ss">
+                            </div>
+                            <div class="form-group">
+                                <label for="trainerStatsOverviewEditDistance">Vzdialenosť (km)</label>
+                                <input type="number" id="trainerStatsOverviewEditDistance" name="distance" step="0.01" min="0">
+                            </div>
+                        </div>
+                        <div id="trainerStatsOverviewEditStrelba" class="category-fields" style="display: none;">
+                            <div class="form-group">
+                                <label for="trainerStatsOverviewEditShotsAttempted">Počet strel</label>
+                                <input type="number" id="trainerStatsOverviewEditShotsAttempted" name="shotsAttempted" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="trainerStatsOverviewEditShotsMade">Počet zásahov</label>
+                                <input type="number" id="trainerStatsOverviewEditShotsMade" name="shotsMade" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="trainerStatsOverviewEditCourtSpot">Miesto na ihrisku</label>
+                                <input type="text" id="trainerStatsOverviewEditCourtSpot" name="courtSpot" maxlength="255">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="trainerStatsOverviewEditNote">Poznámka</label>
+                            <textarea id="trainerStatsOverviewEditNote" name="note" rows="2"></textarea>
+                        </div>
+                        <div class="stats-overview-actions">
+                            <button type="submit" class="btn btn-edit">Uložiť zmeny</button>
+                            <button type="button" class="btn btn-close" onclick="switchTrainerStatsOverviewToView()">Späť</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <section class="section-card">
+            <div class="section-header" style="justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div class="section-icon">
+                        <img src="/IMG/schedule-calendar-svgrepo-com.svg" alt="Kalendár">
+                    </div>
+                    <div>
+                        <h2 class="section-title">Tréningy tento týždeň</h2>
+                        <div class="weekly-trainings-subtitle" id="currentWeekLabel">Načítava sa...</div>
+                    </div>
+                </div>
+                <div class="section-actions">
+                    <button type="button" class="btn-add" onclick="openAddTrainingModal()">+ Pridať tréning</button>
+                    <a href="/pages/trainer-attendance-charts.html" class="btn-link">Grafy a tabuľka účasti</a>
+                </div>
+            </div>
+            <div id="weeklyTrainings" class="schedule-grid">
+                <div class="loading">Načítava sa...</div>
+            </div>
+        </section>
+
+        <!-- Kalendár tréningov (same look as Kalendár zápasov) -->
+        <div class="trainings-calendar">
+            <div class="trainings-calendar-header">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <img src="/IMG/schedule-calendar-svgrepo-com.svg" alt="Kalendár" class="section-icon">
+                    </div>
+                    <h2 class="section-title">Najbližšie tréningy</h2>
+                </div>
+                <div class="month-selector-wrapper">
+                    <button type="button" class="calendar-nav-btn" onclick="changeTrainingsMonth(-1)" title="Predchádzajúci mesiac">←</button>
+                    <div class="calendar-month-selector">
+                        <span id="trainingsMonthName">Január</span>
+                        <span id="trainingsMonthYear">2025</span>
+                    </div>
+                    <button type="button" class="calendar-nav-btn" onclick="changeTrainingsMonth(1)" title="Nasledujúci mesiac">→</button>
+                    <button type="button" class="calendar-today-btn" onclick="goToTodayMonth()" title="Aktuálny mesiac">Dnes</button>
+                </div>
+            </div>
+            <div class="calendar-container">
+                <div class="calendar-grid" id="trainingsCalendarGrid">
+                    <div class="loading">Načítava sa...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Training modal -->
+    <div class="add-training-overlay" id="addTrainingOverlay" onclick="if(event.target===this) closeAddTrainingModal()">
+        <div class="add-training-modal" onclick="event.stopPropagation()">
+            <h2>Pridať tréning</h2>
+            <div id="addTrainingMessage" class="msg" style="display: none;"></div>
+            <form id="addTrainingForm">
+                <div class="form-group">
+                    <label for="addName">Názov *</label>
+                    <input type="text" id="addName" name="name" required placeholder="napr. Tréning U15" value="Tréning">
+                </div>
+                <div class="form-group">
+                    <label for="addDate">Dátum *</label>
+                    <input type="date" id="addDate" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="addTime">Čas začiatku *</label>
+                    <input type="time" id="addTime" name="time" required>
+                </div>
+                <div class="form-group">
+                    <label for="addEndTime">Čas ukončenia</label>
+                    <input type="time" id="addEndTime" name="endTime">
+                </div>
+                <div class="form-group location-wrap">
+                    <label for="addLocation">Miesto/Adresa *</label>
+                    <input type="text" id="addLocation" name="location" required placeholder="Zadajte adresu (napr. Trnava)">
+                    <div id="addTrainingLocationSuggestions" class="location-suggestions" style="display: none;"></div>
+                </div>
+                <div class="form-group">
+                    <label for="addCategoryId">Kategória</label>
+                    <select id="addCategoryId" name="categoryId" required>
+                        <option value="">Vyberte kategóriu</option>
+                    </select>
+                </div>
+                <div class="recurring-box">
+                    <h3>Opakovanie tréningov</h3>
+                    <label class="recurring-checkbox-label" for="addIsRecurring">
+                        <input type="checkbox" id="addIsRecurring" name="isRecurring" class="recurring-checkbox-input">
+                        <span class="recurring-checkbox-box"></span>
+                        <span class="recurring-checkbox-text">Vytvoriť opakujúce sa tréningy</span>
+                    </label>
+                    <div class="recurring-details" id="addRecurringDetails">
+                        <div class="form-group">
+                            <label for="addRecurrencePattern">Typ opakovania *</label>
+                            <select id="addRecurrencePattern" name="recurrencePattern">
+                                <option value="WEEKLY">Týždenne</option>
+                                <option value="DAILY">Denne</option>
+                                <option value="MONTHLY">Mesačne</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="addRecurrenceInterval">Interval *</label>
+                            <input type="number" id="addRecurrenceInterval" name="recurrenceInterval" min="1" value="1">
+                            <div class="interval-desc" id="addIntervalDescription">Každý týždeň</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Ukončenie</label>
+                            <div class="end-type-row">
+                                <label><input type="radio" name="addEndType" value="date" checked> Dátum ukončenia</label>
+                                <label><input type="radio" name="addEndType" value="occurrences"> Počet výskytov</label>
+                            </div>
+                            <div id="addEndDateOption" style="margin-top:0.5rem;"><input type="date" id="addRecurrenceEndDate" name="recurrenceEndDate"></div>
+                            <div id="addOccurrencesOption" style="display: none; margin-top:0.5rem;"><input type="number" id="addNumberOfOccurrences" name="numberOfOccurrences" min="1" placeholder="počet"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="addNotes">Poznámky</label>
+                    <textarea id="addNotes" name="notes" placeholder="Voliteľné" rows="2"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Vytvoriť</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAddTrainingModal()">Zrušiť</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Event modal -->
+    <div class="edit-event-overlay" id="editEventOverlay" onclick="if(event.target===this) closeEditEventModal()">
+        <div class="edit-event-modal" onclick="event.stopPropagation()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>Upraviť udalosť</h2>
+                <button type="button" onclick="closeEditEventModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6B7280;">&times;</button>
+            </div>
+            <div id="editEventMessage" class="msg" style="display: none;"></div>
+            <div id="editEventLoading" style="text-align: center; padding: 2rem; color: #6B7280;">Načítava sa...</div>
+            <form id="editEventForm" style="display: none;">
+                <div class="form-group">
+                    <label for="editEventName">Názov *</label>
+                    <input type="text" id="editEventName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="editEventType">Typ *</label>
+                    <select id="editEventType" name="type" required>
+                        <option value="">Vyberte typ</option>
+                        <option value="TRAINING">Tréning</option>
+                        <option value="MATCH">Zápas</option>
+                    </select>
+                </div>
+                <div id="editEventApplyToAllBox" class="edit-multiple-box" style="display: none;">
+                    <label>
+                        <input type="checkbox" id="editEventApplyToAll" name="applyToAll">
+                        <span>Upraviť viacero tréningov naraz</span>
+                    </label>
+                    <div id="editEventApplyDetails" style="display: none; margin-top: 1rem;">
+                        <div class="form-group">
+                            <label for="editEventApplyCategory">Kategória</label>
+                            <select id="editEventApplyCategory" name="applyCategory">
+                                <option value="_current">Kategória tejto udalosti</option>
+                            </select>
+                            <small>Vyberte, pre ktorú kategóriu chcete zmeny aplikovať.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Ktoré tréningy upraviť</label>
+                            <select id="editEventApplyPattern" name="applyPattern">
+                                <option value="ALL">Všetky podobné (rovnaký názov)</option>
+                                <option value="DAILY">Denne - všetky s rovnakým názvom</option>
+                                <option value="WEEKLY">Týždenne - len rovnaký deň v týždni</option>
+                                <option value="MONTHLY">Mesačne - len rovnaký dátum v mesiaci</option>
+                                <option value="THIS_WEEK">Len tento týždeň</option>
+                                <option value="THIS_MONTH">Len tento mesiac</option>
+                                <option value="FROM_DATE">Od tohto dátumu ďalej</option>
+                            </select>
+                            <small>Určuje, ktoré tréningy budú zmenené podľa vzoru opakovania.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editEventDate">Dátum *</label>
+                    <input type="date" id="editEventDate" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="editEventTime" id="editEventTimeLabel">Čas</label>
+                    <input type="time" id="editEventTime" name="time">
+                    <small id="editEventTimeHint" style="color: #6B7280; display: block; margin-top: 0.25rem;"></small>
+                </div>
+                <div id="editEventEndTimeGroup" class="form-group" style="display: none;">
+                    <label for="editEventEndTime">Čas ukončenia</label>
+                    <input type="time" id="editEventEndTime" name="endTime">
+                </div>
+                <div id="editEventCancelledGroup" class="form-group" style="display: none;">
+                    <label style="display: inline-flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="editEventCancelled" name="cancelled" value="true">
+                        <span style="margin-left: 0.5rem;">Tréning zrušený</span>
+                    </label>
+                </div>
+                <div class="form-group location-wrap">
+                    <label for="editEventLocation">Miesto/Adresa *</label>
+                    <input type="text" id="editEventLocation" name="location" required>
+                    <div id="editEventLocationSuggestions" class="location-suggestions" style="display: none;"></div>
+                </div>
+                <div id="editEventMatchFields" style="display: none;">
+                    <div class="form-group">
+                        <label>Výsledok zápasu</label>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <label style="display: inline-flex; align-items: center; cursor: pointer;"><input type="radio" name="editEventMatchWon" value="true"> Vyhrali</label>
+                            <label style="display: inline-flex; align-items: center; cursor: pointer;"><input type="radio" name="editEventMatchWon" value="false"> Prehrali</label>
+                            <label style="display: inline-flex; align-items: center; cursor: pointer;"><input type="radio" name="editEventMatchWon" value="" checked> Ešte sa nehralo</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editEventCategoryId">Kategória</label>
+                    <select id="editEventCategoryId" name="categoryId" required>
+                        <option value="">Vyberte kategóriu</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editEventOpponent">Súper</label>
+                    <input type="text" id="editEventOpponent" name="opponent">
+                </div>
+                <div class="form-group">
+                    <label for="editEventNotes">Poznámky</label>
+                    <textarea id="editEventNotes" name="notes" rows="2"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Uložiť zmeny</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteEditedEvent()">Zmazať udalosť</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditEventModal()">Zrušiť</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="action-modal-overlay" id="actionConfirmModal" onclick="if(event.target===this) closeActionConfirmModal(false)">
+        <div class="action-modal-box" onclick="event.stopPropagation()">
+            <h3 id="actionConfirmTitle">Potvrdenie</h3>
+            <p id="actionConfirmText"></p>
+            <div class="action-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeActionConfirmModal(false)">Zrušiť</button>
+                <button type="button" class="btn btn-danger" id="actionConfirmOkBtn" onclick="closeActionConfirmModal(true)">Potvrdiť</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-modal-overlay" id="actionInfoModal" onclick="if(event.target===this) closeActionInfoModal()">
+        <div class="action-modal-box" onclick="event.stopPropagation()">
+            <h3 id="actionInfoTitle">Upozornenie</h3>
+            <p id="actionInfoText"></p>
+            <div class="action-modal-actions">
+                <button type="button" class="btn btn-primary" onclick="closeActionInfoModal()">Rozumiem</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/categories.js"></script>
+    <script src="/js/events.js"></script>
+    <script src="/js/attendance.js"></script>
+    <script src="/js/users.js"></script>
+    <script>
+        if (typeof API_CONFIG !== 'undefined' && API_CONFIG.BASE_URL) { window.API_BASE = API_CONFIG.BASE_URL; }
+    </script>
+    <script src="/js/training-statistics.js"></script>
+    <script>
+        const weekdayNames = ['Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota', 'Nedeľa'];
+        const SLOVAKIA_TZ = 'Europe/Bratislava';
+        let trainerCategories = [];
+        let selectedCategoryId = '';
+        let allTrainings = [];
+
+        /** Today's date in Slovakia (YYYY-MM-DD) */
+        function todayInSlovakia() {
+            return new Date().toLocaleDateString('en-CA', { timeZone: SLOVAKIA_TZ });
+        }
+
+        /** Current time in Slovakia (HH:MM) */
+        function nowTimeInSlovakia() {
+            const t = new Date().toLocaleTimeString('sk-SK', { timeZone: SLOVAKIA_TZ, hour: '2-digit', minute: '2-digit', hour12: false });
+            return t.replace('.', ':').replace(/\s/g, '');
+        }
+
+        /** Format a date string (YYYY-MM-DD) for display in Slovakia (e.g. 17. 2. 2025) */
+        function formatDateSlovakia(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr + 'T12:00:00.000Z');
+            return d.toLocaleDateString('sk-SK', { timeZone: SLOVAKIA_TZ, day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        /** Short format day + month in Slovakia (e.g. 17. 2.) */
+        function formatShortDateSlovakia(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr + 'T12:00:00.000Z');
+            return d.toLocaleDateString('sk-SK', { timeZone: SLOVAKIA_TZ, day: '2-digit', month: '2-digit' });
+        }
+
+        /** Monday of the week containing the given YYYY-MM-DD date string (returns YYYY-MM-DD) */
+        function getStartOfWeekDateString(dateStr) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            const date = new Date(y, m - 1, d);
+            const day = (date.getDay() + 6) % 7;
+            date.setDate(date.getDate() - day);
+            const yy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            return yy + '-' + mm + '-' + dd;
+        }
+
+        /** Add n days to YYYY-MM-DD, returns YYYY-MM-DD */
+        function addDaysDateString(dateStr, n) {
+            const d = new Date(dateStr + 'T12:00:00.000Z');
+            d.setUTCDate(d.getUTCDate() + n);
+            return d.toISOString().split('T')[0];
+        }
+
+        function formatLocation(location) {
+            if (!location) return '';
+            const parts = location.split(',');
+            return parts[0].trim();
+        }
+
+        const locationSvg = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M3.37892 10.2236L8 16L12.6211 10.2236C13.5137 9.10788 14 7.72154 14 6.29266V6C14 2.68629 11.3137 0 8 0C4.68629 0 2 2.68629 2 6V6.29266C2 7.72154 2.4863 9.10788 3.37892 10.2236ZM8 8C9.10457 8 10 7.10457 10 6C10 4.89543 9.10457 4 8 4C6.89543 4 6 4.89543 6 6C6 7.10457 6.89543 8 8 8Z" fill="#6B7280"/></svg>';
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (typeof isAuthenticated === 'undefined') { setTimeout(arguments.callee, 100); return; }
+            if (!isAuthenticated()) { window.location.href = '/pages/login.html'; return; }
+
+            const user = getCurrentUser();
+            if (!user || user.role !== 'ADMIN') {
+                window.location.href = '/pages/trainer-trainings.html';
+                return;
+            }
+
+            const displayName = (formatUserDisplayName(user) || 'Admin').replace(/\s*\([^)]*\)\s*$/, '').trim();
+            const displayRole = 'Admin';
+            const userInitial = (displayName.charAt(0) || 'T').toUpperCase();
+
+            document.getElementById('userName').textContent = displayName;
+            document.getElementById('userRole').textContent = displayRole;
+            const dropdownName = document.getElementById('userDropdownName');
+            const dropdownRole = document.getElementById('userDropdownRole');
+            if (dropdownName) dropdownName.textContent = displayName;
+            if (dropdownRole) dropdownRole.textContent = displayRole;
+            document.getElementById('userInfo').setAttribute('data-initial', userInitial);
+
+            const navMenuProfileName = document.getElementById('navMenuProfileName');
+            const navMenuProfileRole = document.getElementById('navMenuProfileRole');
+            const navMenuProfileAvatar = document.getElementById('navMenuProfileAvatar');
+            if (navMenuProfileName) navMenuProfileName.textContent = displayName;
+            if (navMenuProfileRole) navMenuProfileRole.textContent = displayRole;
+            if (navMenuProfileAvatar) navMenuProfileAvatar.textContent = userInitial;
+
+            await loadUserCategories();
+            await loadCategories();
+            await loadTrainings();
+            await populateTrainingStatsFilters();
+            loadTrainingStatsSummary();
+            setupAddTrainingModal();
+            setupEditEventModal();
+            const statsCat = document.getElementById('statsFilterCategory');
+            const statsPlayer = document.getElementById('statsFilterPlayer');
+            const statsReset = document.getElementById('statsFilterReset');
+            const statsFrom = document.getElementById('statsFilterFrom');
+            const statsTo = document.getElementById('statsFilterTo');
+            if (statsCat) statsCat.addEventListener('change', async function() {
+                await populateTrainingStatsPlayers(this.value);
+                loadTrainingStatsSummary();
+            });
+            getMainStatsDateRange();
+            if (statsPlayer) statsPlayer.addEventListener('change', loadTrainingStatsSummary);
+            const statsType = document.getElementById('statsFilterType');
+            if (statsType) statsType.addEventListener('change', loadTrainingStatsSummary);
+            if (statsFrom) statsFrom.addEventListener('change', function() {
+                loadTrainingStatsSummary();
+            });
+            if (statsTo) statsTo.addEventListener('change', function() {
+                loadTrainingStatsSummary();
+            });
+            if (statsReset) statsReset.addEventListener('click', resetMainTrainingStatsFilters);
+        });
+
+        function openAddTrainingModal() {
+            document.getElementById('addTrainingOverlay').classList.add('open');
+            document.getElementById('addTrainingMessage').style.display = 'none';
+            document.getElementById('addName').value = 'Tréning';
+            document.getElementById('addDate').value = todayInSlovakia();
+            document.getElementById('addTime').value = '';
+            document.getElementById('addEndTime').value = '';
+            document.getElementById('addLocation').value = '';
+            document.getElementById('addCategoryId').value = selectedCategoryId || '';
+            document.getElementById('addNotes').value = '';
+            document.getElementById('addIsRecurring').checked = false;
+            document.getElementById('addRecurringDetails').classList.remove('show');
+            document.getElementById('addRecurrencePattern').value = 'WEEKLY';
+            document.getElementById('addRecurrenceInterval').value = '1';
+            document.querySelector('input[name="addEndType"][value="date"]').checked = true;
+            document.getElementById('addEndDateOption').style.display = 'block';
+            document.getElementById('addOccurrencesOption').style.display = 'none';
+            document.getElementById('addRecurrenceEndDate').value = '';
+            document.getElementById('addNumberOfOccurrences').value = '';
+            updateAddTrainingIntervalDesc();
+            loadModalCategories();
+        }
+
+        function closeAddTrainingModal() {
+            document.getElementById('addTrainingOverlay').classList.remove('open');
+        }
+
+        async function loadModalCategories() {
+            const sel = document.getElementById('addCategoryId');
+            const firstOpt = sel.options[0];
+            sel.innerHTML = '';
+            if (firstOpt) sel.appendChild(firstOpt);
+            const cats = trainerCategories.length > 0 ? trainerCategories : await getCategories({ summary: true });
+            (cats || []).forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.textContent = cat.name + (cat.season ? ' (' + cat.season + ')' : '');
+                sel.appendChild(opt);
+            });
+        }
+
+        let addTrainingLocationDebounce = null;
+
+        function setupAddTrainingModal() {
+            const form = document.getElementById('addTrainingForm');
+            form.addEventListener('submit', handleAddTrainingSubmit);
+            document.getElementById('addIsRecurring').addEventListener('change', function() {
+                document.getElementById('addRecurringDetails').classList.toggle('show', this.checked);
+            });
+            document.getElementById('addRecurrencePattern').addEventListener('change', updateAddTrainingIntervalDesc);
+            document.getElementById('addRecurrenceInterval').addEventListener('input', updateAddTrainingIntervalDesc);
+            document.querySelectorAll('input[name="addEndType"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const byDate = this.value === 'date';
+                    document.getElementById('addEndDateOption').style.display = byDate ? 'block' : 'none';
+                    document.getElementById('addOccurrencesOption').style.display = byDate ? 'none' : 'block';
+                });
+            });
+            setupAddTrainingLocationAutocomplete();
+        }
+
+        function setupAddTrainingLocationAutocomplete() {
+            const input = document.getElementById('addLocation');
+            const suggestions = document.getElementById('addTrainingLocationSuggestions');
+            if (window._addTrainingLocSetup) return;
+            window._addTrainingLocSetup = true;
+            input.addEventListener('input', function() {
+                clearTimeout(addTrainingLocationDebounce);
+                const q = input.value.trim();
+                if (q.length < 3) { suggestions.style.display = 'none'; return; }
+                addTrainingLocationDebounce = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`${API_CONFIG.BASE_URL}/locations/search?q=${encodeURIComponent(q)}`, { headers: getAuthHeaders() });
+                        const data = await res.json();
+                        suggestions.innerHTML = '';
+                        if (!data || !data.length) { suggestions.style.display = 'none'; return; }
+                        data.forEach(s => {
+                            const d = document.createElement('div');
+                            d.textContent = s.display_name || s;
+                            d.onclick = () => { input.value = (s.display_name != null ? s.display_name : s); suggestions.style.display = 'none'; };
+                            suggestions.appendChild(d);
+                        });
+                        suggestions.style.display = 'block';
+                    } catch (e) { suggestions.style.display = 'none'; }
+                }, 300);
+            });
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !suggestions.contains(e.target)) suggestions.style.display = 'none';
+            });
+        }
+
+        function updateAddTrainingIntervalDesc() {
+            const interval = parseInt(document.getElementById('addRecurrenceInterval').value) || 1;
+            const pattern = document.getElementById('addRecurrencePattern').value;
+            const desc = { DAILY: interval === 1 ? 'Každý deň' : 'Každých ' + interval + ' dní', WEEKLY: interval === 1 ? 'Každý týždeň' : 'Každých ' + interval + ' týždňov', MONTHLY: interval === 1 ? 'Každý mesiac' : 'Každých ' + interval + ' mesiacov' };
+            document.getElementById('addIntervalDescription').textContent = desc[pattern] || desc.WEEKLY;
+        }
+
+        async function handleAddTrainingSubmit(e) {
+            e.preventDefault();
+            const msgEl = document.getElementById('addTrainingMessage');
+            msgEl.style.display = 'none';
+            const addCategoryId = document.getElementById('addCategoryId').value;
+            if (!addCategoryId) {
+                showAddTrainingMsg('Kategória je povinná.', true);
+                return;
+            }
+            const formData = {
+                name: document.getElementById('addName').value.trim() || 'Tréning',
+                type: 'TRAINING',
+                date: document.getElementById('addDate').value,
+                time: document.getElementById('addTime').value || null,
+                endTime: document.getElementById('addEndTime').value || null,
+                location: document.getElementById('addLocation').value.trim() || null,
+                categoryId: addCategoryId,
+                notes: document.getElementById('addNotes').value.trim() || null
+            };
+            const isRecurring = document.getElementById('addIsRecurring').checked;
+            if (isRecurring) {
+                formData.isRecurring = true;
+                formData.recurrencePattern = document.getElementById('addRecurrencePattern').value;
+                formData.recurrenceInterval = parseInt(document.getElementById('addRecurrenceInterval').value) || 1;
+                const endType = document.querySelector('input[name="addEndType"]:checked').value;
+                if (endType === 'date') {
+                    const endDate = document.getElementById('addRecurrenceEndDate').value;
+                    if (!endDate) { showAddTrainingMsg('Zadajte dátum ukončenia alebo počet výskytov.', true); return; }
+                    formData.recurrenceEndDate = endDate;
+                } else {
+                    const num = document.getElementById('addNumberOfOccurrences').value;
+                    if (!num || parseInt(num) < 1) { showAddTrainingMsg('Zadajte počet výskytov.', true); return; }
+                    formData.numberOfOccurrences = parseInt(num);
+                }
+            } else {
+                formData.isRecurring = false;
+            }
+            Object.keys(formData).forEach(k => { if (formData[k] === null || formData[k] === '') delete formData[k]; });
+            try {
+                const result = await createEvent(formData);
+                const count = result.count !== undefined ? result.count : 1;
+                showAddTrainingMsg(count > 1 ? 'Vytvorených ' + count + ' tréningov.' : 'Tréning bol vytvorený.', false);
+                await loadTrainings();
+                setTimeout(() => { closeAddTrainingModal(); }, 1200);
+            } catch (err) {
+                console.error(err);
+                showAddTrainingMsg('Chyba: ' + (err.message || 'nepodarilo sa vytvoriť tréning.'), true);
+            }
+        }
+
+        function showAddTrainingMsg(text, isError) {
+            const msgEl = document.getElementById('addTrainingMessage');
+            msgEl.textContent = text;
+            msgEl.className = 'msg ' + (isError ? 'error' : 'success');
+            msgEl.style.display = 'block';
+        }
+
+        let editEventModalEventId = null;
+        let editEventLocationDebounce = null;
+        let actionConfirmResolver = null;
+
+        function openActionConfirmModal(message, options = {}) {
+            const modal = document.getElementById('actionConfirmModal');
+            const titleEl = document.getElementById('actionConfirmTitle');
+            const textEl = document.getElementById('actionConfirmText');
+            const okBtn = document.getElementById('actionConfirmOkBtn');
+            if (!modal || !titleEl || !textEl || !okBtn) return Promise.resolve(false);
+            titleEl.textContent = options.title || 'Potvrdenie';
+            textEl.textContent = message || '';
+            okBtn.textContent = options.confirmText || 'Potvrdiť';
+            okBtn.className = 'btn ' + (options.confirmClass || 'btn-danger');
+            modal.classList.add('open');
+            return new Promise(resolve => {
+                actionConfirmResolver = resolve;
+            });
+        }
+
+        function closeActionConfirmModal(confirmed) {
+            const modal = document.getElementById('actionConfirmModal');
+            if (modal) modal.classList.remove('open');
+            if (typeof actionConfirmResolver === 'function') {
+                const resolve = actionConfirmResolver;
+                actionConfirmResolver = null;
+                resolve(Boolean(confirmed));
+            }
+        }
+
+        function openActionInfoModal(message, title) {
+            const modal = document.getElementById('actionInfoModal');
+            const titleEl = document.getElementById('actionInfoTitle');
+            const textEl = document.getElementById('actionInfoText');
+            if (!modal || !titleEl || !textEl) return;
+            titleEl.textContent = title || 'Upozornenie';
+            textEl.textContent = message || '';
+            modal.classList.add('open');
+        }
+
+        function closeActionInfoModal() {
+            const modal = document.getElementById('actionInfoModal');
+            if (modal) modal.classList.remove('open');
+        }
+
+        function getWeekNumber(d) {
+            const date = new Date(d);
+            date.setHours(0, 0, 0, 0);
+            date.setDate(date.getDate() + 4 - (date.getDay() || 7));
+            const yearStart = new Date(date.getFullYear(), 0, 1);
+            return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+        }
+
+        function setupEditEventModal() {
+            const form = document.getElementById('editEventForm');
+            if (!form) return;
+            form.addEventListener('submit', handleEditEventSubmit);
+            document.getElementById('editEventType').addEventListener('change', updateEditEventTypeUi);
+            document.getElementById('editEventApplyToAll').addEventListener('change', function() {
+                document.getElementById('editEventApplyDetails').style.display = this.checked ? 'block' : 'none';
+            });
+            setupEditEventLocationAutocomplete();
+        }
+
+        function updateEditEventTypeUi() {
+            const type = document.getElementById('editEventType').value;
+            const isTraining = type === 'TRAINING';
+            document.getElementById('editEventApplyToAllBox').style.display = isTraining ? 'block' : 'none';
+            document.getElementById('editEventEndTimeGroup').style.display = isTraining ? 'block' : 'none';
+            document.getElementById('editEventCancelledGroup').style.display = isTraining ? 'block' : 'none';
+            document.getElementById('editEventMatchFields').style.display = type === 'MATCH' ? 'block' : 'none';
+            document.getElementById('editEventTimeLabel').textContent = isTraining ? 'Čas začiatku *' : 'Čas';
+            document.getElementById('editEventTime').required = isTraining;
+            document.getElementById('editEventTimeHint').textContent = isTraining ? 'Povinné pre tréning' : '';
+            if (!isTraining) document.getElementById('editEventEndTime').value = '';
+        }
+
+        function setupEditEventLocationAutocomplete() {
+            const input = document.getElementById('editEventLocation');
+            const suggestions = document.getElementById('editEventLocationSuggestions');
+            if (!input || !suggestions) return;
+            input.addEventListener('input', function() {
+                clearTimeout(editEventLocationDebounce);
+                const q = input.value.trim();
+                if (q.length < 3) { suggestions.style.display = 'none'; return; }
+                editEventLocationDebounce = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`${API_CONFIG.BASE_URL}/locations/search?q=${encodeURIComponent(q)}`, { headers: getAuthHeaders() });
+                        const data = await res.json();
+                        suggestions.innerHTML = '';
+                        if (!data || !data.length) { suggestions.style.display = 'none'; return; }
+                        data.forEach(s => {
+                            const d = document.createElement('div');
+                            d.textContent = s.display_name || s;
+                            d.onclick = () => { input.value = (s.display_name != null ? s.display_name : s); suggestions.style.display = 'none'; };
+                            suggestions.appendChild(d);
+                        });
+                        suggestions.style.display = 'block';
+                    } catch (e) { suggestions.style.display = 'none'; }
+                }, 300);
+            });
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !suggestions.contains(e.target)) suggestions.style.display = 'none';
+            });
+        }
+
+        function openEditEventModal(eventId) {
+            editEventModalEventId = eventId;
+            document.getElementById('editEventOverlay').classList.add('open');
+            document.getElementById('editEventForm').style.display = 'none';
+            document.getElementById('editEventLoading').style.display = 'block';
+            document.getElementById('editEventMessage').style.display = 'none';
+            document.getElementById('editEventApplyToAll').checked = false;
+            document.getElementById('editEventApplyDetails').style.display = 'none';
+            loadEventForEdit(eventId);
+        }
+
+        function closeEditEventModal() {
+            document.getElementById('editEventOverlay').classList.remove('open');
+            editEventModalEventId = null;
+        }
+
+        async function loadEventForEdit(eventId) {
+            try {
+                const event = await getEventById(eventId);
+                const cats = trainerCategories.length > 0 ? trainerCategories : await getCategories({ summary: true });
+                const catSel = document.getElementById('editEventCategoryId');
+                catSel.innerHTML = '<option value="">Vyberte kategóriu</option>';
+                (cats || []).forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name + (cat.season ? ' (' + cat.season + ')' : '');
+                    catSel.appendChild(opt);
+                });
+                const applyCatSel = document.getElementById('editEventApplyCategory');
+                applyCatSel.innerHTML = '<option value="_current">Kategória tejto udalosti</option>';
+                (cats || []).forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name + (cat.season ? ' (' + cat.season + ')' : '');
+                    applyCatSel.appendChild(opt);
+                });
+                document.getElementById('editEventName').value = event.name || '';
+                document.getElementById('editEventType').value = event.type || '';
+                document.getElementById('editEventDate').value = event.date ? String(event.date).substring(0, 10) : '';
+                document.getElementById('editEventTime').value = event.time ? event.time.substring(0, 5) : '';
+                document.getElementById('editEventEndTime').value = event.endTime ? event.endTime.substring(0, 5) : '';
+                document.getElementById('editEventLocation').value = event.location || '';
+                document.getElementById('editEventCategoryId').value = event.categoryId || '';
+                document.getElementById('editEventOpponent').value = event.opponent || '';
+                document.getElementById('editEventNotes').value = event.notes || '';
+                document.getElementById('editEventCancelled').checked = !!event.cancelled;
+                const mwTrue = document.querySelector('input[name="editEventMatchWon"][value="true"]');
+                const mwFalse = document.querySelector('input[name="editEventMatchWon"][value="false"]');
+                const mwNone = document.querySelector('input[name="editEventMatchWon"][value=""]');
+                if (event.matchWon === true && mwTrue) mwTrue.checked = true;
+                else if (event.matchWon === false && mwFalse) mwFalse.checked = true;
+                else if (mwNone) mwNone.checked = true;
+                updateEditEventTypeUi();
+                document.getElementById('editEventLoading').style.display = 'none';
+                document.getElementById('editEventForm').style.display = 'block';
+            } catch (err) {
+                console.error('Error loading event:', err);
+                document.getElementById('editEventLoading').innerHTML = 'Chyba načítania: ' + (err.message || 'neznáma chyba');
+            }
+        }
+
+        async function handleEditEventSubmit(e) {
+            e.preventDefault();
+            const msgEl = document.getElementById('editEventMessage');
+            msgEl.style.display = 'none';
+            const editCategoryId = document.getElementById('editEventCategoryId').value;
+            if (!editCategoryId) {
+                msgEl.textContent = 'Kategória je povinná.';
+                msgEl.className = 'msg error';
+                msgEl.style.display = 'block';
+                return;
+            }
+            const applyToAll = document.getElementById('editEventApplyToAll').checked && document.getElementById('editEventType').value === 'TRAINING';
+            const formData = {
+                name: document.getElementById('editEventName').value.trim(),
+                type: document.getElementById('editEventType').value,
+                date: document.getElementById('editEventDate').value,
+                time: document.getElementById('editEventTime').value || null,
+                endTime: document.getElementById('editEventType').value === 'TRAINING' ? (document.getElementById('editEventEndTime').value || null) : null,
+                location: document.getElementById('editEventLocation').value.trim() || null,
+                categoryId: editCategoryId,
+                opponent: document.getElementById('editEventOpponent').value.trim() || null,
+                notes: document.getElementById('editEventNotes').value.trim() || null
+            };
+            if (formData.type === 'TRAINING') {
+                formData.cancelled = document.getElementById('editEventCancelled').checked;
+            }
+            if (formData.type === 'MATCH') {
+                const r = document.querySelector('input[name="editEventMatchWon"]:checked');
+                formData.matchWon = r && r.value !== '' ? r.value === 'true' : null;
+            }
+            Object.keys(formData).forEach(k => { if (formData[k] === null || formData[k] === '') delete formData[k]; });
+            if (formData.type === 'TRAINING' && formData.cancelled !== undefined) formData.cancelled = !!formData.cancelled;
+            try {
+                let idsToUpdate = [editEventModalEventId];
+                if (applyToAll) {
+                    const event = await getEventById(editEventModalEventId);
+                    const applyCategory = document.getElementById('editEventApplyCategory').value;
+                    const applyPattern = document.getElementById('editEventApplyPattern').value;
+                    const categoryId = applyCategory === '_current' ? (event.categoryId || undefined) : (applyCategory || undefined);
+                    const all = await getEvents({ type: 'TRAINING', categoryId: categoryId, search: event.name || '' });
+                    let similar = (all || []).filter(ev => ev.name === (event.name || '') && String(ev.categoryId || '') === String(categoryId || ''));
+                    const refDate = event.date ? new Date(String(event.date).substring(0, 10)) : null;
+                    if (refDate && similar.length > 0) {
+                        if (applyPattern === 'WEEKLY') {
+                            const refDay = refDate.getDay();
+                            similar = similar.filter(ev => {
+                                const d = new Date(String(ev.date).substring(0, 10));
+                                return d.getDay() === refDay;
+                            });
+                        } else if (applyPattern === 'MONTHLY') {
+                            const refDateNum = refDate.getDate();
+                            similar = similar.filter(ev => {
+                                const d = new Date(String(ev.date).substring(0, 10));
+                                return d.getDate() === refDateNum;
+                            });
+                        } else if (applyPattern === 'THIS_WEEK') {
+                            const refWeek = getWeekNumber(refDate);
+                            similar = similar.filter(ev => {
+                                const d = new Date(String(ev.date).substring(0, 10));
+                                return getWeekNumber(d) === refWeek && d.getFullYear() === refDate.getFullYear();
+                            });
+                        } else if (applyPattern === 'THIS_MONTH') {
+                            similar = similar.filter(ev => {
+                                const d = new Date(String(ev.date).substring(0, 10));
+                                return d.getMonth() === refDate.getMonth() && d.getFullYear() === refDate.getFullYear();
+                            });
+                        } else if (applyPattern === 'FROM_DATE') {
+                            const refStr = String(event.date).substring(0, 10);
+                            similar = similar.filter(ev => String(ev.date).substring(0, 10) >= refStr);
+                        }
+                    }
+                    idsToUpdate = similar.map(ev => ev.id);
+                }
+                for (const id of idsToUpdate) {
+                    const payload = { ...formData };
+                    if (idsToUpdate.length === 1) {
+                        payload.date = formData.date;
+                    } else {
+                        const ev = await getEventById(id);
+                        payload.date = ev.date ? String(ev.date).substring(0, 10) : formData.date;
+                    }
+                    await updateEvent(id, payload);
+                }
+                const count = idsToUpdate.length;
+                msgEl.textContent = count > 1 ? 'Upravených ' + count + ' tréningov.' : 'Udalosť bola upravená.';
+                msgEl.className = 'msg success';
+                msgEl.style.display = 'block';
+                await loadTrainings();
+                setTimeout(() => { closeEditEventModal(); }, 1200);
+            } catch (err) {
+                console.error('Error updating event:', err);
+                msgEl.textContent = 'Chyba: ' + (err.message || 'nepodarilo sa uložiť.');
+                msgEl.className = 'msg error';
+                msgEl.style.display = 'block';
+            }
+        }
+
+        async function deleteEditedEvent() {
+            const eventId = editEventModalEventId;
+            if (!eventId) return;
+            const ok = await openActionConfirmModal(
+                'Naozaj chcete túto udalosť natrvalo zmazať? Táto akcia sa nedá vrátiť späť.',
+                { title: 'Zmazať udalosť', confirmText: 'Zmazať', confirmClass: 'btn-danger' }
+            );
+            if (!ok) return;
+
+            const msgEl = document.getElementById('editEventMessage');
+            msgEl.textContent = 'Mazanie udalosti...';
+            msgEl.className = 'msg';
+            msgEl.style.display = 'block';
+
+            try {
+                await deleteEvent(eventId);
+                closeEditEventModal();
+                await loadTrainings();
+            } catch (err) {
+                console.error('Error deleting event:', err);
+                msgEl.textContent = 'Chyba: ' + (err.message || 'udalosť sa nepodarilo zmazať.');
+                msgEl.className = 'msg error';
+                msgEl.style.display = 'block';
+            }
+        }
+
+        async function loadUserCategories() {
+            const textEl = document.getElementById('categoryFilterText');
+            try {
+                trainerCategories = await getCategories({ summary: true });
+            } catch (e) {
+                trainerCategories = [];
+            }
+            selectedCategoryId = '';
+            if (textEl) textEl.textContent = 'Kategórie: Všetky';
+        }
+
+        async function loadCategories() {
+            const container = document.getElementById('categoryOptionsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            const cats = trainerCategories.length > 0 ? trainerCategories : await getCategories({ summary: true });
+            restoreTopNavCategoryFilter(cats || []);
+
+            const optAll = document.createElement('div');
+            optAll.className = 'category-option' + (!selectedCategoryId ? ' active' : '');
+            optAll.setAttribute('data-category-id', '');
+            optAll.setAttribute('data-category-name', 'všetky');
+            optAll.textContent = 'Všetky';
+            optAll.onclick = (event) => selectCategory(event, '', 'Všetky');
+            container.appendChild(optAll);
+
+            (cats || []).forEach(cat => {
+                const opt = document.createElement('div');
+                opt.className = 'category-option' + (String(cat.id) === String(selectedCategoryId) ? ' active' : '');
+                opt.setAttribute('data-category-id', cat.id);
+                opt.setAttribute('data-category-name', (cat.name || '').toLowerCase());
+                opt.textContent = cat.name;
+                opt.onclick = (event) => selectCategory(event, cat.id, cat.name);
+                container.appendChild(opt);
+            });
+        }
+
+        function filterCategories() {
+            const q = (document.getElementById('categorySearch').value || '').toLowerCase().trim();
+            document.querySelectorAll('#categoryOptionsContainer .category-option').forEach(el => {
+                const name = (el.getAttribute('data-category-name') || el.textContent).toLowerCase();
+                el.classList.toggle('hidden', !!q && !name.includes(q));
+            });
+        }
+
+        function toggleCategoryDropdown(e) {
+            e.stopPropagation();
+            if (e.target.closest('.category-dropdown')) return;
+            document.getElementById('categoryFilter').classList.toggle('open');
+        }
+
+        async function selectCategory(event, categoryId, categoryName) {
+            if (event) event.stopPropagation();
+            selectedCategoryId = categoryId;
+            if (typeof setStoredNavCategoryFilterId === 'function') {
+                setStoredNavCategoryFilterId(categoryId == null ? '' : categoryId);
+            }
+            document.getElementById('categoryFilterText').textContent = 'Kategórie: ' + categoryName;
+            document.querySelectorAll('.category-option').forEach(o => {
+                o.classList.toggle('active', o.getAttribute('data-category-id') === String(categoryId));
+            });
+            document.getElementById('categoryFilter').classList.remove('open');
+            renderWeeklyTrainings();
+            displayTrainingsCalendar();
+            const statsCat = document.getElementById('statsFilterCategory');
+            if (statsCat) {
+                statsCat.value = categoryId || '';
+                await populateTrainingStatsPlayers(statsCat.value);
+                loadTrainingStatsSummary();
+            }
+            if (typeof updateStatsCards === 'function') {
+                updateStatsCards();
+            }
+        }
+
+        function restoreTopNavCategoryFilter(availableCategories) {
+            if (typeof getStoredNavCategoryFilterId !== 'function') return;
+            const stored = getStoredNavCategoryFilterId();
+            if (stored == null) return;
+            if (stored === '') {
+                selectedCategoryId = '';
+                document.getElementById('categoryFilterText').textContent = 'Kategórie: Všetky';
+                return;
+            }
+            const match = (availableCategories || []).find(c => String(c.id) === String(stored));
+            if (match) {
+                selectedCategoryId = match.id;
+                document.getElementById('categoryFilterText').textContent = 'Kategórie: ' + match.name;
+            } else {
+                selectedCategoryId = '';
+                document.getElementById('categoryFilterText').textContent = 'Kategórie: Všetky';
+                if (typeof setStoredNavCategoryFilterId === 'function') setStoredNavCategoryFilterId('');
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const filter = document.getElementById('categoryFilter');
+            const dropdown = document.getElementById('categoryDropdown');
+            if (filter && dropdown && !filter.contains(event.target) && !dropdown.contains(event.target)) {
+                filter.classList.remove('open');
+            }
+        });
+
+        function getFilteredTrainings() {
+            if (!selectedCategoryId) {
+                if (trainerCategories.length > 0) {
+                    const ids = trainerCategories.map(c => c.id);
+                    return allTrainings.filter(ev => !ev.categoryId || ids.includes(Number(ev.categoryId)));
+                }
+                return allTrainings;
+            }
+            return allTrainings.filter(ev => ev.categoryId && Number(ev.categoryId) === Number(selectedCategoryId));
+        }
+
+        async function loadTrainings() {
+            try {
+                const events = await getEvents({ type: 'TRAINING', enrich: false });
+                allTrainings = Array.isArray(events) ? events : [];
+            } catch (error) {
+                console.error('Error loading trainings:', error);
+                allTrainings = [];
+            }
+            if (trainerCategories.length === 0) {
+                try { trainerCategories = await getCategories({ summary: true }); } catch (e) {}
+            }
+            renderWeeklyTrainings();
+            displayTrainingsCalendar();
+            updateStatsCards();
+            loadTrainingStatsSummary();
+        }
+
+        /** Populate training stats filter dropdowns: categories and players (players filtered by category). */
+        async function populateTrainingStatsFilters() {
+            const catSel = document.getElementById('statsFilterCategory');
+            const playerSel = document.getElementById('statsFilterPlayer');
+            if (!catSel || !playerSel) return;
+            const cats = trainerCategories.length > 0 ? trainerCategories : (await getCategories({ summary: true }).catch(() => [])) || [];
+            catSel.innerHTML = '<option value="">Všetky kategórie</option>';
+            (cats || []).forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name + (c.season ? ' (' + c.season + ')' : '');
+                catSel.appendChild(opt);
+            });
+            await populateTrainingStatsPlayers(catSel.value);
+        }
+
+        async function populateTrainingStatsPlayers(categoryId) {
+            const playerSel = document.getElementById('statsFilterPlayer');
+            if (!playerSel) return;
+            const currentPlayer = playerSel.value;
+            playerSel.innerHTML = '<option value="">Celý tím</option>';
+            try {
+                const list = await getStatsPlayersForCategory(categoryId);
+                list.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = userListLabel(p) || ('Hráč #' + p.id);
+                    playerSel.appendChild(opt);
+                });
+                if (currentPlayer && list.some(p => String(p.id) === String(currentPlayer))) {
+                    playerSel.value = currentPlayer;
+                }
+            } catch (e) {
+                console.error('Error loading players for stats filter:', e);
+            }
+        }
+
+        const statsPlayersCache = {};
+
+        async function getStatsPlayersForCategory(categoryId) {
+            const key = categoryId ? String(categoryId) : '__all__';
+            if (statsPlayersCache[key]) {
+                return statsPlayersCache[key];
+            }
+            const filters = { role: 'PLAYER' };
+            if (categoryId) filters.categoryId = categoryId;
+            try {
+                const users = await getUsers({ ...filters, summary: true });
+                const list = Array.isArray(users) ? users : [];
+                statsPlayersCache[key] = list;
+                return list;
+            } catch (e) {
+                console.error('Error loading players for stats filter:', e);
+                statsPlayersCache[key] = [];
+                return [];
+            }
+        }
+
+        /** Return list of player IDs to use for stats API (API requires userId). Single player, or all players in category, or all players. */
+        async function getStatsFilterPlayerIds(categoryId, playerId) {
+            if (playerId) return [playerId];
+            const list = await getStatsPlayersForCategory(categoryId);
+            return list.map(u => u.id);
+        }
+
+        let trainingStatsCacheKey = '';
+        let trainingStatsCache = null;
+
+        function normalizeDateRange(fromDate, toDate) {
+            return { fromDate: fromDate || '', toDate: toDate || '' };
+        }
+
+        function getCurrentMonthDateRange() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = now.getMonth();
+            const start = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+            const endDay = new Date(y, m + 1, 0).getDate();
+            const end = `${y}-${String(m + 1).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
+            return { fromDate: start, toDate: end };
+        }
+
+        function getMainStatsDateRange() {
+            let rawFrom = (document.getElementById('statsFilterFrom') || {}).value || '';
+            let rawTo = (document.getElementById('statsFilterTo') || {}).value || '';
+            if (!rawFrom && !rawTo) {
+                const def = getCurrentMonthDateRange();
+                rawFrom = def.fromDate;
+                rawTo = def.toDate;
+            }
+            const normalized = normalizeDateRange(rawFrom, rawTo);
+            const fromEl = document.getElementById('statsFilterFrom');
+            const toEl = document.getElementById('statsFilterTo');
+            if (fromEl) fromEl.value = normalized.fromDate;
+            if (toEl) toEl.value = normalized.toDate;
+            return normalized;
+        }
+
+        function formatDateForFilterLabel(dateStr) {
+            if (!dateStr) return '';
+            const parts = String(dateStr).split('-');
+            if (parts.length !== 3) return String(dateStr);
+            return parts[2] + '.' + parts[1] + '. ' + parts[0];
+        }
+
+        function buildTrainingStatsFilterLabel(categoryName, playerName, typeFilter, fromDate, toDate) {
+            const parts = [];
+            if (categoryName) parts.push('Kategória: ' + categoryName);
+            if (playerName) parts.push('Hráč: ' + playerName);
+            if (typeFilter) {
+                const typeLabelMap = { POSLNOVANIE: 'Posilňovanie', BEH: 'Beh', STRELBA: 'Streľba' };
+                parts.push('Typ: ' + (typeLabelMap[typeFilter] || typeFilter));
+            }
+            if (fromDate || toDate) {
+                const rangeText = (fromDate ? formatDateForFilterLabel(fromDate) : '...') + ' - ' + (toDate ? formatDateForFilterLabel(toDate) : '...');
+                parts.push('Dátum: ' + rangeText);
+            }
+            return parts.length ? parts.join(' · ') : 'Celý tím';
+        }
+
+        async function resetMainTrainingStatsFilters() {
+            const statsCat = document.getElementById('statsFilterCategory');
+            const statsPlayer = document.getElementById('statsFilterPlayer');
+            const statsType = document.getElementById('statsFilterType');
+            const statsFrom = document.getElementById('statsFilterFrom');
+            const statsTo = document.getElementById('statsFilterTo');
+            if (!statsCat || !statsPlayer || !statsType || !statsFrom || !statsTo) return;
+            const lockedCategory = selectedCategoryId ? String(selectedCategoryId) : '';
+            const defaultRange = getCurrentMonthDateRange();
+            statsCat.value = lockedCategory;
+            statsType.value = '';
+            statsFrom.value = defaultRange.fromDate;
+            statsTo.value = defaultRange.toDate;
+            await populateTrainingStatsPlayers(statsCat.value || '');
+            statsPlayer.value = '';
+            loadTrainingStatsSummary();
+        }
+
+        function getStatsDateRanges(includeLastPeriod) {
+            const now = new Date();
+            const range = getMainStatsDateRange();
+            const fromVal = range.fromDate || null;
+            const toVal = range.toDate || null;
+
+            if (fromVal && toVal && fromVal <= toVal) {
+                let lastStart = null;
+                let lastEnd = null;
+                if (includeLastPeriod) {
+                    const from = new Date(fromVal + 'T00:00:00');
+                    const to = new Date(toVal + 'T00:00:00');
+                    const days = Math.max(1, Math.round((to - from) / 86400000) + 1);
+                    const prevTo = new Date(from);
+                    prevTo.setDate(prevTo.getDate() - 1);
+                    const prevFrom = new Date(prevTo);
+                    prevFrom.setDate(prevFrom.getDate() - (days - 1));
+                    lastStart = prevFrom.toISOString().slice(0, 10);
+                    lastEnd = prevTo.toISOString().slice(0, 10);
+                }
+                return {
+                    thisStart: fromVal,
+                    thisEnd: toVal,
+                    lastStart,
+                    lastEnd,
+                    rangeType: 'custom'
+                };
+            }
+
+            const y = now.getFullYear();
+            const m = now.getMonth();
+            const thisStart = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+            const lastDayThis = new Date(y, m + 1, 0).getDate();
+            const thisEnd = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDayThis).padStart(2, '0')}`;
+
+            let lastStart = null;
+            let lastEnd = null;
+            if (includeLastPeriod) {
+                const lastMonth = m === 0 ? 11 : m - 1;
+                const lastYear = m === 0 ? y - 1 : y;
+                lastStart = `${lastYear}-${String(lastMonth + 1).padStart(2, '0')}-01`;
+                const lastDayLast = new Date(lastYear, lastMonth + 1, 0).getDate();
+                lastEnd = `${lastYear}-${String(lastMonth + 1).padStart(2, '0')}-${String(lastDayLast).padStart(2, '0')}`;
+            }
+            return { thisStart, thisEnd, lastStart, lastEnd, rangeType: 'month' };
+        }
+
+        /**
+         * Fetch training statistics for the current filters using at most ONE API call.
+         * When player is selected, uses userId to limit data.
+         * When only category/team is selected, loads all stats for the date window and filters client-side by user IDs.
+         */
+        async function fetchStatsForCurrentFilters(includeLastMonth = true) {
+            const categoryId = (document.getElementById('statsFilterCategory') || {}).value || '';
+            const playerId = (document.getElementById('statsFilterPlayer') || {}).value || '';
+            const typeFilter = (document.getElementById('statsFilterType') || {}).value || '';
+            const ranges = getStatsDateRanges(includeLastMonth);
+            const thisStart = ranges.thisStart;
+            const thisEnd = ranges.thisEnd;
+            const lastStart = ranges.lastStart;
+            const lastEnd = ranges.lastEnd;
+            const rangeType = ranges.rangeType;
+
+            const cacheKey = JSON.stringify({
+                categoryId,
+                playerId,
+                typeFilter,
+                rangeType,
+                thisStart,
+                thisEnd,
+                lastStart: includeLastMonth ? lastStart : null,
+                lastEnd: includeLastMonth ? lastEnd : null
+            });
+
+            if (trainingStatsCache && trainingStatsCacheKey === cacheKey) {
+                return trainingStatsCache;
+            }
+
+            if (typeof getTrainingStatisticsWithFilters !== 'function') {
+                const empty = {
+                    allStats: [],
+                    thisStats: [],
+                    lastStats: [],
+                    thisStart,
+                    thisEnd,
+                    lastStart,
+                    lastEnd,
+                    rangeType
+                };
+                trainingStatsCacheKey = cacheKey;
+                trainingStatsCache = empty;
+                return empty;
+            }
+
+            const playerIds = await getStatsFilterPlayerIds(categoryId, playerId);
+            if (playerIds.length === 0) {
+                const empty = {
+                    allStats: [],
+                    thisStats: [],
+                    lastStats: [],
+                    thisStart,
+                    thisEnd,
+                    lastStart,
+                    lastEnd,
+                    rangeType
+                };
+                trainingStatsCacheKey = cacheKey;
+                trainingStatsCache = empty;
+                return empty;
+            }
+
+            let statsRaw;
+            const apiStartDate = includeLastMonth && lastStart ? lastStart : thisStart;
+            const apiEndDate = thisEnd;
+            if (playerId) {
+                statsRaw = await getTrainingStatisticsWithFilters({
+                    userId: playerId,
+                    startDate: apiStartDate,
+                    endDate: apiEndDate,
+                    category: typeFilter || undefined
+                });
+            } else {
+                statsRaw = await getTrainingStatisticsWithFilters({
+                    startDate: apiStartDate,
+                    endDate: apiEndDate,
+                    category: typeFilter || undefined
+                });
+            }
+
+            const allowedIds = new Set(playerIds);
+            const allStats = (Array.isArray(statsRaw) ? statsRaw : []).filter(s => allowedIds.has(s.userId));
+
+            const thisStats = [];
+            const lastStats = [];
+            allStats.forEach(s => {
+                const raw = (s.workoutDate || (s.createdAt ? String(s.createdAt).slice(0, 10) : '')) || '';
+                const dateStr = String(raw).slice(0, 10);
+                if (!dateStr) return;
+                if (dateStr >= thisStart && dateStr <= thisEnd) thisStats.push(s);
+                if (includeLastMonth && lastStart && lastEnd && dateStr >= lastStart && dateStr <= lastEnd) lastStats.push(s);
+            });
+
+            const result = {
+                allStats,
+                thisStats,
+                lastStats,
+                thisStart,
+                thisEnd,
+                lastStart,
+                lastEnd,
+                rangeType
+            };
+            trainingStatsCacheKey = cacheKey;
+            trainingStatsCache = result;
+            return result;
+        }
+
+        /** Load training statistics summary with optional category/player filter. */
+        async function loadTrainingStatsSummary() {
+            const thisMonthEl = document.getElementById('statRecordsThisMonth');
+            const lastMonthEl = document.getElementById('statRecordsLastMonth');
+            const labelEl = document.getElementById('statsFilterLabel');
+            const primaryLabelEl = document.getElementById('statRecordsPrimaryLabel');
+            const secondaryLabelEl = document.getElementById('statRecordsSecondaryLabel');
+            if (!thisMonthEl || !lastMonthEl || !primaryLabelEl || !secondaryLabelEl) return;
+            const categoryId = (document.getElementById('statsFilterCategory') || {}).value || '';
+            const playerId = (document.getElementById('statsFilterPlayer') || {}).value || '';
+            const typeFilter = (document.getElementById('statsFilterType') || {}).value || '';
+            const rangeForLabel = getMainStatsDateRange();
+            const catSel = document.getElementById('statsFilterCategory');
+            const playerSel = document.getElementById('statsFilterPlayer');
+            const categoryName = catSel && categoryId ? (catSel.options[catSel.selectedIndex] || {}).text : '';
+            const playerName = playerSel && playerId ? (playerSel.options[playerSel.selectedIndex] || {}).text : '';
+            if (labelEl) {
+                labelEl.textContent = buildTrainingStatsFilterLabel(
+                    categoryName || categoryId,
+                    playerName || playerId,
+                    typeFilter,
+                    rangeForLabel.fromDate || '',
+                    rangeForLabel.toDate || ''
+                );
+            }
+
+            let thisCount = 0;
+            let lastCount = 0;
+            try {
+                const data = await fetchStatsForCurrentFilters(true);
+                thisCount = data.thisStats.length;
+                lastCount = data.lastStats.length;
+                if (data.rangeType === 'custom') {
+                    primaryLabelEl.textContent = 'záznamov vo filtre';
+                    secondaryLabelEl.textContent = 'predchádzajúce obdobie';
+                } else {
+                    primaryLabelEl.textContent = 'záznamov tento mesiac';
+                    secondaryLabelEl.textContent = 'minulý mesiac';
+                }
+            } catch (e) {
+                console.error('Error loading training stats summary:', e);
+                thisMonthEl.textContent = '-';
+                lastMonthEl.textContent = '-';
+                renderTrainerStatsCards([]);
+                return;
+            }
+            thisMonthEl.textContent = thisCount;
+            lastMonthEl.textContent = lastCount;
+            renderTrainerStatsCards();
+        }
+
+        /** Render training stat cards in the scroll area (same card style as trainer). */
+        function getTrainingStatCategoryMeta(category) {
+            if (category === 'STRELBA') return { label: 'Streľba', cssClass: 'category-shooting' };
+            if (category === 'BEH') return { label: 'Beh', cssClass: 'category-running' };
+            if (category === 'POSLNOVANIE') return { label: 'Posilňovanie', cssClass: 'category-strength' };
+            return { label: category || 'Neznáme', cssClass: 'category-shooting' };
+        }
+
+        function getUserTeamCategoryLabel(user, categoryNameById, selectedCategoryName) {
+            if (selectedCategoryName) return selectedCategoryName;
+            if (!user) return '-';
+
+            if (user.categoryName) return String(user.categoryName);
+
+            if (user.categoryId != null) {
+                const name = categoryNameById[String(user.categoryId)];
+                if (name) return name;
+            }
+
+            if (Array.isArray(user.categories) && user.categories.length > 0) {
+                const names = user.categories
+                    .map(function(c) { return c && c.name ? String(c.name) : ''; })
+                    .filter(Boolean);
+                if (names.length) return names.slice(0, 2).join(', ');
+            }
+
+            if (Array.isArray(user.categoryIds) && user.categoryIds.length > 0) {
+                const names = user.categoryIds
+                    .map(function(id) { return categoryNameById[String(id)] || ''; })
+                    .filter(Boolean);
+                if (names.length) return names.slice(0, 2).join(', ');
+            }
+
+            return '-';
+        }
+
+        function renderTrainerStatCard(stat) {
+            const categoryMeta = getTrainingStatCategoryMeta(stat.category);
+            const playerName = stat._playerName || ('Hráč #' + (stat.userId || ''));
+            const teamCategory = stat._teamCategory || '-';
+            let statsHtml = '';
+            if (stat.category === 'POSLNOVANIE') {
+                statsHtml += `
+                    <div class="stats-card-stat">
+                        <div class="stats-card-stat-icon"><img src="/IMG/weight-svgrepo-com (1).svg" alt="Váha"></div>
+                        <div class="stats-card-stat-text">Váha: ${stat.weight != null ? stat.weight : '-'}kg</div>
+                    </div>
+                    <div class="stats-card-stat">
+                        <div class="stats-card-stat-icon"><img src="/IMG/repeat-svgrepo-com (1).svg" alt="Opakovania"></div>
+                        <div class="stats-card-stat-text">Opakovania: ${stat.repetitions != null ? stat.repetitions : '-'}</div>
+                    </div>
+                `;
+            } else if (stat.category === 'BEH') {
+                statsHtml += `
+                    <div class="stats-card-stat">
+                        <div class="stats-card-stat-icon"><img src="/IMG/distance-svgrepo-com (1).svg" alt="Vzdialenosť"></div>
+                        <div class="stats-card-stat-text">Vzdialenosť: ${stat.distance != null ? stat.distance : '-'}km</div>
+                    </div>
+                    <div class="stats-card-stat">
+                        <div class="stats-card-stat-icon"><img src="/IMG/timer-svgrepo-com (2).svg" alt="Čas"></div>
+                        <div class="stats-card-stat-text">Čas: ${stat.time ? escapeHtml(stat.time) : '-'}</div>
+                    </div>
+                `;
+            } else if (stat.category === 'STRELBA') {
+                const shotsInfo = (stat.shotsAttempted != null && stat.shotsMade != null) ? `${stat.shotsMade}/${stat.shotsAttempted}` : '';
+                const percentage = stat.successRate ? `${parseFloat(stat.successRate).toFixed(2)}%` : '';
+                if (shotsInfo) statsHtml += `
+                    <div class="stats-card-stat">
+                        <div class="stats-card-stat-icon"><img src="/IMG/scope-svgrepo-com.svg" alt="Úspešnosť"></div>
+                        <div class="stats-card-stat-text">Úspešnosť: ${shotsInfo}</div>
+                    </div>`;
+                if (percentage) statsHtml += `
+                    <div class="stats-card-stat">
+                        <div class="stats-card-stat-icon"><img src="/IMG/percentage-svgrepo-com (1).svg" alt="%"></div>
+                        <div class="stats-card-stat-text">%: ${percentage}</div>
+                    </div>`;
+                if (stat.courtSpot) statsHtml += `
+                    <div class="stats-card-stat">
+                        <div class="stats-card-stat-icon"><img src="/IMG/location-pin-svgrepo-com%20(1).svg" alt="Miesto"></div>
+                        <div class="stats-card-stat-text">Miesto: ${escapeHtml(stat.courtSpot)}</div>
+                    </div>`;
+            }
+            const noteText = (stat.note && stat.note.trim()) ? stat.note.trim() : 'Žiadna';
+            statsHtml += `
+                <div class="stats-card-stat">
+                    <div class="stats-card-stat-icon"><img src="/IMG/note-svgrepo-com.svg" alt="Poznámka"></div>
+                    <div class="stats-card-stat-text">Poznámka: ${escapeHtml(noteText)}</div>
+                </div>`;
+            const date = stat.workoutDate ? new Date(stat.workoutDate + 'T00:00:00') : (stat.createdAt ? new Date(stat.createdAt) : new Date());
+            const dateStr = date.toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const statId = stat.id != null ? stat.id : '';
+            return `<div class="stats-card ${categoryMeta.cssClass}" data-stat-id="${statId}">
+                <div class="stats-card-header">
+                    <div class="stats-card-title">${escapeHtml(stat.exerciseName || 'Cvičenie')}</div>
+                    <span class="stats-card-category-badge ${categoryMeta.cssClass}">${escapeHtml(categoryMeta.label)}</span>
+                </div>
+                <div class="stats-card-meta">
+                    <span>Hráč: ${escapeHtml(playerName)}</span>
+                    <span class="meta-sep">|</span>
+                    <span>Kategória: ${escapeHtml(teamCategory)}</span>
+                </div>
+                <div class="stats-card-stats">
+                    ${statsHtml}
+                </div>
+                <div class="stats-card-date">${dateStr}</div>
+                <div class="stats-card-actions">
+                    <button type="button" class="stats-card-btn stats-card-btn-overview" onclick="openTrainerStatsOverviewModal(${statId})">Viac</button>
+                </div>
+            </div>`;
+        }
+
+        async function renderTrainerStatsCards(preloadedList) {
+            const wrapper = document.getElementById('trainerStatsCardsWrapper');
+            const paginationEl = document.getElementById('trainerStatsPagination');
+            if (!wrapper) return;
+            const categoryId = (document.getElementById('statsFilterCategory') || {}).value || '';
+            const playerId = (document.getElementById('statsFilterPlayer') || {}).value || '';
+            try {
+                let list = Array.isArray(preloadedList) ? preloadedList.slice() : null;
+                if (!list) {
+                    const data = await fetchStatsForCurrentFilters(false);
+                    list = data.thisStats.slice();
+                }
+                const userList = await getStatsPlayersForCategory(categoryId);
+                const playerIdToName = {};
+                const playerIdToTeamCategory = {};
+                let selectedCategoryName = '';
+                if (categoryId) {
+                    const categorySelect = document.getElementById('statsFilterCategory');
+                    if (categorySelect && categorySelect.selectedIndex >= 0 && categorySelect.options[categorySelect.selectedIndex]) {
+                        selectedCategoryName = categorySelect.options[categorySelect.selectedIndex].text || '';
+                    }
+                }
+                const categoryNameById = {};
+                (trainerCategories || []).forEach(function(c) {
+                    if (c && c.id != null) categoryNameById[String(c.id)] = c.name || ('Kategória ' + c.id);
+                });
+                userList.forEach(u => { playerIdToName[u.id] = userListLabel(u) || ('Hráč #' + u.id); });
+                userList.forEach(function(u) {
+                    playerIdToTeamCategory[u.id] = getUserTeamCategoryLabel(u, categoryNameById, selectedCategoryName);
+                });
+                list.forEach(function(s) {
+                    s._playerName = playerIdToName[s.userId] != null ? playerIdToName[s.userId] : ('Hráč #' + (s.userId || ''));
+                    s._teamCategory = playerIdToTeamCategory[s.userId] || selectedCategoryName || '-';
+                });
+                list.sort((a, b) => {
+                    const da = (a.workoutDate || a.createdAt || '').toString();
+                    const db = (b.workoutDate || b.createdAt || '').toString();
+                    return db.localeCompare(da);
+                });
+                if (list.length === 0) {
+                    wrapper.innerHTML = '<div class="no-trainings-text" style="padding:1.5rem;color:#9CA3AF;">Žiadne záznamy pre zvolené filtre.</div>';
+                    if (paginationEl) paginationEl.innerHTML = '';
+                    return;
+                }
+                window.__lastTrainerStatsListForModal = list;
+                wrapper.innerHTML = list.map(s => renderTrainerStatCard(s)).join('');
+                if (paginationEl) {
+                    paginationEl.innerHTML = '';
+                    paginationEl.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Error rendering trainer stats cards:', e);
+                wrapper.innerHTML = '<div class="no-trainings-text" style="padding:1.5rem;color:#9CA3AF;">Chyba načítania.</div>';
+                if (paginationEl) paginationEl.innerHTML = '';
+            }
+        }
+
+        function scrollTrainerStatsToPage(pageIndex) {
+            const container = document.querySelector('.training-stats-section .training-stats-scroll-container');
+            const cards = document.querySelectorAll('.training-stats-section .stats-card');
+            const paginationEl = document.getElementById('trainerStatsPagination');
+            if (!container || !cards.length) return;
+            const cardWidth = (cards[0].offsetWidth || 280) + 16;
+            container.scrollTo({ left: pageIndex * cardWidth * 4, behavior: 'smooth' });
+            if (paginationEl) paginationEl.querySelectorAll('.stats-card-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === pageIndex);
+            });
+        }
+
+        let trainerStatsChartInstances = {};
+
+        function openTrainerStatsDetailModal() {
+            const modal = document.getElementById('trainerStatsDetailModal');
+            if (modal) {
+                modal.style.display = 'block';
+                loadTrainerStatsCharts();
+            }
+        }
+
+        function closeTrainerStatsDetailModal() {
+            const modal = document.getElementById('trainerStatsDetailModal');
+            if (modal) {
+                modal.style.display = 'none';
+                if (trainerStatsChartInstances) {
+                    Object.values(trainerStatsChartInstances).forEach(chart => { if (chart) chart.destroy(); });
+                    trainerStatsChartInstances = {};
+                }
+            }
+        }
+
+        let currentTrainerStatsOverviewStat = null;
+
+        function openTrainerStatsOverviewModal(statId) {
+            const list = window.__lastTrainerStatsListForModal;
+            if (!list) return;
+            const stat = list.find(s => String(s.id) === String(statId));
+            if (!stat) return;
+            currentTrainerStatsOverviewStat = stat;
+            const playerNameEl = document.getElementById('trainerStatsOverviewPlayerName');
+            const gridEl = document.getElementById('trainerStatsOverviewGrid');
+            const bodyEl = document.getElementById('trainerStatsOverviewBody');
+            const editFormEl = document.getElementById('trainerStatsOverviewEditForm');
+            if (playerNameEl) playerNameEl.textContent = 'Hráč: ' + (stat._playerName || ('Hráč #' + (stat.userId || '')));
+            if (gridEl) {
+                const date = stat.workoutDate ? new Date(stat.workoutDate + 'T00:00:00') : (stat.createdAt ? new Date(stat.createdAt) : new Date());
+                const dateStr = date.toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                let rows = [
+                    { label: 'Cvičenie', value: stat.exerciseName || '-' },
+                    { label: 'Kategória', value: stat.category === 'POSLNOVANIE' ? 'Poslňovanie' : stat.category === 'BEH' ? 'Beh' : stat.category === 'STRELBA' ? 'Streľba' : (stat.category || '-') },
+                    { label: 'Dátum', value: dateStr }
+                ];
+                if (stat.category === 'POSLNOVANIE') {
+                    rows.push({ label: 'Váha', value: stat.weight != null ? stat.weight + ' kg' : '-' });
+                    rows.push({ label: 'Opakovania', value: stat.repetitions != null ? stat.repetitions : '-' });
+                } else if (stat.category === 'BEH') {
+                    rows.push({ label: 'Vzdialenosť', value: stat.distance != null ? stat.distance + ' km' : '-' });
+                    rows.push({ label: 'Čas', value: stat.time ? escapeHtml(stat.time) : '-' });
+                } else if (stat.category === 'STRELBA') {
+                    const shots = (stat.shotsAttempted != null && stat.shotsMade != null) ? stat.shotsMade + '/' + stat.shotsAttempted : '-';
+                    rows.push({ label: 'Úspešnosť', value: shots });
+                    if (stat.successRate != null) rows.push({ label: '%', value: parseFloat(stat.successRate).toFixed(2) + '%' });
+                    if (stat.courtSpot) rows.push({ label: 'Miesto', value: escapeHtml(stat.courtSpot) });
+                }
+                rows.push({ label: 'Poznámka', value: (stat.note && stat.note.trim()) ? escapeHtml(stat.note.trim()) : 'Žiadna' });
+                gridEl.innerHTML = rows.map(r => `<div class="stats-overview-row"><span class="stats-overview-label">${escapeHtml(r.label)}:</span><span class="stats-overview-value">${r.value}</span></div>`).join('');
+            }
+            if (bodyEl) bodyEl.style.display = 'block';
+            if (editFormEl) editFormEl.style.display = 'none';
+            const modal = document.getElementById('trainerStatsOverviewModal');
+            if (modal) modal.style.display = 'block';
+
+            const btnDel = document.getElementById('trainerStatsOverviewBtnDelete');
+            const btnEdit = document.getElementById('trainerStatsOverviewBtnEdit');
+            if (btnDel) btnDel.onclick = () => deleteTrainerStatsOverviewStat();
+            if (btnEdit) btnEdit.onclick = () => switchTrainerStatsOverviewToEdit();
+        }
+
+        function closeTrainerStatsOverviewModal() {
+            const modal = document.getElementById('trainerStatsOverviewModal');
+            if (modal) modal.style.display = 'none';
+            currentTrainerStatsOverviewStat = null;
+        }
+
+        function openTrainerStatsOverviewListModal() {
+            const list = window.__lastTrainerStatsListForModal;
+            const bodyEl = document.getElementById('trainerStatsOverviewListBody');
+            const modal = document.getElementById('trainerStatsOverviewListModal');
+            if (!bodyEl || !modal) return;
+            if (!list || list.length === 0) {
+                bodyEl.innerHTML = '<div class="no-trainings-text" style="padding:2rem;color:#6B7280;">Žiadne štatistiky na zobrazenie. Použite filtre a obnovte zobrazenie.</div>';
+                modal.style.display = 'block';
+                return;
+            }
+            bodyEl.innerHTML = list.map(stat => {
+                const date = stat.workoutDate ? new Date(stat.workoutDate + 'T00:00:00') : (stat.createdAt ? new Date(stat.createdAt) : new Date());
+                const dateStr = date.toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const catLabel = stat.category === 'POSLNOVANIE' ? 'Poslňovanie' : stat.category === 'BEH' ? 'Beh' : stat.category === 'STRELBA' ? 'Streľba' : (stat.category || '');
+                const playerName = stat._playerName || ('Hráč #' + (stat.userId || ''));
+                const statId = stat.id != null ? stat.id : '';
+                return `<div class="stats-overview-list-row">
+                    <div class="stats-overview-list-info">
+                        <div class="stats-overview-list-player">${escapeHtml(playerName)}</div>
+                        <div class="stats-overview-list-exercise">${escapeHtml(stat.exerciseName || 'Cvičenie')}</div>
+                        <div class="stats-overview-list-meta">${dateStr} · ${escapeHtml(catLabel)}</div>
+                    </div>
+                    <button type="button" class="stats-card-btn stats-card-btn-overview" onclick="closeTrainerStatsOverviewListModal(); openTrainerStatsOverviewModal(${statId})">Viac</button>
+                </div>`;
+            }).join('');
+            modal.style.display = 'block';
+        }
+
+        function closeTrainerStatsOverviewListModal() {
+            const modal = document.getElementById('trainerStatsOverviewListModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function switchTrainerStatsOverviewToView() {
+            document.getElementById('trainerStatsOverviewBody').style.display = 'block';
+            document.getElementById('trainerStatsOverviewEditForm').style.display = 'none';
+        }
+
+        function switchTrainerStatsOverviewToEdit() {
+            const stat = currentTrainerStatsOverviewStat;
+            if (!stat) return;
+            document.getElementById('trainerStatsOverviewBody').style.display = 'none';
+            document.getElementById('trainerStatsOverviewEditForm').style.display = 'block';
+            document.getElementById('trainerStatsOverviewEditId').value = stat.id || '';
+            document.getElementById('trainerStatsOverviewEditWorkoutDate').value = (stat.workoutDate || '').toString().slice(0, 10);
+            document.getElementById('trainerStatsOverviewEditExerciseName').value = stat.exerciseName || '';
+            document.getElementById('trainerStatsOverviewEditCategory').value = stat.category || 'POSLNOVANIE';
+            document.getElementById('trainerStatsOverviewEditNote').value = stat.note || '';
+            const cat = stat.category || 'POSLNOVANIE';
+            document.getElementById('trainerStatsOverviewEditPoslnovanie').style.display = cat === 'POSLNOVANIE' ? 'block' : 'none';
+            document.getElementById('trainerStatsOverviewEditBeh').style.display = cat === 'BEH' ? 'block' : 'none';
+            document.getElementById('trainerStatsOverviewEditStrelba').style.display = cat === 'STRELBA' ? 'block' : 'none';
+            document.getElementById('trainerStatsOverviewEditWeight').value = stat.weight != null ? stat.weight : '';
+            document.getElementById('trainerStatsOverviewEditRepetitions').value = stat.repetitions != null ? stat.repetitions : '';
+            document.getElementById('trainerStatsOverviewEditTime').value = stat.time || '';
+            document.getElementById('trainerStatsOverviewEditDistance').value = stat.distance != null ? stat.distance : '';
+            document.getElementById('trainerStatsOverviewEditShotsAttempted').value = stat.shotsAttempted != null ? stat.shotsAttempted : '';
+            document.getElementById('trainerStatsOverviewEditShotsMade').value = stat.shotsMade != null ? stat.shotsMade : '';
+            document.getElementById('trainerStatsOverviewEditCourtSpot').value = stat.courtSpot || '';
+            document.getElementById('trainerStatsOverviewEditCategory').onchange = function() {
+                const c = this.value;
+                document.getElementById('trainerStatsOverviewEditPoslnovanie').style.display = c === 'POSLNOVANIE' ? 'block' : 'none';
+                document.getElementById('trainerStatsOverviewEditBeh').style.display = c === 'BEH' ? 'block' : 'none';
+                document.getElementById('trainerStatsOverviewEditStrelba').style.display = c === 'STRELBA' ? 'block' : 'none';
+            };
+        }
+
+        async function deleteTrainerStatsOverviewStat() {
+            const stat = currentTrainerStatsOverviewStat;
+            if (!stat || stat.id == null) return;
+            const ok = await openActionConfirmModal(
+                'Naozaj chcete zmazať túto štatistiku?',
+                { title: 'Zmazať štatistiku', confirmText: 'Zmazať', confirmClass: 'btn-danger' }
+            );
+            if (!ok) return;
+            try {
+                if (typeof deleteTrainingStatistics === 'function') {
+                    await deleteTrainingStatistics(stat.id);
+                    closeTrainerStatsOverviewModal();
+                    await loadTrainingStatsSummary();
+                    renderTrainerStatsCards();
+                }
+            } catch (e) {
+                console.error('Delete stat error:', e);
+                openActionInfoModal('Chyba pri mazaní: ' + (e.message || 'Neznáma chyba'), 'Chyba');
+            }
+        }
+
+        (function initTrainerStatsOverviewEditForm() {
+            const form = document.getElementById('trainerStatsOverviewEditFormForm');
+            if (!form) return;
+            form.onsubmit = async function(e) {
+                e.preventDefault();
+                const stat = currentTrainerStatsOverviewStat;
+                if (!stat || !stat.id) return;
+                const workoutDate = document.getElementById('trainerStatsOverviewEditWorkoutDate').value;
+                const exerciseName = document.getElementById('trainerStatsOverviewEditExerciseName').value.trim();
+                const category = document.getElementById('trainerStatsOverviewEditCategory').value;
+                const note = (document.getElementById('trainerStatsOverviewEditNote').value || '').trim();
+                const data = { workoutDate, exerciseName, category, note };
+                if (category === 'POSLNOVANIE') {
+                    data.weight = document.getElementById('trainerStatsOverviewEditWeight').value ? parseFloat(document.getElementById('trainerStatsOverviewEditWeight').value) : null;
+                    data.repetitions = document.getElementById('trainerStatsOverviewEditRepetitions').value ? parseInt(document.getElementById('trainerStatsOverviewEditRepetitions').value, 10) : null;
+                } else if (category === 'BEH') {
+                    data.time = (document.getElementById('trainerStatsOverviewEditTime').value || '').trim() || null;
+                    data.distance = document.getElementById('trainerStatsOverviewEditDistance').value ? parseFloat(document.getElementById('trainerStatsOverviewEditDistance').value) : null;
+                } else if (category === 'STRELBA') {
+                    data.shotsAttempted = document.getElementById('trainerStatsOverviewEditShotsAttempted').value ? parseInt(document.getElementById('trainerStatsOverviewEditShotsAttempted').value, 10) : null;
+                    data.shotsMade = document.getElementById('trainerStatsOverviewEditShotsMade').value ? parseInt(document.getElementById('trainerStatsOverviewEditShotsMade').value, 10) : null;
+                    data.courtSpot = (document.getElementById('trainerStatsOverviewEditCourtSpot').value || '').trim() || null;
+                }
+                try {
+                    if (typeof updateTrainingStatistics === 'function') {
+                        await updateTrainingStatistics(stat.id, data);
+                        closeTrainerStatsOverviewModal();
+                        await loadTrainingStatsSummary();
+                        renderTrainerStatsCards();
+                    }
+                } catch (err) {
+                    console.error('Update stat error:', err);
+                    openActionInfoModal('Chyba pri ukladaní: ' + (err.message || 'Neznáma chyba'), 'Chyba');
+                }
+            };
+        })();
+
+        async function loadTrainerStatsCharts() {
+            const container = document.getElementById('trainerStatsChartsContainer');
+            if (!container) return;
+            container.innerHTML = '<div class="loading" style="padding:2rem;">Načítavanie...</div>';
+            try {
+                const data = await fetchStatsForCurrentFilters(false);
+                const stats = data.allStats;
+                if (!stats.length) {
+                    container.innerHTML = '<div class="no-trainings-text" style="padding:2rem;color:#9CA3AF;">Žiadni hráči pre zvolený filter.</div>';
+                    return;
+                }
+                renderTrainerStatsCharts(stats, container);
+            } catch (e) {
+                console.error('Error loading trainer stats charts:', e);
+                container.innerHTML = '<div class="no-trainings-text" style="padding:2rem;color:#9CA3AF;">Chyba načítania.</div>';
+            }
+        }
+
+        /** Group stats by workout date and summarize (same day = one point in charts). */
+        function summarizeStatsByDay(stats, category) {
+            const getDateKey = (s) => (s.workoutDate && String(s.workoutDate).slice(0, 10)) || (s.createdAt ? new Date(s.createdAt).toISOString().slice(0, 10) : '');
+            const byDay = {};
+            stats.forEach(s => {
+                const key = getDateKey(s);
+                if (!key) return;
+                if (!byDay[key]) byDay[key] = { dateKey: key, workoutDate: key, items: [] };
+                byDay[key].items.push(s);
+            });
+            const sortedKeys = Object.keys(byDay).sort();
+            if (category === 'POSLNOVANIE') {
+                return sortedKeys.map(key => {
+                    const arr = byDay[key].items;
+                    let weightSum = 0, weightCount = 0, repSum = 0;
+                    arr.forEach(s => {
+                        if (s.weight != null) { weightSum += parseFloat(s.weight); weightCount++; }
+                        repSum += (s.repetitions != null ? parseInt(s.repetitions, 10) : 0);
+                    });
+                    return {
+                        workoutDate: key,
+                        weight: weightCount ? weightSum / weightCount : null,
+                        repetitions: repSum
+                    };
+                });
+            }
+            if (category === 'BEH') {
+                const timeToMinutes = (s) => {
+                    if (!s || !s.time) return 0;
+                    const parts = String(s.time).split(':');
+                    if (parts.length === 3) {
+                        const h = parseInt(parts[0], 10) || 0, m = parseInt(parts[1], 10) || 0, sec = parseFloat(parts[2]) || 0;
+                        return h * 60 + m + sec / 60;
+                    }
+                    if (parts.length === 2) {
+                        const m = parseInt(parts[0], 10) || 0, sec = parseFloat(parts[1]) || 0;
+                        return m + sec / 60;
+                    }
+                    return parseFloat(s.time) / 60 || 0;
+                };
+                return sortedKeys.map(key => {
+                    const arr = byDay[key].items;
+                    let distanceSum = 0, timeMinutesSum = 0;
+                    arr.forEach(s => {
+                        distanceSum += parseFloat(s.distance) || 0;
+                        timeMinutesSum += timeToMinutes(s);
+                    });
+                    return { workoutDate: key, distance: distanceSum, timeMinutes: timeMinutesSum };
+                });
+            }
+            if (category === 'STRELBA') {
+                return sortedKeys.map(key => {
+                    const arr = byDay[key].items;
+                    let attempted = 0, made = 0;
+                    arr.forEach(s => {
+                        attempted += parseInt(s.shotsAttempted, 10) || 0;
+                        made += parseInt(s.shotsMade, 10) || 0;
+                    });
+                    const successRate = attempted > 0 ? (made / attempted) * 100 : null;
+                    return { workoutDate: key, shotsAttempted: attempted, shotsMade: made, successRate };
+                });
+            }
+            return [];
+        }
+
+        function renderTrainerStatsCharts(stats, container) {
+            if (!container) return;
+            if (!stats || stats.length === 0) {
+                container.innerHTML = '<div class="no-trainings-text" style="padding:2rem;">Žiadne štatistiky pre zobrazenie grafov.</div>';
+                return;
+            }
+            const poslnovanieRaw = stats.filter(s => s.category === 'POSLNOVANIE').sort((a, b) => {
+                const dateA = a.workoutDate ? new Date(a.workoutDate) : new Date(a.createdAt || 0);
+                const dateB = b.workoutDate ? new Date(b.workoutDate) : new Date(b.createdAt || 0);
+                return dateA - dateB;
+            });
+            const behRaw = stats.filter(s => s.category === 'BEH').sort((a, b) => {
+                const dateA = a.workoutDate ? new Date(a.workoutDate) : new Date(a.createdAt || 0);
+                const dateB = b.workoutDate ? new Date(b.workoutDate) : new Date(b.createdAt || 0);
+                return dateA - dateB;
+            });
+            const strelbaRaw = stats.filter(s => s.category === 'STRELBA').sort((a, b) => {
+                const dateA = a.workoutDate ? new Date(a.workoutDate) : new Date(a.createdAt || 0);
+                const dateB = b.workoutDate ? new Date(b.workoutDate) : new Date(b.createdAt || 0);
+                return dateA - dateB;
+            });
+            const poslnovanieStats = summarizeStatsByDay(poslnovanieRaw, 'POSLNOVANIE');
+            const behStats = summarizeStatsByDay(behRaw, 'BEH');
+            const strelbaStats = summarizeStatsByDay(strelbaRaw, 'STRELBA');
+            let html = '';
+            if (poslnovanieStats.length > 0) {
+                html += '<div class="trainer-chart-container"><h3>Poslňovanie - Váha</h3><div class="trainer-chart-wrapper"><canvas id="trainerPoslnovanieWeightChart"></canvas></div></div>';
+                html += '<div class="trainer-chart-container"><h3>Poslňovanie - Opakovania</h3><div class="trainer-chart-wrapper"><canvas id="trainerPoslnovanieRepsChart"></canvas></div></div>';
+            }
+            if (behStats.length > 0) {
+                html += '<div class="trainer-chart-container"><h3>Beh - Vzdialenosť</h3><div class="trainer-chart-wrapper"><canvas id="trainerBehDistanceChart"></canvas></div></div>';
+                html += '<div class="trainer-chart-container"><h3>Beh - Čas</h3><div class="trainer-chart-wrapper"><canvas id="trainerBehTimeChart"></canvas></div></div>';
+            }
+            if (strelbaStats.length > 0) {
+                html += '<div class="trainer-chart-container"><h3>Streľba - Úspešnosť (%)</h3><div class="trainer-chart-wrapper"><canvas id="trainerStrelbaSuccessChart"></canvas></div></div>';
+                html += '<div class="trainer-chart-container"><h3>Streľba - Počet strel</h3><div class="trainer-chart-wrapper"><canvas id="trainerStrelbaShotsChart"></canvas></div></div>';
+            }
+            if (!html) {
+                container.innerHTML = '<div class="no-trainings-text" style="padding:2rem;">Žiadne štatistiky pre zvolený typ.</div>';
+                return;
+            }
+            container.innerHTML = html;
+            if (poslnovanieStats.length > 0) renderTrainerPoslnovanieCharts(poslnovanieStats);
+            if (behStats.length > 0) renderTrainerBehCharts(behStats);
+            if (strelbaStats.length > 0) renderTrainerStrelbaCharts(strelbaStats);
+        }
+
+        function renderTrainerPoslnovanieCharts(stats) {
+            const labels = stats.map(s => {
+                const date = s.workoutDate ? new Date(s.workoutDate + 'T00:00:00') : new Date(s.createdAt || 0);
+                return date.toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+            });
+            const weights = stats.map(s => (s.weight != null ? parseFloat(s.weight) : null) ?? 0);
+            const reps = stats.map(s => (s.repetitions != null ? parseInt(s.repetitions, 10) : 0) || 0);
+            const weightCtx = document.getElementById('trainerPoslnovanieWeightChart');
+            if (weightCtx && window.Chart) {
+                if (trainerStatsChartInstances.poslnovanieWeight) trainerStatsChartInstances.poslnovanieWeight.destroy();
+                trainerStatsChartInstances.poslnovanieWeight = new Chart(weightCtx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Váha (kg)', data: weights, borderColor: '#6B2C91', backgroundColor: 'rgba(107, 44, 145, 0.1)', tension: 0.4, fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: false } } }
+                });
+            }
+            const repsCtx = document.getElementById('trainerPoslnovanieRepsChart');
+            if (repsCtx && window.Chart) {
+                if (trainerStatsChartInstances.poslnovanieReps) trainerStatsChartInstances.poslnovanieReps.destroy();
+                trainerStatsChartInstances.poslnovanieReps = new Chart(repsCtx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Opakovania', data: reps, borderColor: '#6B2C91', backgroundColor: 'rgba(107, 44, 145, 0.1)', tension: 0.4, fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true } } }
+                });
+            }
+        }
+
+        function renderTrainerBehCharts(stats) {
+            const labels = stats.map(s => {
+                const date = s.workoutDate ? new Date(s.workoutDate + 'T00:00:00') : new Date(s.createdAt || 0);
+                return date.toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+            });
+            const distances = stats.map(s => parseFloat(s.distance) || 0);
+            const times = stats.map(s => {
+                if (s.timeMinutes != null) return Number(s.timeMinutes);
+                if (!s.time) return 0;
+                const parts = String(s.time).split(':');
+                if (parts.length === 3) {
+                    const hours = parseInt(parts[0], 10) || 0, minutes = parseInt(parts[1], 10) || 0, seconds = parseFloat(parts[2]) || 0;
+                    return hours * 60 + minutes + (seconds / 60);
+                } else if (parts.length === 2) {
+                    const minutes = parseInt(parts[0], 10) || 0, seconds = parseFloat(parts[1]) || 0;
+                    return minutes + (seconds / 60);
+                }
+                return parseFloat(s.time) / 60 || 0;
+            });
+            const distanceCtx = document.getElementById('trainerBehDistanceChart');
+            if (distanceCtx && window.Chart) {
+                if (trainerStatsChartInstances.behDistance) trainerStatsChartInstances.behDistance.destroy();
+                trainerStatsChartInstances.behDistance = new Chart(distanceCtx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Vzdialenosť (km)', data: distances, borderColor: '#6B2C91', backgroundColor: 'rgba(107, 44, 145, 0.1)', tension: 0.4, fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true } } }
+                });
+            }
+            const timeCtx = document.getElementById('trainerBehTimeChart');
+            if (timeCtx && window.Chart) {
+                if (trainerStatsChartInstances.behTime) trainerStatsChartInstances.behTime.destroy();
+                trainerStatsChartInstances.behTime = new Chart(timeCtx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Čas (min)', data: times, borderColor: '#6B2C91', backgroundColor: 'rgba(107, 44, 145, 0.1)', tension: 0.4, fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true } } }
+                });
+            }
+        }
+
+        function renderTrainerStrelbaCharts(stats) {
+            const labels = stats.map(s => {
+                const date = s.workoutDate ? new Date(s.workoutDate + 'T00:00:00') : new Date(s.createdAt || 0);
+                return date.toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+            });
+            const successRates = stats.map(s => (s.successRate != null ? parseFloat(s.successRate) : null) ?? 0);
+            const shotsAttempted = stats.map(s => (s.shotsAttempted != null ? parseInt(s.shotsAttempted, 10) : 0) || 0);
+            const shotsMade = stats.map(s => (s.shotsMade != null ? parseInt(s.shotsMade, 10) : 0) || 0);
+            const successCtx = document.getElementById('trainerStrelbaSuccessChart');
+            if (successCtx && window.Chart) {
+                if (trainerStatsChartInstances.strelbaSuccess) trainerStatsChartInstances.strelbaSuccess.destroy();
+                trainerStatsChartInstances.strelbaSuccess = new Chart(successCtx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Úspešnosť (%)', data: successRates, borderColor: '#6B2C91', backgroundColor: 'rgba(107, 44, 145, 0.1)', tension: 0.4, fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, max: 100 } } }
+                });
+            }
+            const shotsCtx = document.getElementById('trainerStrelbaShotsChart');
+            if (shotsCtx && window.Chart) {
+                if (trainerStatsChartInstances.strelbaShots) trainerStatsChartInstances.strelbaShots.destroy();
+                trainerStatsChartInstances.strelbaShots = new Chart(shotsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Počet strel', data: shotsAttempted, backgroundColor: 'rgba(107, 44, 145, 0.6)', borderColor: '#6B2C91', borderWidth: 1 },
+                            { label: 'Počet zásahov', data: shotsMade, backgroundColor: 'rgba(107, 44, 145, 0.3)', borderColor: '#6B2C91', borderWidth: 1 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true } } }
+                });
+            }
+        }
+
+        /** Update the 4 top stat cards from current trainings (and attendance for this week). */
+        async function updateStatsCards() {
+            const trainings = getFilteredTrainings().filter(ev => !ev.cancelled);
+            const todayStr = todayInSlovakia();
+            const startStr = getStartOfWeekDateString(todayStr);
+            const endStr = addDaysDateString(startStr, 6);
+
+            const thisWeek = trainings.filter(ev => {
+                const d = ev.date ? String(ev.date).substring(0, 10) : '';
+                return d && d >= startStr && d <= endStr;
+            });
+            const now = new Date();
+            const y = now.getFullYear(), m = now.getMonth();
+            const monthStart = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+            const lastDay = new Date(y, m + 1, 0).getDate();
+            const monthEnd = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+            const thisMonth = trainings.filter(ev => {
+                const d = ev.date ? String(ev.date).substring(0, 10) : '';
+                return d && d >= monthStart && d <= monthEnd;
+            });
+
+            const sorted = trainings.slice().sort((a, b) => {
+                const da = (a.date || '') + (a.time || '');
+                const db = (b.date || '') + (b.time || '');
+                return da.localeCompare(db);
+            });
+            const nextTraining = sorted.find(ev => {
+                const d = ev.date ? String(ev.date).substring(0, 10) : '';
+                const t = (ev.time || '').substring(0, 5);
+                if (d > todayStr) return true;
+                if (d === todayStr && t >= nowTimeInSlovakia()) return true;
+                return false;
+            });
+
+            document.getElementById('statTrainingsThisWeek').textContent = thisWeek.length;
+            document.getElementById('statTrainingsThisWeekSub').textContent =
+                startStr && endStr ? formatShortDateSlovakia(startStr) + ' - ' + formatShortDateSlovakia(endStr) : '';
+
+            document.getElementById('statTrainingsThisMonth').textContent = thisMonth.length;
+            document.getElementById('statTrainingsThisMonthSub').textContent =
+                monthStart ? (monthNamesSk[m] || '') + ' ' + y : '';
+
+            if (nextTraining) {
+                const name = nextTraining.name || nextTraining.categoryName || 'Tréning';
+                const dateStr = nextTraining.date ? String(nextTraining.date).substring(0, 10) : '';
+                const timeStr = nextTraining.time ? nextTraining.time.substring(0, 5) : '';
+                document.getElementById('statNextTraining').textContent = (timeStr ? ' ' + timeStr : '');
+                document.getElementById('statNextTrainingSub').textContent =
+                    (dateStr ? formatDateSlovakia(dateStr) : '') + (timeStr ? ' ' + timeStr : '');
+            } else {
+                document.getElementById('statNextTraining').textContent = 'Žiadny';
+                document.getElementById('statNextTrainingSub').textContent = 'Žiadny nadchádzajúci tréning';
+            }
+
+            let presentTotal = 0, recordsTotal = 0;
+            if (typeof getAttendanceByDateRange === 'function' && thisWeek.length > 0) {
+                try {
+                    const weekAttendance = await getAttendanceByDateRange(startStr, endStr);
+                    const eventIdSet = new Set(thisWeek.map(ev => ev.id));
+                    const arr = Array.isArray(weekAttendance) ? weekAttendance : [];
+                    arr.forEach(a => {
+                        if (!eventIdSet.has(a.eventId)) return;
+                        recordsTotal++;
+                        if (a.status === 'PRESENT' || a.status === 'LATE') {
+                            presentTotal++;
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error loading attendance for stats:', e);
+                }
+            }
+            const avgPct = recordsTotal > 0 ? ((presentTotal / recordsTotal) * 100).toFixed(1) : null;
+            const avgEl = document.getElementById('statAvgAttendance');
+            const avgSub = document.getElementById('statAvgAttendanceSub');
+            const avgBar = document.getElementById('statAvgAttendanceBar');
+            if (avgPct !== null) {
+                avgEl.textContent = avgPct + '%';
+                avgSub.textContent = presentTotal + ' / ' + recordsTotal + ' prítomných';
+                if (avgBar) avgBar.style.width = Math.min(100, Math.max(0, parseFloat(avgPct))) + '%';
+            } else {
+                avgEl.textContent = thisWeek.length === 0 ? '-' : '0%';
+                avgSub.textContent = thisWeek.length === 0 ? 'Žiadne tréningy tento týždeň' : 'Žiadna evidovaná účast';
+                if (avgBar) avgBar.style.width = '0%';
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        const monthNamesSk = ['Január', 'Február', 'Marec', 'Apríl', 'Máj', 'Jún', 'Júl', 'August', 'September', 'Október', 'November', 'December'];
+        const dayNamesShort = ['Pon', 'Uto', 'Str', 'Štv', 'Pia', 'Sob', 'Ned'];
+        let currentTrainingsCalendarDate = new Date();
+
+        function changeTrainingsMonth(d) {
+            currentTrainingsCalendarDate.setMonth(currentTrainingsCalendarDate.getMonth() + d);
+            displayTrainingsCalendar();
+        }
+
+        function goToTodayMonth() {
+            currentTrainingsCalendarDate = new Date();
+            displayTrainingsCalendar();
+        }
+
+        function displayTrainingsCalendar() {
+            const gridEl = document.getElementById('trainingsCalendarGrid');
+            if (!gridEl) return;
+            const year = currentTrainingsCalendarDate.getFullYear();
+            const month = currentTrainingsCalendarDate.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            let startDow = firstDay.getDay();
+            startDow = startDow === 0 ? 6 : startDow - 1;
+
+            document.getElementById('trainingsMonthName').textContent = monthNamesSk[month];
+            document.getElementById('trainingsMonthYear').textContent = year;
+
+            const trainings = getFilteredTrainings();
+            const trainingsByDate = {};
+            trainings.forEach(ev => {
+                const d = ev.date ? String(ev.date).substring(0, 10) : '';
+                if (!d) return;
+                if (!trainingsByDate[d]) trainingsByDate[d] = [];
+                trainingsByDate[d].push(ev);
+            });
+
+            let html = '';
+            dayNamesShort.forEach(d => { html += `<div class="calendar-day-header">${d}</div>`; });
+
+            if (startDow > 0) {
+                const prev = new Date(year, month, 0);
+                const py = prev.getFullYear(), pm = prev.getMonth() + 1, pd = prev.getDate();
+                for (let i = startDow - 1; i >= 0; i--) {
+                    const day = pd - i;
+                    const key = `${py}-${String(pm).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                    const dayTrainings = trainingsByDate[key] || [];
+                    html += renderTrainingDayCell(day, dayTrainings, false, true, py, pm);
+                }
+            }
+
+            const today = new Date();
+            for (let day = 1; day <= daysInMonth; day++) {
+                const key = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const dayTrainings = trainingsByDate[key] || [];
+                const isToday = year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
+                html += renderTrainingDayCell(day, dayTrainings, isToday, false, year, month + 1);
+            }
+
+            gridEl.innerHTML = html;
+        }
+
+        function formatTrainingLocation(loc) {
+            if (!loc) return '';
+            const parts = loc.split(',');
+            return parts[0].trim();
+        }
+
+        function renderTrainingDayCell(day, dayTrainings, isToday, otherMonth, y, m) {
+            const locationSvg = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M3.37892 10.2236L8 16L12.6211 10.2236C13.5137 9.10788 14 7.72154 14 6.29266V6C14 2.68629 11.3137 0 8 0C4.68629 0 2 2.68629 2 6V6.29266C2 7.72154 2.4863 9.10788 3.37892 10.2236ZM8 8C9.10457 8 10 7.10457 10 6C10 4.89543 9.10457 4 8 4C6.89543 4 6 4.89543 6 6C6 7.10457 6.89543 8 8 8Z" fill="#6B7280"/></svg>';
+            const byId = new Map((trainerCategories.length ? trainerCategories : []).map(c => [String(c.id), c]));
+            let content = `<div class="calendar-day ${isToday ? 'today' : ''} ${otherMonth ? 'other-month' : ''}">
+                <div class="calendar-day-number">${day}${otherMonth ? '.' + m + '.' : ''}</div>
+                <div class="day-events">`;
+            dayTrainings.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+            dayTrainings.forEach(ev => {
+                let time = '';
+                if (ev.time) {
+                    const startTime = ev.time.substring(0, 5);
+                    time = ev.endTime ? `${startTime}-${ev.endTime.substring(0, 5)}` : startTime;
+                }
+                const name = escapeHtml(ev.name || (ev.categoryName) || 'Tréning');
+                const categoryRaw = (ev.categoryName || (byId.get(String(ev.categoryId)) || {}).name || '').trim();
+                const categoryText = categoryRaw ? escapeHtml(categoryRaw) : '';
+                const cancelled = !!ev.cancelled;
+                const locShort = ev.location ? formatTrainingLocation(ev.location) : '';
+                const isDotView = window.innerWidth <= 672;
+                const isCompact = window.innerWidth <= 1024 && !isDotView;
+
+                if (isDotView) {
+                    const dotTitle = (ev.name || 'Tréning')
+                        + (categoryRaw ? ` [${categoryRaw}]` : '')
+                        + (time ? ' ' + time : '');
+                    content += `<div class="training-dot ${cancelled ? 'cancelled' : ''}" onclick="openEditEventModal(${ev.id}); event.stopPropagation();" title="${escapeHtml(dotTitle)}" aria-label="Tréning: ${escapeHtml(name)}"></div>`;
+                } else if (isCompact) {
+                    content += `
+                        <div class="training-calendar-card compact ${cancelled ? 'cancelled' : ''}" onclick="openEditEventModal(${ev.id})" data-training-id="${ev.id}">
+                            ${time ? `<div class="training-time compact">${time}</div>` : ''}
+                            ${categoryText ? `<div class="training-location"><span style="font-weight:600;">Kat.:</span> ${categoryText}</div>` : ''}
+                            ${locShort ? `<div class="training-location">${locationSvg}<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" class="training-location-link">${escapeHtml(locShort)}</a></div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    content += `
+                        <div class="training-calendar-card ${cancelled ? 'cancelled' : ''}" onclick="openEditEventModal(${ev.id})">
+                            ${time ? `<div class="training-time">${time}</div>` : ''}
+                            <div class="training-name">${cancelled ? '<span class="training-name-text">' + name + '</span> <span class="cancelled-label">Zrušené</span>' : name}</div>
+                            ${categoryText ? `<div class="training-location"><span style="font-weight:600;">Kategória:</span> ${categoryText}</div>` : ''}
+                            ${locShort ? `<div class="training-location">${locationSvg}<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" class="training-location-link">${escapeHtml(locShort)}</a></div>` : ''}
+                            <div class="training-actions">
+                                <button type="button" class="training-action-btn" onclick="event.stopPropagation(); openEditEventModal(${ev.id})">Upraviť</button>
+                                ${!cancelled ? `<a href="/pages/attendance-record.html?eventId=${ev.id}" class="training-action-btn" onclick="event.stopPropagation();">Účast</a>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            content += '</div></div>';
+            return content;
+        }
+
+        let trainingsCalendarResizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(trainingsCalendarResizeTimeout);
+            trainingsCalendarResizeTimeout = setTimeout(displayTrainingsCalendar, 150);
+        });
+
+        function renderWeeklyTrainings() {
+            const container = document.getElementById('weeklyTrainings');
+            const weekLabelEl = document.getElementById('currentWeekLabel');
+            if (!container || !weekLabelEl) return;
+
+            const trainings = getFilteredTrainings();
+            const todayStr = todayInSlovakia();
+            const startStr = getStartOfWeekDateString(todayStr);
+            const endStr = addDaysDateString(startStr, 6);
+
+            weekLabelEl.textContent =
+                formatShortDateSlovakia(startStr) + ' - ' +
+                formatDateSlovakia(endStr);
+
+            const byDay = Array.from({ length: 7 }, () => []);
+            const byId = new Map((trainerCategories.length ? trainerCategories : []).map(c => [c.id, c]));
+
+            for (const ev of trainings) {
+                const evDate = ev.date ? String(ev.date).substring(0, 10) : '';
+                if (!evDate || evDate < startStr || evDate > endStr) continue;
+                const [y, m, d] = evDate.split('-').map(Number);
+                const dayOfWeek = (new Date(y, m - 1, d).getDay() + 6) % 7;
+                byDay[dayOfWeek].push(ev);
+            }
+
+            let scheduleHTML = '';
+            for (let i = 0; i < 7; i++) {
+                const dayStr = addDaysDateString(startStr, i);
+                const events = byDay[i].slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+                const isToday = (dayStr === todayStr);
+
+                scheduleHTML += '<div class="schedule-day' + (isToday ? ' today' : '') + '">';
+                scheduleHTML += '<div class="day-header' + (isToday ? ' today' : '') + '">' + escapeHtml(weekdayNames[i]) + '</div>';
+                scheduleHTML += '<div class="day-events">';
+
+                if (events.length === 0) {
+                    scheduleHTML += '<div class="no-training-text">Žiadny tréning</div>';
+                } else {
+                    events.forEach(ev => {
+                        const cat = ev.categoryId ? byId.get(ev.categoryId) : null;
+                        let timeText = ev.time ? ev.time.substring(0, 5) : '';
+                        if (ev.time && ev.endTime) timeText += '-' + (ev.endTime || '').substring(0, 5);
+                        const name = ev.name || (cat && cat.name) || 'Tréning';
+                        const categoryName = ev.categoryName || (cat && cat.name) || '';
+                        const location = ev.location || '';
+                        const cancelled = !!ev.cancelled;
+
+                        const locationBlock = location
+                            ? '<div class="event-detail"><span class="event-detail-icon">' + locationSvg + '</span><span><a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location) + '" target="_blank" style="color: inherit; text-decoration: underline;">' + escapeHtml(formatLocation(location)) + '</a></span></div>'
+                            : '';
+
+                        scheduleHTML += '<div class="event-card training' + (cancelled ? ' cancelled' : '') + '">';
+                        if (timeText) scheduleHTML += '<div class="event-time">' + escapeHtml(timeText) + '</div>';
+                        scheduleHTML += '<div class="event-team-name">' + (cancelled ? '<span class="event-team-name-text">' + escapeHtml(name) + '</span> <span class="cancelled-label">Zrušené</span>' : escapeHtml(name)) + '</div>';
+                        if (categoryName) scheduleHTML += '<div class="event-detail"><span style="font-weight:600;">Kategória:</span> ' + escapeHtml(categoryName) + '</div>';
+                        scheduleHTML += locationBlock;
+                        scheduleHTML += '<div class="event-card-actions">';
+                        scheduleHTML += '<button type="button" class="btn-edit" onclick="openEditEventModal(' + ev.id + ')">Upraviť</button>';
+                        if (!cancelled) scheduleHTML += '<a href="/pages/attendance-record.html?eventId=' + ev.id + '" class="btn-attendance">Účast</a>';
+                        scheduleHTML += '</div></div>';
+                    });
+                }
+                scheduleHTML += '</div></div>';
+            }
+
+            container.innerHTML = scheduleHTML;
+        }
+
+        async function handleSignOut() {
+            if (typeof logout === 'function') await logout();
+            window.location.href = '/pages/login.html';
+        }
+        async function handleSignOutFromMenu() {
+            closeNavMenu();
+            await handleSignOut();
+        }
+        function handleStatsFromMenu(e) {
+            e.preventDefault();
+            closeNavMenu();
+            window.location.href = '/pages/trainer-training-stats.html';
+        }
+        function toggleNavMenu() {
+            document.getElementById('hamburgerBtn').classList.toggle('open');
+            document.getElementById('navOverlay').classList.toggle('open');
+            document.getElementById('navSlideMenu').classList.toggle('open');
+            document.body.style.overflow = document.getElementById('navSlideMenu').classList.contains('open') ? 'hidden' : '';
+        }
+        function closeNavMenu() {
+            document.getElementById('hamburgerBtn').classList.remove('open');
+            document.getElementById('navOverlay').classList.remove('open');
+            document.getElementById('navSlideMenu').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function toggleQuickAddMenu(event) {
+            event.stopPropagation();
+            document.getElementById('quickAddMenu').classList.toggle('open');
+        }
+        function closeQuickAddMenu() {
+            document.getElementById('quickAddMenu').classList.remove('open');
+        }
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('quickAddWrapper');
+            const menu = document.getElementById('quickAddMenu');
+            if (wrapper && menu && !wrapper.contains(e.target)) menu.classList.remove('open');
+        });
+        function toggleUserDropdown(event) {
+            event.stopPropagation();
+            document.getElementById('userInfo').classList.toggle('open');
+        }
+        document.addEventListener('click', function() {
+            const u = document.getElementById('userInfo');
+            if (u) u.classList.remove('open');
+        });
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

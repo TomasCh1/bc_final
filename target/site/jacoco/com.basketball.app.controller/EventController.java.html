@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.controller</a> &gt; <span class="el_source">EventController.java</span></div><h1>EventController.java</h1><pre class="source lang-java linenums">package com.basketball.app.controller;
+
+import com.basketball.app.dto.EventCreateRequest;
+import com.basketball.app.dto.EventLiveActionCreateRequest;
+import com.basketball.app.dto.EventNominationsRequest;
+import com.basketball.app.dto.EventOpponentsRequest;
+import com.basketball.app.dto.EventRefereesRequest;
+import com.basketball.app.dto.EventUpdateRequest;
+import com.basketball.app.model.Event;
+import com.basketball.app.service.EventLiveActionService;
+import com.basketball.app.service.EventNominationService;
+import com.basketball.app.service.EventOpponentService;
+import com.basketball.app.service.EventRefereeService;
+import com.basketball.app.service.EventService;
+import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/api/events&quot;)
+public class EventController {
+
+    private final EventService eventService;
+    private final EventNominationService eventNominationService;
+    private final EventOpponentService eventOpponentService;
+    private final EventLiveActionService eventLiveActionService;
+    private final EventRefereeService eventRefereeService;
+
+    public EventController(
+            EventService eventService,
+            EventNominationService eventNominationService,
+            EventOpponentService eventOpponentService,
+            EventLiveActionService eventLiveActionService,
+            EventRefereeService eventRefereeService
+<span class="fc" id="L42">    ) {</span>
+<span class="fc" id="L43">        this.eventService = eventService;</span>
+<span class="fc" id="L44">        this.eventNominationService = eventNominationService;</span>
+<span class="fc" id="L45">        this.eventOpponentService = eventOpponentService;</span>
+<span class="fc" id="L46">        this.eventLiveActionService = eventLiveActionService;</span>
+<span class="fc" id="L47">        this.eventRefereeService = eventRefereeService;</span>
+<span class="fc" id="L48">    }</span>
+
+    /**
+     * Get all events with optional filters
+     */
+    @GetMapping
+    public ResponseEntity&lt;?&gt; getAllEvents(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false, defaultValue = &quot;true&quot;) boolean enrich) {
+        try {
+<span class="fc" id="L62">            Event.EventType eventType = null;</span>
+<span class="pc bpc" id="L63" title="1 of 4 branches missed.">            if (type != null &amp;&amp; !type.trim().isEmpty()) {</span>
+                try {
+<span class="fc" id="L65">                    eventType = Event.EventType.valueOf(type.toUpperCase());</span>
+<span class="fc" id="L66">                } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L67">                    return ResponseEntity.badRequest()</span>
+<span class="fc" id="L68">                            .body(Map.of(&quot;error&quot;, &quot;Invalid event type: &quot; + type));</span>
+<span class="fc" id="L69">                }</span>
+            }
+
+<span class="fc" id="L72">            List&lt;Event&gt; events = eventService.findAll(categoryId, eventType, startDate, endDate, search);</span>
+<span class="fc" id="L73">            List&lt;Map&lt;String, Object&gt;&gt; eventMaps = events.stream()</span>
+<span class="fc" id="L74">                    .map(e -&gt; eventService.toEventMap(e, enrich))</span>
+<span class="fc" id="L75">                    .collect(java.util.stream.Collectors.toList());</span>
+
+<span class="fc" id="L77">            return ResponseEntity.ok(eventMaps);</span>
+<span class="nc" id="L78">        } catch (Exception e) {</span>
+<span class="nc" id="L79">            e.printStackTrace();</span>
+<span class="nc" id="L80">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L81">                    .body(Map.of(&quot;error&quot;, &quot;Error fetching events: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get event by ID
+     */
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;?&gt; getEventById(@PathVariable Long id) {
+        try {
+<span class="fc" id="L91">            Event event = eventService.findById(id)</span>
+<span class="fc" id="L92">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Event not found: &quot; + id));</span>
+            
+<span class="fc" id="L94">            return ResponseEntity.ok(eventService.toEventMap(event));</span>
+<span class="fc" id="L95">        } catch (Exception e) {</span>
+<span class="fc" id="L96">            return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="fc" id="L97">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Create event
+     */
+    @PostMapping
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; createEvent(@Valid @RequestBody EventCreateRequest request) {
+        try {
+            // Use createEventWithDetails to get count for recurring events
+<span class="fc" id="L109">            Map&lt;String, Object&gt; result = eventService.createEventWithDetails(request);</span>
+            
+            // For backward compatibility, if it's not recurring, return just the event
+<span class="fc bfc" id="L112" title="All 2 branches covered.">            if (Boolean.FALSE.equals(result.get(&quot;isRecurring&quot;))) {</span>
+<span class="fc" id="L113">                return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="fc" id="L114">                        .body(result.get(&quot;event&quot;));</span>
+            }
+            
+            // For recurring events, return the full result with count
+<span class="fc" id="L118">            return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="fc" id="L119">                    .body(result);</span>
+<span class="nc" id="L120">        } catch (Exception e) {</span>
+<span class="nc" id="L121">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L122">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Update event
+     */
+    @PutMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; updateEvent(@PathVariable Long id, @Valid @RequestBody EventUpdateRequest request) {
+        try {
+<span class="fc" id="L133">            Event event = eventService.updateEvent(id, request);</span>
+<span class="fc" id="L134">            return ResponseEntity.ok(eventService.toEventMap(event));</span>
+<span class="fc" id="L135">        } catch (Exception e) {</span>
+<span class="fc" id="L136">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L137">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Delete event
+     */
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; deleteEvent(@PathVariable Long id) {
+        try {
+<span class="fc" id="L148">            eventService.deleteEvent(id);</span>
+<span class="fc" id="L149">            return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Event deleted successfully&quot;));</span>
+<span class="nc" id="L150">        } catch (Exception e) {</span>
+<span class="nc" id="L151">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L152">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get events by category
+     */
+    @GetMapping(&quot;/category/{categoryId}&quot;)
+    public ResponseEntity&lt;?&gt; getEventsByCategory(@PathVariable Long categoryId) {
+        try {
+<span class="fc" id="L162">            List&lt;Event&gt; events = eventService.findByCategory(categoryId);</span>
+<span class="fc" id="L163">            List&lt;Map&lt;String, Object&gt;&gt; eventMaps = events.stream()</span>
+<span class="fc" id="L164">                    .map(eventService::toEventMap)</span>
+<span class="fc" id="L165">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L166">            return ResponseEntity.ok(eventMaps);</span>
+<span class="nc" id="L167">        } catch (Exception e) {</span>
+<span class="nc" id="L168">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L169">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get events by type
+     */
+    @GetMapping(&quot;/type/{type}&quot;)
+    public ResponseEntity&lt;?&gt; getEventsByType(@PathVariable String type) {
+        try {
+<span class="fc" id="L179">            Event.EventType eventType = Event.EventType.valueOf(type.toUpperCase());</span>
+<span class="fc" id="L180">            List&lt;Event&gt; events = eventService.findByType(eventType);</span>
+<span class="fc" id="L181">            List&lt;Map&lt;String, Object&gt;&gt; eventMaps = events.stream()</span>
+<span class="fc" id="L182">                    .map(eventService::toEventMap)</span>
+<span class="fc" id="L183">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L184">            return ResponseEntity.ok(eventMaps);</span>
+<span class="fc" id="L185">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L186">            return ResponseEntity.badRequest()</span>
+<span class="fc" id="L187">                    .body(Map.of(&quot;error&quot;, &quot;Invalid event type: &quot; + type));</span>
+<span class="nc" id="L188">        } catch (Exception e) {</span>
+<span class="nc" id="L189">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L190">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get events by date range
+     */
+    @GetMapping(&quot;/range&quot;)
+    public ResponseEntity&lt;?&gt; getEventsByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        try {
+<span class="fc" id="L202">            List&lt;Event&gt; events = eventService.findByDateRange(startDate, endDate);</span>
+<span class="fc" id="L203">            List&lt;Map&lt;String, Object&gt;&gt; eventMaps = events.stream()</span>
+<span class="fc" id="L204">                    .map(eventService::toEventMap)</span>
+<span class="fc" id="L205">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L206">            return ResponseEntity.ok(eventMaps);</span>
+<span class="nc" id="L207">        } catch (Exception e) {</span>
+<span class="nc" id="L208">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L209">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get the match closest to the given date (on or after it). Single event.
+     */
+    @GetMapping(&quot;/closest-match&quot;)
+    public ResponseEntity&lt;?&gt; getClosestMatch(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) Long categoryId) {
+        try {
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">            LocalDate onOrAfter = date != null ? date : LocalDate.now();</span>
+<span class="fc" id="L222">            return eventService.findClosestMatch(onOrAfter, categoryId)</span>
+<span class="fc" id="L223">                    .map(event -&gt; ResponseEntity.ok(eventService.toEventMap(event)))</span>
+<span class="fc" id="L224">                    .orElseGet(() -&gt; ResponseEntity.ok(Map.of()));</span>
+<span class="nc" id="L225">        } catch (Exception e) {</span>
+<span class="nc" id="L226">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L227">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get nominated players for a match
+     */
+    @GetMapping(&quot;/{id}/nominations&quot;)
+    public ResponseEntity&lt;?&gt; getEventNominations(@PathVariable Long id) {
+        try {
+<span class="fc" id="L237">            return ResponseEntity.ok(eventNominationService.getNominationsForEvent(id));</span>
+<span class="nc" id="L238">        } catch (Exception e) {</span>
+<span class="nc" id="L239">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L240">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Replace nominated players for a match
+     */
+    @PutMapping(&quot;/{id}/nominations&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; replaceEventNominations(
+            @PathVariable Long id,
+            @RequestBody(required = false) EventNominationsRequest request
+    ) {
+        try {
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">            List&lt;Long&gt; playerIds = request != null ? request.getPlayerIds() : null;</span>
+<span class="fc" id="L255">            return ResponseEntity.ok(eventNominationService.replaceNominationsForEvent(</span>
+                    id,
+                    playerIds,
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">                    request != null ? request.getNominations() : null</span>
+            ));
+<span class="nc" id="L260">        } catch (Exception e) {</span>
+<span class="nc" id="L261">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L262">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get referees for a match
+     */
+    @GetMapping(&quot;/{id}/referees&quot;)
+    public ResponseEntity&lt;?&gt; getEventReferees(@PathVariable Long id) {
+        try {
+<span class="fc" id="L272">            return ResponseEntity.ok(eventRefereeService.getRefereesForEvent(id));</span>
+<span class="nc" id="L273">        } catch (Exception e) {</span>
+<span class="nc" id="L274">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L275">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Replace referees for a match (max 3). Admin and Trainer only.
+     */
+    @PutMapping(&quot;/{id}/referees&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; replaceEventReferees(
+            @PathVariable Long id,
+            @RequestBody(required = false) EventRefereesRequest request
+    ) {
+        try {
+<span class="nc" id="L289">            return ResponseEntity.ok(eventRefereeService.replaceRefereesForEvent(</span>
+                    id,
+<span class="nc bnc" id="L291" title="All 2 branches missed.">                    request != null ? request.getReferees() : null</span>
+            ));
+<span class="nc" id="L293">        } catch (Exception e) {</span>
+<span class="nc" id="L294">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L295">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get opponent jersey numbers for a match
+     */
+    @GetMapping(&quot;/{id}/opponents&quot;)
+    public ResponseEntity&lt;?&gt; getEventOpponents(@PathVariable Long id) {
+        try {
+<span class="fc" id="L305">            return ResponseEntity.ok(eventOpponentService.getOpponentsForEvent(id));</span>
+<span class="nc" id="L306">        } catch (Exception e) {</span>
+<span class="nc" id="L307">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L308">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Replace opponent jersey numbers for a match
+     */
+    @PutMapping(&quot;/{id}/opponents&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; replaceEventOpponents(
+            @PathVariable Long id,
+            @RequestBody(required = false) EventOpponentsRequest request
+    ) {
+        try {
+<span class="nc" id="L322">            return ResponseEntity.ok(eventOpponentService.replaceOpponentsForEvent(</span>
+                    id,
+<span class="nc bnc" id="L324" title="All 2 branches missed.">                    request != null ? request.getJerseyNumbers() : null</span>
+            ));
+<span class="nc" id="L326">        } catch (Exception e) {</span>
+<span class="nc" id="L327">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L328">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * List persisted live actions for a match
+     */
+    @GetMapping(&quot;/{id}/live-actions&quot;)
+    public ResponseEntity&lt;?&gt; getEventLiveActions(@PathVariable Long id) {
+        try {
+<span class="fc" id="L338">            return ResponseEntity.ok(eventLiveActionService.getLiveActions(id));</span>
+<span class="nc" id="L339">        } catch (Exception e) {</span>
+<span class="nc" id="L340">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L341">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Create one persisted live action for a match
+     */
+    @PostMapping(&quot;/{id}/live-actions&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; createEventLiveAction(
+            @PathVariable Long id,
+            @Valid @RequestBody EventLiveActionCreateRequest request
+    ) {
+        try {
+<span class="nc" id="L355">            return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="nc" id="L356">                    .body(eventLiveActionService.createLiveAction(id, request));</span>
+<span class="nc" id="L357">        } catch (Exception e) {</span>
+<span class="nc" id="L358">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L359">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Delete persisted live action for a match
+     */
+    @DeleteMapping(&quot;/{id}/live-actions/{actionId}&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; deleteEventLiveAction(
+            @PathVariable Long id,
+            @PathVariable Long actionId
+    ) {
+        try {
+<span class="nc" id="L373">            eventLiveActionService.deleteLiveAction(id, actionId);</span>
+<span class="nc" id="L374">            return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Live action deleted.&quot;));</span>
+<span class="nc" id="L375">        } catch (Exception e) {</span>
+<span class="nc" id="L376">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L377">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get live summary (score, V/P, opponent jerseys, player +/-) for a match.
+     */
+    @GetMapping(&quot;/{id}/live-summary&quot;)
+    public ResponseEntity&lt;?&gt; getEventLiveSummary(@PathVariable Long id) {
+        try {
+<span class="fc" id="L387">            return ResponseEntity.ok(eventLiveActionService.getLiveSummary(id));</span>
+<span class="nc" id="L388">        } catch (Exception e) {</span>
+<span class="nc" id="L389">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L390">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get season summary: wins, losses, win %, category balances, last 5 results.
+     */
+    @GetMapping(&quot;/season-summary&quot;)
+    public ResponseEntity&lt;?&gt; getSeasonSummary(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Long categoryId) {
+        try {
+<span class="fc" id="L403">            return ResponseEntity.ok(eventService.getSeasonSummary(startDate, endDate, categoryId));</span>
+<span class="nc" id="L404">        } catch (Exception e) {</span>
+<span class="nc" id="L405">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L406">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Správa používateľov - Admin - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/coach-nav.css">
+    <link rel="stylesheet" href="/css/admin-layout.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #FFFFFF; color: #111827; }
+        .dashboard-content { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+        .top-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .stat-card-content { display: flex; flex-direction: column; flex: 1; }
+        .stat-label { font-size: 0.9rem; color: #6B7280; font-weight: 500; }
+        .stat-value-wrapper { display: flex; align-items: center; gap: 0.75rem; justify-content: space-between; }
+        .stat-value { font-size: 2rem; font-weight: 700; color: #111827; line-height: 1.2; }
+        .stat-subtitle { font-size: 0.85rem; color: #9CA3AF; }
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .stat-icon img, .stat-icon svg { width: 100%; height: 100%; object-fit: contain; }
+
+        .section-card {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.04);
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .section-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .section-icon img { width: 100%; height: 100%; object-fit: contain; }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #111827;
+        }
+        .section-subtitle {
+            font-size: 0.9rem;
+            color: #6B7280;
+            margin-top: 0.25rem;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.15rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            border: 1px solid #E5E7EB;
+            background: #F9FAFB;
+            color: #374151;
+        }
+        .pill-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .filter-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #4B5563;
+        }
+        .filter-input,
+        .filter-select {
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+            font-size: 0.9rem;
+        }
+        .filter-actions {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+        .btn-primary, .btn-secondary, .btn-danger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.55rem 1.1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .btn-primary { background: #6B2C91; color: #FFFFFF; }
+        .btn-secondary { background: #E5E7EB; color: #111827; }
+        .btn-danger { background: #DC2626; color: #FFFFFF; }
+        .btn-primary:hover { background: #5A2380; }
+        .btn-secondary:hover { background: #D1D5DB; }
+        .btn-danger:hover { background: #B91C1C; }
+
+        .users-table-wrapper {
+            margin-top: 1rem;
+            border-radius: 12px;
+            border: 1px solid #E5E7EB;
+            overflow: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead {
+            background: #F9FAFB;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        th {
+            font-weight: 600;
+            color: #4B5563;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        tbody tr:nth-child(even) {
+            background: #F9FAFB;
+        }
+        tbody tr:hover {
+            background: #EEF2FF;
+        }
+
+        .badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .badge-role-admin { background: #FEE2E2; color: #B91C1C; }
+        .badge-role-trainer { background: #FEF3C7; color: #92400E; }
+        .badge-role-player { background: #DCFCE7; color: #166534; }
+        .badge-role-guest { background: #E5E7EB; color: #374151; }
+        .badge-status-active { background: #DCFCE7; color: #166534; }
+        .badge-status-inactive { background: #E5E7EB; color: #374151; }
+
+        .actions-cell {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .category-cell {
+            position: relative;
+            cursor: default;
+        }
+        .more-categories-indicator {
+            font-weight: 600;
+            text-decoration: underline;
+            color: #6B2C91;
+            cursor: pointer;
+        }
+        .category-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 160px;
+            max-width: 260px;
+            z-index: 1000;
+            display: none;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        .category-tooltip div {
+            padding: 0.15rem 0;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .category-tooltip div:last-child {
+            border-bottom: none;
+        }
+        .category-cell:hover .category-tooltip {
+            display: block;
+        }
+
+        .pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #E5E7EB;
+        }
+        .pagination-info {
+            font-size: 0.9rem;
+            color: #6B7280;
+            padding: 0.5rem;
+        }
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            padding: 0.5rem;
+        }
+        .pagination-controls .btn-secondary,
+        .pagination-controls .btn-primary {
+            padding: 0.45rem 0.9rem;
+            font-size: 0.85rem;
+        }
+        .pagination-controls .btn-secondary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 1.5rem;
+            color: #6B7280;
+            font-size: 0.9rem;
+        }
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .message-error {
+            background: #FEF2F2;
+            color: #B91C1C;
+            border: 1px solid #FECACA;
+        }
+        .message-success {
+            background: #ECFDF3;
+            color: #166534;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-box {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.75rem;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05), 0 20px 40px rgba(0,0,0,0.15);
+        }
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+        .modal-text {
+            font-size: 0.95rem;
+            color: #6B7280;
+            margin-bottom: 1.5rem;
+            line-height: 1.45;
+        }
+        .modal-text strong { color: #111827; }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        .modal-actions .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; border: 1px solid #BBF7D0; }
+
+
+        @media (max-width: 1024px) {
+            .top-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .filters-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .top-stats {
+                grid-template-columns: 1fr;
+            }
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+            th, td {
+                padding: 0.6rem 0.75rem;
+            }
+        }
+
+        @media (max-width: 765px) {
+            body.admin .dashboard-header .header-right {
+                gap: 0.45rem;
+            }
+            body.admin .dashboard-header .action-buttons-header {
+                gap: 0.45rem;
+            }
+            body.admin .dashboard-header .action-buttons-header .admin-add-user-btn,
+            body.admin .dashboard-header .header-right .theme-toggle-pretty {
+                width: 2.2rem;
+                height: 2.2rem;
+                min-width: 2.2rem;
+                min-height: 2.2rem;
+                padding: 0;
+                border-radius: 999px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+            body.admin .dashboard-header .header-right .theme-toggle-pretty {
+                gap: 0;
+            }
+            body.admin .dashboard-header .header-right .theme-toggle-pretty span {
+                display: none;
+            }
+            body.admin .dashboard-header .action-buttons-header .admin-add-user-btn {
+                font-size: 0;
+                line-height: 1;
+            }
+            body.admin .dashboard-header .action-buttons-header .admin-add-user-btn::before {
+                content: "+";
+                font-size: 1.25rem;
+                font-weight: 700;
+                line-height: 1;
+            }
+        }
+
+        @media (max-width: 670px) {
+            body.admin .dashboard-header .action-buttons-header {
+                display: flex !important;
+            }
+        }
+
+        .reload-region {
+            position: relative;
+        }
+        .admin-users-top-stats {
+            border-radius: 12px;
+        }
+        .reload-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.72);
+            border-radius: inherit;
+            pointer-events: auto;
+        }
+        .reload-region.is-reloading .reload-overlay {
+            display: flex;
+        }
+        .reload-spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid #E5E7EB;
+            border-top-color: #6B2C91;
+            border-radius: 50%;
+            animation: admin-users-spin 0.65s linear infinite;
+        }
+        @keyframes admin-users-spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="admin">
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav">
+                <a href="/pages/admin-dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                <a href="/pages/admin-matches.html" class="nav-pill">Zápasy</a>
+                <a href="/pages/admin-trainings.html" class="nav-pill">Tréningy</a>
+                <a href="/pages/admin-users.html" class="nav-pill active">User Management</a>
+                <a href="/pages/admin-categories.html" class="nav-pill">Kategórie</a>
+                <a href="/pages/trainer-attendance-charts.html" class="nav-pill">Grafy účasti</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="action-buttons-header">
+                <a href="/pages/admin-users-create.html" class="btn-primary admin-add-user-btn">+ Pridať používateľa</a>
+            </div>
+            <div class="user-info" id="userInfo" data-initial="A" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">Admin</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <div class="nav-menu-profile">
+            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">A</div>
+            <div class="nav-menu-profile-info">
+                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                <div class="nav-menu-profile-role" id="navMenuProfileRole">Admin</div>
+            </div>
+        </div>
+        <div class="nav-menu-divider"></div>
+        <a href="/pages/admin-dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/admin-matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>
+        <a href="/pages/admin-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+        <a href="/pages/admin-users.html" class="nav-pill active" onclick="closeNavMenu()">User Management</a>
+        <a href="/pages/admin-categories.html" class="nav-pill" onclick="closeNavMenu()">Kategórie</a>
+        <a href="/pages/trainer-attendance-charts.html" class="nav-pill" onclick="closeNavMenu()">Grafy účasti</a>
+        <div class="nav-menu-divider"></div>
+        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>
+    </nav>
+
+    <div class="dashboard-content">
+        <div id="messageArea"></div>
+
+        <div class="reload-region admin-users-top-stats" id="topStatsReloadRegion">
+            <div class="reload-overlay" aria-hidden="true"><span class="reload-spinner" role="status" aria-label="Načítava sa"></span></div>
+            <div class="top-stats">
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Aktívni hráči</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="statActivePlayers">-</div>
+                        <div class="stat-icon">
+                            <img src="/IMG/basketball-player-with-the-ball-svgrepo-com.svg" alt="Aktívni hráči">
+                        </div>
+                    </div>
+                    <div class="stat-subtitle" id="statActivePlayersSub">Načítava sa...</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Počet trénerov</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="statTrainers">-</div>
+                        <div class="stat-icon">
+                            <img src="/IMG/whistle-game-referee-svgrepo-com.svg" alt="Tréneri">
+                        </div>
+                    </div>
+                    <div class="stat-subtitle" id="statTrainersSub">Načítava sa...</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Admini</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="statAdmins">-</div>
+                        <div class="stat-icon">
+                            <img src="/IMG/basketball-svgrepo-com.svg" alt="Admini">
+                        </div>
+                    </div>
+                    <div class="stat-subtitle" id="statAdminsSub">Načítava sa...</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Všetci používatelia</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="statAllUsers">-</div>
+                        <div class="stat-icon">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                    </div>
+                    <div class="stat-subtitle" id="statAllUsersSub">Načítava sa...</div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <div class="section-card reload-region" id="usersSectionReloadRegion">
+            <div class="reload-overlay" aria-hidden="true"><span class="reload-spinner" role="status" aria-label="Načítava sa"></span></div>
+            <div class="section-header">
+                <div class="section-header-left">
+                    <div class="section-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="section-title">Používatelia</div>
+                        <div class="section-subtitle">Prehľad všetkých používateľov s možnosťou filtrovania</div>
+                    </div>
+                </div>
+                <div>
+                    <span class="pill">
+                        <span class="pill-dot" style="background:#22C55E;"></span>
+                        <span><span id="pillActiveUsers">0</span> aktívnych</span>
+                    </span>
+                </div>
+            </div>
+
+            <form id="filterForm">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="searchInput" class="filter-label">Vyhľadávanie</label>
+                        <input type="text" id="searchInput" class="filter-input" placeholder="Meno, priezvisko alebo email...">
+                    </div>
+                    <div class="filter-group">
+                        <label for="roleFilter" class="filter-label">Rola</label>
+                        <select id="roleFilter" class="filter-select">
+                            <option value="">Všetky role</option>
+                            <option value="ADMIN">Admin</option>
+                            <option value="TRAINER">Tréner</option>
+                            <option value="PLAYER">Hráč</option>
+                            <option value="GUEST">Hosť</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="categoryFilter" class="filter-label">Kategória</label>
+                        <select id="categoryFilter" class="filter-select">
+                            <option value="">Všetky kategórie</option>
+                        </select>
+                    </div>
+                    <div class="filter-group filter-actions">
+                        <button type="button" class="btn-secondary" id="resetFiltersBtn">Vymazať</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="users-table-wrapper">
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Meno</th>
+                            <th>Priezvisko</th>
+                            <th>Email</th>
+                            <th>Rola</th>
+                            <th>Kategórie</th>
+                            <th>Stav</th>
+                            <th>Akcie</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+                
+            </div>
+            <div id="paginationBar" class="pagination-bar" style="display:none;">
+                <div class="pagination-info" id="paginationInfo"></div>
+                <div class="pagination-controls">
+                    <button type="button" class="btn-secondary" id="prevPageBtn" onclick="goPrevPage()">← Predchádzajúca</button>
+                    <span class="pagination-info" id="pageIndicator"></span>
+                    <button type="button" class="btn-secondary" id="nextPageBtn" onclick="goNextPage()">Ďalšia →</button>
+                    <button type="button" class="btn-primary" id="loadMoreBtn" onclick="loadMoreUsers()">Načítať ďalšie</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="deleteUserModal" onclick="if (event.target === this) closeDeleteUserModal();">
+        <div class="modal-box" onclick="event.stopPropagation();">
+            <div class="modal-title">Zmazať používateľa?</div>
+            <div class="modal-text">
+                Naozaj chcete zmazať používateľa <strong id="deleteUserModalUserName"></strong>? Používateľ bude označený ako zmazaný a nebude sa zobrazovať v zozname. Štatistiky a história zostanú v systéme.
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeDeleteUserModal()">Zrušiť</button>
+                <button type="button" class="btn-danger" id="deleteUserModalConfirmBtn" onclick="confirmDeleteUser()">Áno, zmazať</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/categories.js"></script>
+    <script src="/js/users.js"></script>
+    <script>
+        const PAGE_SIZE = 30;
+        let allCategories = [];
+        let totalElements = 0;
+        let currentPage = 0;
+        let currentPageContent = [];   // current page only (paged mode)
+        let accumulatedContent = null; // null = paged mode; else [page0, page1, ...] for load-more
+        let restorePageOnLoad = false;  // when true, loadUsersList uses currentPage instead of 0
+        let filtersAutoApplyTimer = null;
+        /** Tracks last category id used for top stats; undefined until first successful load. */
+        let prevCategoryIdForStats = undefined;
+
+        function setUsersSectionReloading(on) {
+            const el = document.getElementById('usersSectionReloadRegion');
+            if (el) el.classList.toggle('is-reloading', !!on);
+        }
+
+        function setTopStatsReloading(on) {
+            const el = document.getElementById('topStatsReloadRegion');
+            if (el) el.classList.toggle('is-reloading', !!on);
+        }
+
+        /**
+         * Top stat cards refresh only when the category filter changes or when forceStats (delete, reset, first load).
+         * Search/role alone reload the users table only.
+         */
+        function shouldRefreshTopStats(filters, options) {
+            const cat = (filters.categoryId || '').toString();
+            const categoryChanged = prevCategoryIdForStats === undefined || cat !== prevCategoryIdForStats;
+            return categoryChanged || !!(options && options.forceStats);
+        }
+
+        function applyStatsIfNeeded(res, filters, options) {
+            if (!res.stats) return;
+            if (shouldRefreshTopStats(filters, options)) {
+                updateStatsFromResponse(res.stats);
+            }
+        }
+
+        function commitStatsCategoryAfterSuccess(filters) {
+            prevCategoryIdForStats = (filters.categoryId || '').toString();
+        }
+
+        function showMessage(message, type) {
+            const area = document.getElementById('messageArea');
+            if (!area) return;
+            const div = document.createElement('div');
+            div.className = 'message ' + (type === 'error' ? 'message-error' : 'message-success');
+            div.textContent = message;
+            area.innerHTML = '';
+            area.appendChild(div);
+            setTimeout(() => {
+                if (area.contains(div)) {
+                    area.removeChild(div);
+                }
+            }, 4000);
+        }
+
+        function updateStatsFromResponse(stats) {
+            if (!stats) return;
+            const total = stats.totalElements || 0;
+            const activePlayers = stats.activePlayers != null ? stats.activePlayers : 0;
+            const trainers = stats.trainers != null ? stats.trainers : 0;
+            const admins = stats.admins != null ? stats.admins : 0;
+            const activeUsers = stats.activeUsers != null ? stats.activeUsers : 0;
+
+            document.getElementById('statActivePlayers').textContent = activePlayers;
+            document.getElementById('statTrainers').textContent = trainers;
+            document.getElementById('statAdmins').textContent = admins;
+            document.getElementById('statAllUsers').textContent = total;
+
+            document.getElementById('pillActiveUsers').textContent = activeUsers;
+
+            document.getElementById('statActivePlayersSub').textContent = activePlayers === 1 ? 'Aktívny hráč' : 'Aktívni hráči';
+            document.getElementById('statTrainersSub').textContent = trainers === 1 ? 'Tréner' : 'Tréneri';
+            document.getElementById('statAdminsSub').textContent = admins === 1 ? 'Admin' : 'Admini';
+            document.getElementById('statAllUsersSub').textContent = 'Celkový počet používateľov';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            const current = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+            if (!current || current.role !== 'ADMIN') {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            const displayName = (typeof formatUserDisplayName === 'function' ? formatUserDisplayName(current) : (current.name || 'Admin')).replace(/\s*\([^)]*\)\s*$/, '').trim();
+            const displayRole = 'Admin';
+            const userInitial = (displayName.charAt(0) || 'A').toUpperCase();
+
+            document.getElementById('userName').textContent = displayName;
+            document.getElementById('userRole').textContent = displayRole;
+            const dropdownName = document.getElementById('userDropdownName');
+            const dropdownRole = document.getElementById('userDropdownRole');
+            if (dropdownName) dropdownName.textContent = displayName;
+            if (dropdownRole) dropdownRole.textContent = displayRole;
+            document.getElementById('userInfo').setAttribute('data-initial', userInitial);
+
+            const navMenuProfileName = document.getElementById('navMenuProfileName');
+            const navMenuProfileRole = document.getElementById('navMenuProfileRole');
+            const navMenuProfileAvatar = document.getElementById('navMenuProfileAvatar');
+            if (navMenuProfileName) navMenuProfileName.textContent = displayName;
+            if (navMenuProfileRole) navMenuProfileRole.textContent = displayRole;
+            if (navMenuProfileAvatar) navMenuProfileAvatar.textContent = userInitial;
+
+            await loadCategoriesFilter();
+
+            const savedFilters = sessionStorage.getItem('adminUsersReturnFilters');
+            if (savedFilters) {
+                try {
+                    const f = JSON.parse(savedFilters);
+                    if (document.getElementById('searchInput')) document.getElementById('searchInput').value = f.search || '';
+                    if (document.getElementById('roleFilter')) document.getElementById('roleFilter').value = f.role || '';
+                    if (document.getElementById('categoryFilter')) document.getElementById('categoryFilter').value = f.categoryId || '';
+                    if (typeof f.page === 'number' && f.page >= 0) {
+                        currentPage = f.page;
+                        restorePageOnLoad = true;
+                    }
+                    sessionStorage.removeItem('adminUsersReturnFilters');
+                } catch (e) { sessionStorage.removeItem('adminUsersReturnFilters'); }
+            }
+
+            const filterForm = document.getElementById('filterForm');
+            filterForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (filtersAutoApplyTimer) clearTimeout(filtersAutoApplyTimer);
+                currentPage = 0;
+                restorePageOnLoad = false;
+                loadUsersList();
+            });
+            const searchInput = document.getElementById('searchInput');
+            const roleFilter = document.getElementById('roleFilter');
+            const categoryFilter = document.getElementById('categoryFilter');
+
+            const applyFiltersInstantly = () => {
+                currentPage = 0;
+                restorePageOnLoad = false;
+                loadUsersList();
+            };
+
+            const applyFiltersWithDebounce = () => {
+                if (filtersAutoApplyTimer) clearTimeout(filtersAutoApplyTimer);
+                filtersAutoApplyTimer = setTimeout(() => {
+                    applyFiltersInstantly();
+                }, 250);
+            };
+
+            if (searchInput) {
+                searchInput.addEventListener('input', applyFiltersWithDebounce);
+            }
+            if (roleFilter) {
+                roleFilter.addEventListener('change', applyFiltersInstantly);
+            }
+            if (categoryFilter) {
+                categoryFilter.addEventListener('change', applyFiltersInstantly);
+            }
+
+            document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('roleFilter').value = '';
+                document.getElementById('categoryFilter').value = '';
+                if (filtersAutoApplyTimer) clearTimeout(filtersAutoApplyTimer);
+                currentPage = 0;
+                restorePageOnLoad = false;
+                loadUsersList({ forceStats: true });
+            });
+
+            await loadUsersList();
+        });
+
+        async function loadCategoriesFilter() {
+            try {
+                allCategories = await getCategories({ summary: true });
+                const select = document.getElementById('categoryFilter');
+                select.innerHTML = '<option value="">Všetky kategórie</option>';
+                (allCategories || []).forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Chyba pri načítaní kategórií:', e);
+            }
+        }
+
+        function getFilters() {
+            return {
+                search: document.getElementById('searchInput').value,
+                role: document.getElementById('roleFilter').value,
+                categoryId: document.getElementById('categoryFilter').value || undefined
+            };
+        }
+
+        async function getUsersWithAdminsUnfiltered(params) {
+            const res = await getUsers(params);
+            const page = params && params.page != null ? Number(params.page) : 0;
+            const hasCategoryFilter = !!(params && params.categoryId);
+            const hasRoleFilter = !!(params && params.role);
+
+            if (!hasCategoryFilter || hasRoleFilter || page !== 0) {
+                return res;
+            }
+
+            const adminsRes = await getUsers({
+                summary: true,
+                role: 'ADMIN',
+                page: 0,
+                size: PAGE_SIZE
+            });
+            const baseContent = Array.isArray(res.content) ? res.content : [];
+            const adminContent = Array.isArray(adminsRes.content) ? adminsRes.content : [];
+            const seen = new Set();
+            const merged = [];
+
+            adminContent.forEach(user => {
+                if (!user || seen.has(user.id)) return;
+                seen.add(user.id);
+                merged.push(user);
+            });
+            baseContent.forEach(user => {
+                if (!user || seen.has(user.id)) return;
+                seen.add(user.id);
+                merged.push(user);
+            });
+
+            const baseTotal = typeof res.totalElements === 'number' ? res.totalElements : baseContent.length;
+            const adjustedTotal = Math.max(baseTotal + adminContent.length, merged.length);
+            return {
+                ...res,
+                content: merged,
+                totalElements: adjustedTotal
+            };
+        }
+
+        function getDisplayedUsers() {
+            if (accumulatedContent != null) {
+                return accumulatedContent.flat();
+            }
+            return currentPageContent;
+        }
+
+        function updatePaginationBar() {
+            const bar = document.getElementById('paginationBar');
+            const total = totalElements;
+            if (total === 0) {
+                bar.style.display = 'none';
+                return;
+            }
+            bar.style.display = 'flex';
+            const totalPages = Math.ceil(total / PAGE_SIZE);
+            const displayed = getDisplayedUsers().length;
+            const start = accumulatedContent != null ? 1 : currentPage * PAGE_SIZE + 1;
+            const end = accumulatedContent != null ? Math.min(accumulatedContent.flat().length, total) : Math.min((currentPage + 1) * PAGE_SIZE, total);
+            document.getElementById('paginationInfo').textContent =
+                'Zobrazených ' + start + '–' + end + ' z ' + total + ' používateľov';
+            document.getElementById('pageIndicator').textContent =
+                totalPages > 1 ? 'Strana ' + (currentPage + 1) + ' / ' + totalPages : '';
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            prevBtn.disabled = currentPage === 0 && accumulatedContent == null;
+            nextBtn.disabled = currentPage >= totalPages - 1 && accumulatedContent == null;
+            if (accumulatedContent != null) {
+                prevBtn.disabled = false;
+                nextBtn.disabled = currentPage >= totalPages - 1;
+            }
+            const loadedCount = accumulatedContent != null ? accumulatedContent.flat().length : (currentPage + 1) * PAGE_SIZE;
+            loadMoreBtn.style.display = loadedCount >= total ? 'none' : 'inline-flex';
+            loadMoreBtn.textContent = 'Načítať ďalších 30';
+        }
+
+        async function goPrevPage() {
+            if (currentPage <= 0) return;
+            const filters = getFilters();
+            const refreshTop = shouldRefreshTopStats(filters, {});
+            setUsersSectionReloading(true);
+            if (refreshTop) setTopStatsReloading(true);
+            try {
+                accumulatedContent = null;
+                currentPage--;
+                const res = await getUsersWithAdminsUnfiltered({ ...filters, summary: true, page: currentPage, size: PAGE_SIZE });
+                currentPageContent = res.content || [];
+                totalElements = res.totalElements != null ? res.totalElements : currentPageContent.length;
+                applyStatsIfNeeded(res, filters, {});
+                commitStatsCategoryAfterSuccess(filters);
+                renderUsersTable(currentPageContent);
+                updatePaginationBar();
+            } catch (err) {
+                console.error('Error loading previous page:', err);
+                showMessage('Chyba pri načítaní stránky: ' + (err.message || err), 'error');
+            } finally {
+                setUsersSectionReloading(false);
+                if (refreshTop) setTopStatsReloading(false);
+            }
+        }
+
+        async function goNextPage() {
+            const totalPages = Math.ceil(totalElements / PAGE_SIZE);
+            const nextPage = accumulatedContent != null ? accumulatedContent.length : currentPage + 1;
+            if (nextPage >= totalPages) return;
+            const filters = getFilters();
+            const refreshTop = shouldRefreshTopStats(filters, {});
+            setUsersSectionReloading(true);
+            if (refreshTop) setTopStatsReloading(true);
+            try {
+                accumulatedContent = null;
+                currentPage = nextPage;
+                const res = await getUsersWithAdminsUnfiltered({ ...filters, summary: true, page: currentPage, size: PAGE_SIZE });
+                currentPageContent = res.content || [];
+                totalElements = res.totalElements != null ? res.totalElements : totalElements;
+                applyStatsIfNeeded(res, filters, {});
+                commitStatsCategoryAfterSuccess(filters);
+                renderUsersTable(currentPageContent);
+                updatePaginationBar();
+            } catch (err) {
+                console.error('Error loading next page:', err);
+                showMessage('Chyba pri načítaní stránky: ' + (err.message || err), 'error');
+            } finally {
+                setUsersSectionReloading(false);
+                if (refreshTop) setTopStatsReloading(false);
+            }
+        }
+
+        async function loadMoreUsers() {
+            const totalPages = Math.ceil(totalElements / PAGE_SIZE);
+            const nextPageIndex = accumulatedContent != null ? accumulatedContent.length : 1;
+            if (nextPageIndex >= totalPages) return;
+            const filters = getFilters();
+            const refreshTop = shouldRefreshTopStats(filters, {});
+            setUsersSectionReloading(true);
+            if (refreshTop) setTopStatsReloading(true);
+            try {
+                const res = await getUsersWithAdminsUnfiltered({ ...filters, summary: true, page: nextPageIndex, size: PAGE_SIZE });
+                const nextContent = res.content || [];
+                if (accumulatedContent == null) {
+                    accumulatedContent = [currentPageContent.slice(), nextContent];
+                } else {
+                    accumulatedContent.push(nextContent);
+                }
+                totalElements = res.totalElements != null ? res.totalElements : totalElements;
+                currentPage = accumulatedContent.length - 1;
+                applyStatsIfNeeded(res, filters, {});
+                commitStatsCategoryAfterSuccess(filters);
+                renderUsersTable(getDisplayedUsers());
+                updatePaginationBar();
+            } catch (err) {
+                console.error('Error loading more users:', err);
+                showMessage('Chyba pri načítaní: ' + (err.message || err), 'error');
+            } finally {
+                setUsersSectionReloading(false);
+                if (refreshTop) setTopStatsReloading(false);
+            }
+        }
+
+        async function loadUsersList(options) {
+            options = options || {};
+            const filters = getFilters();
+            const refreshTop = shouldRefreshTopStats(filters, options);
+            setUsersSectionReloading(true);
+            if (refreshTop) setTopStatsReloading(true);
+            document.getElementById('paginationBar').style.display = 'none';
+
+            try {
+                const pageToLoad = restorePageOnLoad ? currentPage : 0;
+                if (restorePageOnLoad) restorePageOnLoad = false;
+                const res = await getUsersWithAdminsUnfiltered({ ...filters, summary: true, page: pageToLoad, size: PAGE_SIZE });
+                const content = res.content || [];
+                totalElements = res.totalElements != null ? res.totalElements : content.length;
+                currentPage = pageToLoad;
+                currentPageContent = content;
+                accumulatedContent = null;
+                applyStatsIfNeeded(res, filters, options);
+                commitStatsCategoryAfterSuccess(filters);
+                renderUsersTable(content);
+                updatePaginationBar();
+            } catch (err) {
+                console.error('Error loading users:', err);
+                showMessage('Chyba pri načítaní používateľov: ' + (err.message || err), 'error');
+            } finally {
+                setUsersSectionReloading(false);
+                if (refreshTop) setTopStatsReloading(false);
+            }
+        }
+
+        function renderUsersTable(users) {
+            const body = document.getElementById('usersTableBody');
+            body.innerHTML = '';
+
+            if (!users || users.length === 0) {
+                body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:1.5rem;">Nenašli sa žiadni používatelia</td></tr>';
+                return;
+            }
+
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+
+                let allCategoryNames = [];
+                let categoryDisplay = 'Žiadne';
+                let showTooltip = false;
+
+                if ((user.role === 'TRAINER' || user.role === 'ADMIN') && user.coachedCategories && user.coachedCategories.length > 0) {
+                    allCategoryNames = user.coachedCategories;
+                } else if (user.role === 'PLAYER' && user.categories && user.categories.length > 0) {
+                    allCategoryNames = user.categories.map(c => c.name);
+                } else if (user.categoryIds && user.categoryIds.length > 0 && allCategories.length) {
+                    allCategoryNames = user.categoryIds.map(id => {
+                        const c = allCategories.find(cat => cat.id == id || cat.id === id);
+                        return c ? c.name : null;
+                    }).filter(Boolean);
+                } else if (user.categoryId) {
+                    const catName = (allCategories.find(c => c.id === user.categoryId) || {}).name || ('Kategória ' + user.categoryId);
+                    allCategoryNames = [catName];
+                }
+
+                if (allCategoryNames.length > 2) {
+                    categoryDisplay = allCategoryNames.slice(0, 2).join(', ') + ' ';
+                    categoryDisplay += `<span class="more-categories-indicator">+${allCategoryNames.length - 2} ďalšie</span>`;
+                    showTooltip = true;
+                } else if (allCategoryNames.length > 0) {
+                    categoryDisplay = allCategoryNames.join(', ');
+                }
+
+                const roleClass = 'badge-role-' + (user.role || '').toLowerCase();
+                const statusClass = user.isActive ? 'badge-status-active' : 'badge-status-inactive';
+
+                const tooltipHtml = showTooltip
+                    ? `<div class="category-tooltip">${allCategoryNames.map(n => `<div>${n}</div>`).join('')}</div>`
+                    : '';
+
+                const displayName = (typeof formatUserDisplayName === 'function' ? formatUserDisplayName(user) : (user.displayName || user.name || ''));
+                tr.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.name || ''}</td>
+                    <td>${user.surname || ''}</td>
+                    <td>${user.email}</td>
+                    <td><span class="badge ${roleClass}">${user.role}</span></td>
+                    <td class="category-cell">
+                        ${categoryDisplay}
+                        ${tooltipHtml}
+                    </td>
+                    <td><span class="badge ${statusClass}">${user.isActive ? 'Aktívny' : 'Neaktívny'}</span></td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn-secondary" onclick="editUser(${user.id})">Upraviť</button>
+                            ${user.role !== 'ADMIN' ? `<button class="btn-danger" data-user-id="${user.id}" data-user-name="${(displayName || user.email || ('Používateľ ' + user.id)).replace(/"/g, '&quot;')}" onclick="openDeleteUserModal(this)">Zmazať</button>` : ''}
+                        </div>
+                    </td>
+                `;
+
+                body.appendChild(tr);
+            });
+        }
+
+        let pendingDeleteUserId = null;
+        let pendingDeleteUserName = null;
+
+        function openDeleteUserModal(btn) {
+            pendingDeleteUserId = btn.getAttribute('data-user-id');
+            pendingDeleteUserName = btn.getAttribute('data-user-name') || '';
+            document.getElementById('deleteUserModalUserName').textContent = pendingDeleteUserName;
+            document.getElementById('deleteUserModal').classList.add('open');
+        }
+
+        function closeDeleteUserModal() {
+            document.getElementById('deleteUserModal').classList.remove('open');
+            pendingDeleteUserId = null;
+            pendingDeleteUserName = null;
+        }
+
+        async function confirmDeleteUser() {
+            if (pendingDeleteUserId == null) return;
+            const confirmBtn = document.getElementById('deleteUserModalConfirmBtn');
+            confirmBtn.disabled = true;
+            try {
+                await deleteUser(pendingDeleteUserId);
+                const nameToShow = pendingDeleteUserName || ('ID ' + pendingDeleteUserId);
+                closeDeleteUserModal();
+                showMessage('Používateľ "' + nameToShow + '" bol zmazaný.', 'success');
+                await loadUsersList({ forceStats: true });
+            } catch (e) {
+                console.error('Error deleting user:', e);
+                showMessage('Chyba pri mazaní používateľa: ' + (e.message || e), 'error');
+            } finally {
+                confirmBtn.disabled = false;
+            }
+        }
+
+        function editUser(id) {
+            const filters = getFilters();
+            const state = {
+                search: filters.search || '',
+                role: filters.role || '',
+                categoryId: filters.categoryId || '',
+                page: currentPage
+            };
+            sessionStorage.setItem('adminUsersReturnFilters', JSON.stringify(state));
+            window.location.href = '/pages/admin-users-edit.html?id=' + id;
+        }
+
+        function toggleNavMenu() {
+            const btn = document.getElementById('hamburgerBtn');
+            const overlay = document.getElementById('navOverlay');
+            const menu = document.getElementById('navSlideMenu');
+            if (!btn || !overlay || !menu) return;
+            btn.classList.toggle('open');
+            overlay.classList.toggle('open');
+            menu.classList.toggle('open');
+            document.body.style.overflow = menu.classList.contains('open') ? 'hidden' : '';
+        }
+
+        function closeNavMenu() {
+            const btn = document.getElementById('hamburgerBtn');
+            const overlay = document.getElementById('navOverlay');
+            const menu = document.getElementById('navSlideMenu');
+            if (btn) btn.classList.remove('open');
+            if (overlay) overlay.classList.remove('open');
+            if (menu) menu.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function handleSignOutFromMenu() {
+            closeNavMenu();
+            handleSignOut();
+        }
+
+        function toggleUserDropdown(event) {
+            event.stopPropagation();
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo) {
+                userInfo.classList.toggle('open');
+            }
+        }
+
+        async function handleSignOut() {
+            if (typeof logout === 'function') {
+                await logout();
+            } else {
+                window.location.href = '/pages/login.html';
+            }
+        }
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>
+

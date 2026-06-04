@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoryService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.service</a> &gt; <span class="el_source">CategoryService.java</span></div><h1>CategoryService.java</h1><pre class="source lang-java linenums">package com.basketball.app.service;
+
+import com.basketball.app.dto.CategoryCreateRequest;
+import com.basketball.app.dto.CategoryUpdateRequest;
+import com.basketball.app.model.Category;
+import com.basketball.app.model.Event;
+import com.basketball.app.repository.AttendanceRepository;
+import com.basketball.app.repository.CategoryRepository;
+import com.basketball.app.repository.EventRepository;
+import com.basketball.app.repository.StatisticsRepository;
+import com.basketball.app.repository.UserRepository;
+import com.basketball.app.repository.PlayerCountByCategory;
+import com.basketball.app.model.User;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class CategoryService {
+
+    private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
+    private final EventRepository eventRepository;
+    private final StatisticsRepository statisticsRepository;
+    private final AttendanceRepository attendanceRepository;
+
+    public CategoryService(CategoryRepository categoryRepository,
+                          UserRepository userRepository,
+                          EventRepository eventRepository,
+                          StatisticsRepository statisticsRepository,
+<span class="fc" id="L33">                          AttendanceRepository attendanceRepository) {</span>
+<span class="fc" id="L34">        this.categoryRepository = categoryRepository;</span>
+<span class="fc" id="L35">        this.userRepository = userRepository;</span>
+<span class="fc" id="L36">        this.eventRepository = eventRepository;</span>
+<span class="fc" id="L37">        this.statisticsRepository = statisticsRepository;</span>
+<span class="fc" id="L38">        this.attendanceRepository = attendanceRepository;</span>
+<span class="fc" id="L39">    }</span>
+
+    /**
+     * Create a new category
+     */
+    @Transactional
+    public Category createCategory(CategoryCreateRequest request) {
+        // Validate name uniqueness
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (categoryRepository.findByName(request.getName()).isPresent()) {</span>
+<span class="fc" id="L48">            throw new RuntimeException(&quot;Category with name &quot; + request.getName() + &quot; already exists&quot;);</span>
+        }
+
+        // Validate and set coaches (if provided)
+<span class="fc" id="L52">        Set&lt;User&gt; coaches = new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L53" title="1 of 4 branches missed.">        if (request.getCoachIds() != null &amp;&amp; !request.getCoachIds().isEmpty()) {</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">            for (Long coachId : request.getCoachIds()) {</span>
+<span class="fc" id="L55">                User coach = userRepository.findById(coachId)</span>
+<span class="fc" id="L56">                        .orElseThrow(() -&gt; new RuntimeException(&quot;Coach not found: &quot; + coachId));</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">                if (Boolean.TRUE.equals(coach.getDeleted())) {</span>
+<span class="nc" id="L58">                    throw new RuntimeException(&quot;Coach not found: &quot; + coachId);</span>
+                }
+<span class="pc bpc" id="L60" title="1 of 4 branches missed.">                if (coach.getRole() != User.Role.TRAINER &amp;&amp; coach.getRole() != User.Role.ADMIN) {</span>
+<span class="fc" id="L61">                    throw new RuntimeException(&quot;User must be a TRAINER or ADMIN to be assigned as coach&quot;);</span>
+                }
+<span class="fc" id="L63">                coaches.add(coach);</span>
+<span class="fc" id="L64">            }</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        } else if (request.getCoachId() != null) {</span>
+            // Support legacy single coachId for backwards compatibility
+<span class="nc" id="L67">            User coach = userRepository.findById(request.getCoachId())</span>
+<span class="nc" id="L68">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Coach not found: &quot; + request.getCoachId()));</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            if (Boolean.TRUE.equals(coach.getDeleted())) {</span>
+<span class="nc" id="L70">                throw new RuntimeException(&quot;Coach not found: &quot; + request.getCoachId());</span>
+            }
+<span class="nc bnc" id="L72" title="All 4 branches missed.">            if (coach.getRole() != User.Role.TRAINER &amp;&amp; coach.getRole() != User.Role.ADMIN) {</span>
+<span class="nc" id="L73">                throw new RuntimeException(&quot;User must be a TRAINER or ADMIN to be assigned as coach&quot;);</span>
+            }
+<span class="nc" id="L75">            coaches.add(coach);</span>
+        }
+
+<span class="fc" id="L78">        Category category = new Category();</span>
+<span class="fc" id="L79">        category.setName(request.getName());</span>
+<span class="fc" id="L80">        category.setSeason(request.getSeason());</span>
+<span class="fc" id="L81">        category.setCoachId(request.getCoachId()); // Keep for backwards compatibility</span>
+<span class="fc" id="L82">        category.setCoaches(coaches); // Set multiple coaches</span>
+
+<span class="fc" id="L84">        return categoryRepository.save(category);</span>
+    }
+
+    /**
+     * Update category
+     */
+    @Transactional
+    public Category updateCategory(Long id, CategoryUpdateRequest request) {
+<span class="fc" id="L92">        Category category = categoryRepository.findById(id)</span>
+<span class="fc" id="L93">                .orElseThrow(() -&gt; new RuntimeException(&quot;Category not found: &quot; + id));</span>
+
+        // Validate name uniqueness if changed
+<span class="pc bpc" id="L96" title="1 of 4 branches missed.">        if (request.getName() != null &amp;&amp; !request.getName().equals(category.getName())) {</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            if (categoryRepository.findByName(request.getName()).isPresent()) {</span>
+<span class="fc" id="L98">                throw new RuntimeException(&quot;Category with name &quot; + request.getName() + &quot; already exists&quot;);</span>
+            }
+<span class="fc" id="L100">            category.setName(request.getName());</span>
+        }
+
+        // Update coaches (if provided)
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (request.getCoachIds() != null) {</span>
+            // Clear all existing coaches first to ensure proper replacement
+<span class="fc" id="L106">            category.getCoaches().clear();</span>
+            // Also clear legacy coachId field to prevent stale data showing old coaches
+<span class="fc" id="L108">            category.setCoachId(null);</span>
+            
+<span class="fc" id="L110">            Set&lt;User&gt; coaches = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            for (Long coachId : request.getCoachIds()) {</span>
+<span class="fc" id="L112">                User coach = userRepository.findById(coachId)</span>
+<span class="pc" id="L113">                        .orElseThrow(() -&gt; new RuntimeException(&quot;Coach not found: &quot; + coachId));</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">                if (Boolean.TRUE.equals(coach.getDeleted())) {</span>
+<span class="nc" id="L115">                    throw new RuntimeException(&quot;Coach not found: &quot; + coachId);</span>
+                }
+<span class="pc bpc" id="L117" title="3 of 4 branches missed.">                if (coach.getRole() != User.Role.TRAINER &amp;&amp; coach.getRole() != User.Role.ADMIN) {</span>
+<span class="nc" id="L118">                    throw new RuntimeException(&quot;User must be a TRAINER or ADMIN to be assigned as coach&quot;);</span>
+                }
+<span class="fc" id="L120">                coaches.add(coach);</span>
+<span class="fc" id="L121">            }</span>
+            // Add new coaches - this will replace all existing coaches
+<span class="fc" id="L123">            category.getCoaches().addAll(coaches);</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        } else if (request.getCoachId() != null) {</span>
+            // Support legacy single coachId for backwards compatibility
+<span class="nc" id="L126">            User coach = userRepository.findById(request.getCoachId())</span>
+<span class="nc" id="L127">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Coach not found: &quot; + request.getCoachId()));</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">            if (Boolean.TRUE.equals(coach.getDeleted())) {</span>
+<span class="nc" id="L129">                throw new RuntimeException(&quot;Coach not found: &quot; + request.getCoachId());</span>
+            }
+<span class="nc bnc" id="L131" title="All 4 branches missed.">            if (coach.getRole() != User.Role.TRAINER &amp;&amp; coach.getRole() != User.Role.ADMIN) {</span>
+<span class="nc" id="L132">                throw new RuntimeException(&quot;User must be a TRAINER or ADMIN to be assigned as coach&quot;);</span>
+            }
+            // Clear many-to-many relationship and use legacy field
+<span class="nc" id="L135">            category.getCoaches().clear();</span>
+<span class="nc" id="L136">            category.setCoachId(request.getCoachId());</span>
+<span class="nc" id="L137">            category.getCoaches().add(coach);</span>
+        }
+        // If neither coachIds nor coachId provided, leave existing coaches unchanged
+
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        if (request.getSeason() != null) {</span>
+<span class="fc" id="L142">            category.setSeason(request.getSeason());</span>
+        }
+
+<span class="fc" id="L145">        return categoryRepository.save(category);</span>
+    }
+
+    /**
+     * Get category by ID (with coaches loaded)
+     */
+    public Optional&lt;Category&gt; findById(Long id) {
+        // First try to get from cache if available, otherwise fetch fresh
+<span class="fc" id="L153">        Optional&lt;Category&gt; category = categoryRepository.findById(id);</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (category.isPresent()) {</span>
+            // Force load coaches by accessing them
+            try {
+<span class="fc" id="L157">                category.get().getCoaches().size(); // Trigger lazy load</span>
+<span class="nc" id="L158">            } catch (Exception e) {</span>
+                // If lazy loading fails, try fetching with coaches
+<span class="nc" id="L160">                List&lt;Category&gt; categoriesWithCoaches = categoryRepository.findAllWithCoaches();</span>
+<span class="nc" id="L161">                return categoriesWithCoaches.stream()</span>
+<span class="nc" id="L162">                        .filter(c -&gt; c.getId().equals(id))</span>
+<span class="nc" id="L163">                        .findFirst();</span>
+<span class="fc" id="L164">            }</span>
+        }
+<span class="fc" id="L166">        return category;</span>
+    }
+
+    /**
+     * Get all categories
+     */
+    public List&lt;Category&gt; findAll() {
+<span class="fc" id="L173">        return categoryRepository.findAllWithCoaches();</span>
+    }
+
+    /**
+     * Get all categories without loading coaches (for summary/list payloads).
+     */
+    public List&lt;Category&gt; findAllForSummary() {
+<span class="nc" id="L180">        return categoryRepository.findAll();</span>
+    }
+    
+    /**
+     * Get category with coach names (for enriched responses)
+     */
+    public Map&lt;String, Object&gt; toCategoryMap(Category category) {
+<span class="nc" id="L187">        Map&lt;String, Object&gt; categoryMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L188">        categoryMap.put(&quot;id&quot;, category.getId());</span>
+<span class="nc" id="L189">        categoryMap.put(&quot;name&quot;, category.getName());</span>
+<span class="nc" id="L190">        categoryMap.put(&quot;season&quot;, category.getSeason());</span>
+<span class="nc" id="L191">        categoryMap.put(&quot;coachId&quot;, category.getCoachId()); // Keep for backwards compatibility</span>
+        
+        try {
+<span class="nc" id="L194">            Set&lt;User&gt; coaches = category.getCoaches();</span>
+<span class="nc bnc" id="L195" title="All 4 branches missed.">            if (coaches != null &amp;&amp; !coaches.isEmpty()) {</span>
+<span class="nc" id="L196">                List&lt;Map&lt;String, Object&gt;&gt; coachesList = coaches.stream()</span>
+<span class="nc" id="L197">                        .map(coach -&gt; {</span>
+<span class="nc" id="L198">                            Map&lt;String, Object&gt; coachMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L199">                            coachMap.put(&quot;id&quot;, coach.getId());</span>
+<span class="nc" id="L200">                            coachMap.put(&quot;name&quot;, com.basketball.app.util.UserNames.getDisplayName(coach));</span>
+<span class="nc" id="L201">                            coachMap.put(&quot;email&quot;, coach.getEmail());</span>
+<span class="nc" id="L202">                            coachMap.put(&quot;role&quot;, coach.getRole().name());</span>
+<span class="nc" id="L203">                            return coachMap;</span>
+                        })
+<span class="nc" id="L205">                        .collect(Collectors.toList());</span>
+<span class="nc" id="L206">                categoryMap.put(&quot;coachIds&quot;, coaches.stream()</span>
+<span class="nc" id="L207">                        .map(User::getId)</span>
+<span class="nc" id="L208">                        .collect(Collectors.toList()));</span>
+<span class="nc" id="L209">                categoryMap.put(&quot;coaches&quot;, coachesList);</span>
+                
+<span class="nc" id="L211">                List&lt;String&gt; coachNames = coaches.stream()</span>
+<span class="nc" id="L212">                        .map(User::getName)</span>
+<span class="nc" id="L213">                        .collect(Collectors.toList());</span>
+<span class="nc" id="L214">                categoryMap.put(&quot;coachNames&quot;, coachNames);</span>
+<span class="nc" id="L215">                categoryMap.put(&quot;coachName&quot;, String.join(&quot;, &quot;, coachNames)); // For backwards compatibility</span>
+<span class="nc" id="L216">            } else {</span>
+<span class="nc" id="L217">                categoryMap.put(&quot;coachIds&quot;, Collections.emptyList());</span>
+<span class="nc" id="L218">                categoryMap.put(&quot;coaches&quot;, Collections.emptyList());</span>
+<span class="nc" id="L219">                categoryMap.put(&quot;coachNames&quot;, Collections.emptyList());</span>
+                
+                // Fallback to old coachId if no coaches in set
+<span class="nc bnc" id="L222" title="All 2 branches missed.">                if (category.getCoachId() != null) {</span>
+<span class="nc" id="L223">                    Optional&lt;User&gt; coach = userRepository.findById(category.getCoachId());</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">                    if (coach.isPresent()) {</span>
+<span class="nc" id="L225">                        categoryMap.put(&quot;coachName&quot;, com.basketball.app.util.UserNames.getDisplayName(coach.get()));</span>
+                    } else {
+<span class="nc" id="L227">                        categoryMap.put(&quot;coachName&quot;, null);</span>
+                    }
+<span class="nc" id="L229">                } else {</span>
+<span class="nc" id="L230">                    categoryMap.put(&quot;coachName&quot;, null);</span>
+                }
+            }
+<span class="nc" id="L233">        } catch (Exception e) {</span>
+<span class="nc" id="L234">            categoryMap.put(&quot;coachIds&quot;, Collections.emptyList());</span>
+<span class="nc" id="L235">            categoryMap.put(&quot;coaches&quot;, Collections.emptyList());</span>
+<span class="nc" id="L236">            categoryMap.put(&quot;coachNames&quot;, Collections.emptyList());</span>
+<span class="nc" id="L237">            categoryMap.put(&quot;coachName&quot;, null);</span>
+<span class="nc" id="L238">        }</span>
+        
+<span class="nc" id="L240">        categoryMap.put(&quot;createdAt&quot;, category.getCreatedAt());</span>
+<span class="nc" id="L241">        categoryMap.put(&quot;updatedAt&quot;, category.getUpdatedAt());</span>
+<span class="nc" id="L242">        return categoryMap;</span>
+    }
+
+    /**
+     * Minimal map for list/dropdown: id, name, season. No coaches loaded.
+     */
+    public Map&lt;String, Object&gt; toCategorySummaryMap(Category category) {
+<span class="nc" id="L249">        Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L250">        map.put(&quot;id&quot;, category.getId());</span>
+<span class="nc" id="L251">        map.put(&quot;name&quot;, category.getName());</span>
+<span class="nc" id="L252">        map.put(&quot;season&quot;, category.getSeason());</span>
+<span class="nc" id="L253">        return map;</span>
+    }
+
+    /**
+     * Player count per category (only counts, no user data). For admin categories overview.
+     */
+    public Map&lt;Long, Long&gt; getPlayerCountByCategoryId() {
+<span class="nc" id="L260">        Map&lt;Long, Long&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">        for (PlayerCountByCategory p : userRepository.getPlayerCountPerCategory()) {</span>
+<span class="nc bnc" id="L262" title="All 4 branches missed.">            if (p.getCategoryId() != null &amp;&amp; p.getPlayerCount() != null) {</span>
+<span class="nc" id="L263">                map.put(p.getCategoryId(), p.getPlayerCount());</span>
+            }
+<span class="nc" id="L265">        }</span>
+<span class="nc" id="L266">        return map;</span>
+    }
+
+    /**
+     * Search categories by name or season
+     */
+    public List&lt;Category&gt; searchCategories(String search) {
+<span class="pc bpc" id="L273" title="1 of 4 branches missed.">        if (search == null || search.trim().isEmpty()) {</span>
+<span class="fc" id="L274">            return findAll();</span>
+        }
+<span class="fc" id="L276">        return categoryRepository.searchByNameOrSeason(search.trim());</span>
+    }
+
+    /**
+     * Filter categories by season
+     */
+    public List&lt;Category&gt; findBySeason(String season) {
+<span class="fc" id="L283">        return categoryRepository.findBySeason(season);</span>
+    }
+
+    /**
+     * Filter categories by coach (supports many-to-many relationship)
+     */
+    public List&lt;Category&gt; findByCoach(Long coachId) {
+<span class="nc" id="L290">        List&lt;Category&gt; allCategories = categoryRepository.findAllWithCoaches();</span>
+        
+<span class="nc" id="L292">        List&lt;Category&gt; categories = allCategories.stream()</span>
+<span class="nc" id="L293">                .filter(category -&gt; {</span>
+<span class="nc bnc" id="L294" title="All 2 branches missed.">                    boolean hasCoach = category.getCoaches() != null &amp;&amp; </span>
+<span class="nc" id="L295">                            category.getCoaches().stream()</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">                                    .anyMatch(coach -&gt; coach.getId().equals(coachId));</span>
+<span class="nc bnc" id="L297" title="All 2 branches missed.">                    boolean isLegacyCoach = category.getCoachId() != null &amp;&amp; </span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                            category.getCoachId().equals(coachId);</span>
+<span class="nc bnc" id="L299" title="All 4 branches missed.">                    return hasCoach || isLegacyCoach;</span>
+                })
+<span class="nc" id="L301">                .collect(Collectors.toList());</span>
+        
+<span class="nc" id="L303">        return categories;</span>
+    }
+
+    /**
+     * Assign coach to category (legacy method - use updateCategory with coachIds instead)
+     */
+    @Transactional
+    public Category assignCoach(Long categoryId, Long coachId) {
+<span class="nc" id="L311">        Category category = categoryRepository.findById(categoryId)</span>
+<span class="nc" id="L312">                .orElseThrow(() -&gt; new RuntimeException(&quot;Category not found: &quot; + categoryId));</span>
+
+<span class="nc" id="L314">        User coach = userRepository.findById(coachId)</span>
+<span class="nc" id="L315">                .orElseThrow(() -&gt; new RuntimeException(&quot;Coach not found: &quot; + coachId));</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        if (Boolean.TRUE.equals(coach.getDeleted())) {</span>
+<span class="nc" id="L317">            throw new RuntimeException(&quot;Coach not found: &quot; + coachId);</span>
+        }
+<span class="nc bnc" id="L319" title="All 4 branches missed.">        if (coach.getRole() != User.Role.TRAINER &amp;&amp; coach.getRole() != User.Role.ADMIN) {</span>
+<span class="nc" id="L320">            throw new RuntimeException(&quot;User must be a TRAINER or ADMIN to be assigned as coach&quot;);</span>
+        }
+
+<span class="nc" id="L323">        category.getCoaches().add(coach);</span>
+<span class="nc" id="L324">        category.setCoachId(coachId);</span>
+<span class="nc" id="L325">        return categoryRepository.save(category);</span>
+    }
+
+    /**
+     * Remove coach from category
+     */
+    @Transactional
+    public Category removeCoach(Long categoryId) {
+<span class="nc" id="L333">        Category category = categoryRepository.findById(categoryId)</span>
+<span class="nc" id="L334">                .orElseThrow(() -&gt; new RuntimeException(&quot;Category not found: &quot; + categoryId));</span>
+
+<span class="nc" id="L336">        category.getCoaches().clear();</span>
+<span class="nc" id="L337">        category.setCoachId(null);</span>
+<span class="nc" id="L338">        return categoryRepository.save(category);</span>
+    }
+
+    /**
+     * Remove a single coach from a category.
+     */
+    @Transactional
+    public void removeCoachFromCategory(Long categoryId, Long coachId) {
+<span class="nc" id="L346">        Category category = categoryRepository.findById(categoryId).orElse(null);</span>
+<span class="nc bnc" id="L347" title="All 2 branches missed.">        if (category == null) return;</span>
+<span class="nc bnc" id="L348" title="All 2 branches missed.">        if (category.getCoaches() != null) {</span>
+<span class="nc" id="L349">            category.getCoaches().removeIf(c -&gt; c.getId().equals(coachId));</span>
+<span class="nc bnc" id="L350" title="All 2 branches missed.">            if (coachId.equals(category.getCoachId())) {</span>
+<span class="nc" id="L351">                category.setCoachId(null);</span>
+            }
+<span class="nc" id="L353">            categoryRepository.save(category);</span>
+        }
+<span class="nc" id="L355">    }</span>
+
+    /**
+     * Delete category and all data tied to it (events, stats, attendance).
+     * Users are not deleted; they are only unassigned from this category.
+     */
+    @Transactional
+    public void deleteCategory(Long id) {
+<span class="fc" id="L363">        Category category = categoryRepository.findById(id)</span>
+<span class="fc" id="L364">                .orElseThrow(() -&gt; new RuntimeException(&quot;Category not found: &quot; + id));</span>
+
+<span class="fc" id="L366">        userRepository.deleteUserCategoryLinksByCategoryId(id);</span>
+<span class="fc" id="L367">        userRepository.clearLegacyCategoryIdByCategoryId(id);</span>
+
+<span class="fc" id="L369">        category.getCoaches().clear();</span>
+<span class="fc" id="L370">        category.setCoachId(null);</span>
+<span class="fc" id="L371">        categoryRepository.save(category);</span>
+
+<span class="fc" id="L373">        List&lt;Event&gt; events = eventRepository.findByCategoryId(id);</span>
+<span class="fc" id="L374">        List&lt;Long&gt; eventIds = events.stream().map(Event::getId).toList();</span>
+<span class="pc bpc" id="L375" title="1 of 2 branches missed.">        if (!eventIds.isEmpty()) {</span>
+<span class="nc" id="L376">            statisticsRepository.deleteAll(statisticsRepository.findByEventIdIn(eventIds));</span>
+<span class="nc" id="L377">            attendanceRepository.deleteAll(attendanceRepository.findByEventIdIn(eventIds));</span>
+        }
+<span class="fc" id="L379">        eventRepository.deleteAll(events);</span>
+
+<span class="fc" id="L381">        categoryRepository.delete(category);</span>
+<span class="fc" id="L382">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

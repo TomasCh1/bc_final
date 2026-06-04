@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StatisticsService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.service</a> &gt; <span class="el_source">StatisticsService.java</span></div><h1>StatisticsService.java</h1><pre class="source lang-java linenums">package com.basketball.app.service;
+
+import com.basketball.app.dto.StatisticsCreateRequest;
+import com.basketball.app.dto.StatisticsUpdateRequest;
+import com.basketball.app.model.Statistics;
+import com.basketball.app.model.Event;
+import com.basketball.app.model.User;
+import com.basketball.app.repository.StatisticsRepository;
+import com.basketball.app.repository.EventRepository;
+import com.basketball.app.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class StatisticsService {
+
+    private final StatisticsRepository statisticsRepository;
+    private final EventRepository eventRepository;
+    private final UserRepository userRepository;
+
+    public StatisticsService(StatisticsRepository statisticsRepository,
+                           EventRepository eventRepository,
+<span class="fc" id="L31">                           UserRepository userRepository) {</span>
+<span class="fc" id="L32">        this.statisticsRepository = statisticsRepository;</span>
+<span class="fc" id="L33">        this.eventRepository = eventRepository;</span>
+<span class="fc" id="L34">        this.userRepository = userRepository;</span>
+<span class="fc" id="L35">    }</span>
+
+    /** Apply map keys (MIN, 2PÚ, PTS, etc.) to entity columns and set statIndex from formula. */
+    private void applyValuesToStatistics(Statistics stat, Map&lt;String, Object&gt; values) {
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (values == null) return;</span>
+<span class="fc" id="L40">        stat.setMin(getDoubleValue(values, &quot;MIN&quot;, null));</span>
+<span class="fc" id="L41">        stat.setTwoPMade(getIntValue(values, &quot;2PÚ&quot;));</span>
+<span class="fc" id="L42">        stat.setTwoPAttempts(getIntValue(values, &quot;2PC&quot;));</span>
+<span class="fc" id="L43">        stat.setThreePMade(getIntValue(values, &quot;3PÚ&quot;));</span>
+<span class="fc" id="L44">        stat.setThreePAttempts(getIntValue(values, &quot;3PC&quot;));</span>
+<span class="fc" id="L45">        stat.setFgMade(getIntValue(values, &quot;FGÚ&quot;));</span>
+<span class="fc" id="L46">        stat.setFgAttempts(getIntValue(values, &quot;FGC&quot;));</span>
+<span class="fc" id="L47">        stat.setFtMade(getIntValue(values, &quot;FTÚ&quot;));</span>
+<span class="fc" id="L48">        stat.setFtAttempts(getIntValue(values, &quot;FTC&quot;));</span>
+<span class="fc" id="L49">        stat.setPts(getIntValue(values, &quot;PTS&quot;));</span>
+<span class="fc" id="L50">        stat.setFoulsPlus(getIntValue(values, &quot;F+&quot;));</span>
+<span class="fc" id="L51">        stat.setFoulsMinus(getIntValue(values, &quot;F-&quot;));</span>
+<span class="fc" id="L52">        stat.setOffReb(getIntValue(values, &quot;OFF&quot;));</span>
+<span class="fc" id="L53">        stat.setDefReb(getIntValue(values, &quot;DEF&quot;));</span>
+<span class="fc" id="L54">        stat.setStl(getIntValue(values, &quot;STL&quot;));</span>
+<span class="fc" id="L55">        stat.setAst(getIntValue(values, &quot;AST&quot;));</span>
+<span class="fc" id="L56">        stat.setBlk(getIntValue(values, &quot;BLK&quot;));</span>
+<span class="fc" id="L57">        stat.setTurnovers(getIntValue(values, &quot;TO&quot;));</span>
+<span class="pc bpc" id="L58" title="1 of 4 branches missed.">        Double index = values.containsKey(&quot;INDEX&quot;) &amp;&amp; values.get(&quot;INDEX&quot;) != null</span>
+<span class="fc" id="L59">            ? getDoubleValue(values, &quot;INDEX&quot;, 0.0) : calculateIndex(values);</span>
+<span class="fc" id="L60">        stat.setStatIndex(index);</span>
+<span class="fc" id="L61">    }</span>
+
+    private static Integer getIntValue(Map&lt;String, Object&gt; values, String key) {
+<span class="fc" id="L64">        Object v = values.get(key);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (v == null) return null;</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (v instanceof Number) return ((Number) v).intValue();</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (v instanceof String) {</span>
+<span class="nc" id="L68">            try { return Integer.parseInt((String) v); } catch (NumberFormatException e) { return null; }</span>
+        }
+<span class="nc" id="L70">        return null;</span>
+    }
+
+    /**
+     * Calculate INDEX formula:
+     * (PTS + OFF + DEF + AST + STL + BLK) - ((FGC - FGÚ) + (FTC - FTÚ) + TO)
+     */
+    public Double calculateIndex(Map&lt;String, Object&gt; values) {
+        try {
+            // Get values with defaults
+<span class="fc" id="L80">            double pts = getDoubleValue(values, &quot;PTS&quot;, 0.0);</span>
+<span class="fc" id="L81">            double off = getDoubleValue(values, &quot;OFF&quot;, 0.0);</span>
+<span class="fc" id="L82">            double def = getDoubleValue(values, &quot;DEF&quot;, 0.0);</span>
+<span class="fc" id="L83">            double ast = getDoubleValue(values, &quot;AST&quot;, 0.0);</span>
+<span class="fc" id="L84">            double stl = getDoubleValue(values, &quot;STL&quot;, 0.0);</span>
+<span class="fc" id="L85">            double blk = getDoubleValue(values, &quot;BLK&quot;, 0.0);</span>
+<span class="fc" id="L86">            double fgc = getDoubleValue(values, &quot;FGC&quot;, 0.0);</span>
+<span class="fc" id="L87">            double fgu = getDoubleValue(values, &quot;FGÚ&quot;, 0.0);</span>
+<span class="fc" id="L88">            double ftc = getDoubleValue(values, &quot;FTC&quot;, 0.0);</span>
+<span class="fc" id="L89">            double ftu = getDoubleValue(values, &quot;FTÚ&quot;, 0.0);</span>
+<span class="fc" id="L90">            double to = getDoubleValue(values, &quot;TO&quot;, 0.0);</span>
+
+            // Calculate INDEX
+<span class="fc" id="L93">            double index = (pts + off + def + ast + stl + blk) - ((fgc - fgu) + (ftc - ftu) + to);</span>
+<span class="fc" id="L94">            return Math.round(index * 100.0) / 100.0; // Round to 2 decimal places</span>
+<span class="nc" id="L95">        } catch (Exception e) {</span>
+<span class="nc" id="L96">            throw new RuntimeException(&quot;Error calculating INDEX: &quot; + e.getMessage(), e);</span>
+        }
+    }
+
+    private Double getDoubleValue(Map&lt;String, Object&gt; values, String key, Double defaultValue) {
+<span class="fc" id="L101">        Object value = values.get(key);</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L103">            return defaultValue;</span>
+        }
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (value instanceof Number) {</span>
+<span class="fc" id="L106">            return ((Number) value).doubleValue();</span>
+        }
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (value instanceof String) {</span>
+            try {
+<span class="fc" id="L110">                return Double.parseDouble((String) value);</span>
+<span class="fc" id="L111">            } catch (NumberFormatException e) {</span>
+<span class="fc" id="L112">                return defaultValue;</span>
+            }
+        }
+<span class="nc" id="L115">        return defaultValue;</span>
+    }
+
+    /**
+     * Create statistics record
+     */
+    @Transactional
+    public Statistics createStatistics(StatisticsCreateRequest request) {
+        // Validate event exists
+<span class="fc" id="L124">        eventRepository.findById(request.getEventId())</span>
+<span class="fc" id="L125">                .orElseThrow(() -&gt; new RuntimeException(&quot;Event not found: &quot; + request.getEventId()));</span>
+
+        // Validate player exists and is not deleted
+<span class="fc" id="L128">        var player = userRepository.findById(request.getPlayerId())</span>
+<span class="pc" id="L129">                .orElseThrow(() -&gt; new RuntimeException(&quot;Player not found: &quot; + request.getPlayerId()));</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        if (Boolean.TRUE.equals(player.getDeleted())) {</span>
+<span class="fc" id="L131">            throw new RuntimeException(&quot;Player not found: &quot; + request.getPlayerId());</span>
+        }
+
+        // Opponent is validated by @NotBlank on request
+
+<span class="fc" id="L136">        Statistics statistics = new Statistics();</span>
+<span class="fc" id="L137">        statistics.setEventId(request.getEventId());</span>
+<span class="fc" id="L138">        statistics.setPlayerId(request.getPlayerId());</span>
+<span class="fc" id="L139">        statistics.setStatType(Statistics.StatType.GAME);</span>
+<span class="fc" id="L140">        statistics.setOpponent(request.getOpponent());</span>
+<span class="fc" id="L141">        statistics.setTimestamp(LocalDateTime.now());</span>
+<span class="fc" id="L142">        applyValuesToStatistics(statistics, request.getValues());</span>
+
+<span class="fc" id="L144">        return statisticsRepository.save(statistics);</span>
+    }
+
+    /**
+     * Update statistics record
+     */
+    @Transactional
+    public Statistics updateStatistics(Long id, StatisticsUpdateRequest request) {
+<span class="fc" id="L152">        Statistics existing = statisticsRepository.findById(id)</span>
+<span class="fc" id="L153">                .orElseThrow(() -&gt; new RuntimeException(&quot;Statistics not found: &quot; + id));</span>
+
+<span class="pc bpc" id="L155" title="2 of 4 branches missed.">        if (request.getOpponent() != null &amp;&amp; !request.getOpponent().isBlank()) {</span>
+<span class="fc" id="L156">            existing.setOpponent(request.getOpponent());</span>
+        }
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">        if (request.getValues() != null) {</span>
+<span class="fc" id="L159">            applyValuesToStatistics(existing, request.getValues());</span>
+        }
+
+<span class="fc" id="L162">        return statisticsRepository.save(existing);</span>
+    }
+
+    /**
+     * Get statistics by ID
+     */
+    public Optional&lt;Statistics&gt; findById(Long id) {
+<span class="nc" id="L169">        return statisticsRepository.findById(id);</span>
+    }
+
+    /**
+     * Get all statistics
+     */
+    public List&lt;Statistics&gt; findAll() {
+<span class="nc" id="L176">        return statisticsRepository.findAll();</span>
+    }
+
+    /**
+     * Get statistics by event
+     */
+    public List&lt;Statistics&gt; findByEvent(Long eventId) {
+<span class="nc" id="L183">        return statisticsRepository.findByEventId(eventId);</span>
+    }
+
+    /**
+     * Get statistics by player
+     */
+    public List&lt;Statistics&gt; findByPlayer(Long playerId) {
+<span class="nc" id="L190">        return statisticsRepository.findByPlayerId(playerId);</span>
+    }
+
+    /**
+     * Get statistics by stat type
+     */
+    public List&lt;Statistics&gt; findByStatType(Statistics.StatType statType) {
+<span class="nc" id="L197">        return statisticsRepository.findByStatType(statType);</span>
+    }
+
+    /**
+     * Get statistics with filters
+     */
+    public List&lt;Statistics&gt; findWithFilters(Long playerId, Long eventId, Long categoryId,
+                                          Statistics.StatType statType, LocalDate startDate,
+                                          LocalDate endDate, String opponent) {
+        List&lt;Statistics&gt; results;
+
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        if (playerId != null) {</span>
+<span class="fc" id="L209">            results = statisticsRepository.findByPlayerId(playerId);</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        } else if (eventId != null) {</span>
+<span class="fc" id="L211">            results = statisticsRepository.findByEventId(eventId);</span>
+<span class="pc bpc" id="L212" title="1 of 6 branches missed.">        } else if (categoryId != null &amp;&amp; startDate == null &amp;&amp; endDate == null) {</span>
+<span class="fc" id="L213">            results = statisticsRepository.findByCategoryId(categoryId);</span>
+        } else {
+<span class="fc" id="L215">            results = statisticsRepository.findAll();</span>
+        }
+
+        // Apply additional filters
+<span class="fc bfc" id="L219" title="All 2 branches covered.">        if (statType != null) {</span>
+<span class="fc" id="L220">            results = results.stream()</span>
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">                    .filter(s -&gt; s.getStatType() == statType)</span>
+<span class="fc" id="L222">                    .collect(Collectors.toList());</span>
+        }
+
+<span class="pc bpc" id="L225" title="1 of 4 branches missed.">        if (opponent != null &amp;&amp; !opponent.trim().isEmpty()) {</span>
+<span class="fc" id="L226">            results = results.stream()</span>
+<span class="pc bpc" id="L227" title="1 of 4 branches missed.">                    .filter(s -&gt; s.getOpponent() != null &amp;&amp; s.getOpponent().equalsIgnoreCase(opponent))</span>
+<span class="fc" id="L228">                    .collect(Collectors.toList());</span>
+        }
+
+<span class="pc bpc" id="L231" title="1 of 4 branches missed.">        if (startDate != null || endDate != null) {</span>
+<span class="fc" id="L232">            List&lt;Long&gt; eventIds = eventRepository.findAll().stream()</span>
+<span class="fc" id="L233">                    .filter(e -&gt; {</span>
+<span class="pc bpc" id="L234" title="3 of 6 branches missed.">                        if (startDate != null &amp;&amp; e.getDate() != null &amp;&amp; e.getDate().isBefore(startDate)) {</span>
+<span class="nc" id="L235">                            return false;</span>
+                        }
+<span class="pc bpc" id="L237" title="2 of 6 branches missed.">                        if (endDate != null &amp;&amp; e.getDate() != null &amp;&amp; e.getDate().isAfter(endDate)) {</span>
+<span class="fc" id="L238">                            return false;</span>
+                        }
+<span class="pc bpc" id="L240" title="3 of 6 branches missed.">                        if (categoryId != null &amp;&amp; (e.getCategoryId() == null || !e.getCategoryId().equals(categoryId))) {</span>
+<span class="nc" id="L241">                            return false;</span>
+                        }
+<span class="fc" id="L243">                        return true;</span>
+                    })
+<span class="fc" id="L245">                    .map(e -&gt; e.getId())</span>
+<span class="fc" id="L246">                    .collect(Collectors.toList());</span>
+
+<span class="fc" id="L248">            results = results.stream()</span>
+<span class="fc" id="L249">                    .filter(s -&gt; eventIds.contains(s.getEventId()))</span>
+<span class="fc" id="L250">                    .collect(Collectors.toList());</span>
+        }
+
+<span class="fc" id="L253">        return results;</span>
+    }
+
+    /**
+     * Get statistics with filters and return as maps with event/player.
+     */
+    public List&lt;Map&lt;String, Object&gt;&gt; findWithFiltersAsMaps(Long playerId, Long eventId, Long categoryId,
+                                                           Statistics.StatType statType, LocalDate startDate,
+                                                           LocalDate endDate, String opponent) {
+<span class="fc" id="L262">        List&lt;Statistics&gt; list = findWithFilters(playerId, eventId, categoryId, statType, startDate, endDate, opponent);</span>
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">        if (list.isEmpty()) {</span>
+<span class="nc" id="L264">            return Collections.emptyList();</span>
+        }
+<span class="fc" id="L266">        Set&lt;Long&gt; eventIds = list.stream().map(Statistics::getEventId).filter(Objects::nonNull).collect(Collectors.toSet());</span>
+<span class="fc" id="L267">        Set&lt;Long&gt; playerIds = list.stream().map(Statistics::getPlayerId).filter(Objects::nonNull).collect(Collectors.toSet());</span>
+<span class="fc" id="L268">        Map&lt;Long, Event&gt; eventsById = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L269">        Map&lt;Long, User&gt; usersById = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L270" title="1 of 2 branches missed.">        if (!eventIds.isEmpty()) {</span>
+<span class="fc" id="L271">            eventRepository.findAllById(eventIds).forEach(e -&gt; eventsById.put(e.getId(), e));</span>
+        }
+<span class="pc bpc" id="L273" title="1 of 2 branches missed.">        if (!playerIds.isEmpty()) {</span>
+<span class="fc" id="L274">            userRepository.findAllById(playerIds).forEach(u -&gt; usersById.put(u.getId(), u));</span>
+        }
+<span class="fc" id="L276">        return list.stream()</span>
+<span class="fc" id="L277">                .map(s -&gt; toStatisticsMap(s, eventsById, usersById))</span>
+<span class="fc" id="L278">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Get statistics for the most recent N games.
+     */
+    public Map&lt;String, Object&gt; findRecentGameStatistics(Long categoryId, int limit, int offset) {
+<span class="fc" id="L285">        Pageable pageable = PageRequest.of(offset / limit, limit);</span>
+<span class="fc" id="L286">        Page&lt;Long&gt; eventIdsPage = eventRepository.findRecentMatchEventIdsWithGameStats(categoryId, pageable);</span>
+<span class="fc" id="L287">        List&lt;Long&gt; eventIds = eventIdsPage.getContent();</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">        if (eventIds.isEmpty()) {</span>
+<span class="fc" id="L289">            Map&lt;String, Object&gt; out = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L290">            out.put(&quot;statistics&quot;, Collections.emptyList());</span>
+<span class="fc" id="L291">            out.put(&quot;totalGames&quot;, 0L);</span>
+<span class="fc" id="L292">            out.put(&quot;hasMore&quot;, false);</span>
+<span class="fc" id="L293">            return out;</span>
+        }
+<span class="fc" id="L295">        List&lt;Statistics&gt; statistics = statisticsRepository.findByEventIdIn(eventIds);</span>
+<span class="fc" id="L296">        Map&lt;Long, Integer&gt; order = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L297" title="All 2 branches covered.">        for (int i = 0; i &lt; eventIds.size(); i++) {</span>
+<span class="fc" id="L298">            order.put(eventIds.get(i), i);</span>
+        }
+<span class="fc" id="L300">        statistics.sort(Comparator.comparing(s -&gt; order.getOrDefault(s.getEventId(), 0)));</span>
+<span class="fc" id="L301">        Set&lt;Long&gt; eventIdsSet = new HashSet&lt;&gt;(eventIds);</span>
+<span class="fc" id="L302">        Set&lt;Long&gt; playerIds = statistics.stream().map(Statistics::getPlayerId).filter(Objects::nonNull).collect(Collectors.toSet());</span>
+<span class="fc" id="L303">        Map&lt;Long, Event&gt; eventsById = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L304">        Map&lt;Long, User&gt; usersById = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L305" title="1 of 2 branches missed.">        if (!eventIdsSet.isEmpty()) {</span>
+<span class="fc" id="L306">            eventRepository.findAllById(eventIdsSet).forEach(e -&gt; eventsById.put(e.getId(), e));</span>
+        }
+<span class="pc bpc" id="L308" title="1 of 2 branches missed.">        if (!playerIds.isEmpty()) {</span>
+<span class="pc" id="L309">            userRepository.findAllById(playerIds).forEach(u -&gt; usersById.put(u.getId(), u));</span>
+        }
+<span class="fc" id="L311">        List&lt;Map&lt;String, Object&gt;&gt; maps = statistics.stream()</span>
+<span class="fc" id="L312">                .map(s -&gt; toStatisticsMap(s, eventsById, usersById))</span>
+<span class="fc" id="L313">                .collect(Collectors.toList());</span>
+<span class="fc" id="L314">        Map&lt;String, Object&gt; out = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L315">        out.put(&quot;statistics&quot;, maps);</span>
+<span class="fc" id="L316">        out.put(&quot;totalGames&quot;, eventIdsPage.getTotalElements());</span>
+<span class="pc bpc" id="L317" title="1 of 2 branches missed.">        out.put(&quot;hasMore&quot;, (offset + limit) &lt; eventIdsPage.getTotalElements());</span>
+<span class="fc" id="L318">        return out;</span>
+    }
+
+    /**
+     * Delete statistics
+     */
+    @Transactional
+    public void deleteStatistics(Long id) {
+<span class="fc bfc" id="L326" title="All 2 branches covered.">        if (!statisticsRepository.existsById(id)) {</span>
+<span class="fc" id="L327">            throw new RuntimeException(&quot;Statistics not found: &quot; + id);</span>
+        }
+<span class="fc" id="L329">        statisticsRepository.deleteById(id);</span>
+<span class="fc" id="L330">    }</span>
+
+    private static Map&lt;String, Object&gt; buildValues(Statistics s) {
+<span class="fc" id="L333">        Map&lt;String, Object&gt; m = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L334" title="1 of 2 branches missed.">        if (s.getMin() != null) m.put(&quot;MIN&quot;, s.getMin());</span>
+<span class="pc bpc" id="L335" title="1 of 2 branches missed.">        if (s.getTwoPMade() != null) m.put(&quot;2PÚ&quot;, s.getTwoPMade());</span>
+<span class="pc bpc" id="L336" title="1 of 2 branches missed.">        if (s.getTwoPAttempts() != null) m.put(&quot;2PC&quot;, s.getTwoPAttempts());</span>
+<span class="pc bpc" id="L337" title="1 of 2 branches missed.">        if (s.getThreePMade() != null) m.put(&quot;3PÚ&quot;, s.getThreePMade());</span>
+<span class="pc bpc" id="L338" title="1 of 2 branches missed.">        if (s.getThreePAttempts() != null) m.put(&quot;3PC&quot;, s.getThreePAttempts());</span>
+<span class="pc bpc" id="L339" title="1 of 2 branches missed.">        if (s.getFgMade() != null) m.put(&quot;FGÚ&quot;, s.getFgMade());</span>
+<span class="pc bpc" id="L340" title="1 of 2 branches missed.">        if (s.getFgAttempts() != null) m.put(&quot;FGC&quot;, s.getFgAttempts());</span>
+<span class="pc bpc" id="L341" title="1 of 2 branches missed.">        if (s.getFtMade() != null) m.put(&quot;FTÚ&quot;, s.getFtMade());</span>
+<span class="pc bpc" id="L342" title="1 of 2 branches missed.">        if (s.getFtAttempts() != null) m.put(&quot;FTC&quot;, s.getFtAttempts());</span>
+<span class="fc bfc" id="L343" title="All 2 branches covered.">        if (s.getPts() != null) m.put(&quot;PTS&quot;, s.getPts());</span>
+<span class="pc bpc" id="L344" title="1 of 2 branches missed.">        if (s.getFoulsPlus() != null) m.put(&quot;F+&quot;, s.getFoulsPlus());</span>
+<span class="pc bpc" id="L345" title="1 of 2 branches missed.">        if (s.getFoulsMinus() != null) m.put(&quot;F-&quot;, s.getFoulsMinus());</span>
+<span class="pc bpc" id="L346" title="1 of 2 branches missed.">        if (s.getOffReb() != null) m.put(&quot;OFF&quot;, s.getOffReb());</span>
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">        if (s.getDefReb() != null) m.put(&quot;DEF&quot;, s.getDefReb());</span>
+<span class="pc bpc" id="L348" title="1 of 2 branches missed.">        if (s.getStl() != null) m.put(&quot;STL&quot;, s.getStl());</span>
+<span class="pc bpc" id="L349" title="1 of 2 branches missed.">        if (s.getAst() != null) m.put(&quot;AST&quot;, s.getAst());</span>
+<span class="pc bpc" id="L350" title="1 of 2 branches missed.">        if (s.getBlk() != null) m.put(&quot;BLK&quot;, s.getBlk());</span>
+<span class="pc bpc" id="L351" title="1 of 2 branches missed.">        if (s.getTurnovers() != null) m.put(&quot;TO&quot;, s.getTurnovers());</span>
+<span class="pc bpc" id="L352" title="1 of 2 branches missed.">        if (s.getStatIndex() != null) m.put(&quot;INDEX&quot;, s.getStatIndex());</span>
+<span class="fc" id="L353">        return m;</span>
+    }
+
+    /**
+     * Convert Statistics to map with enriched data
+     */
+    public Map&lt;String, Object&gt; toStatisticsMap(Statistics statistics) {
+<span class="fc" id="L360">        return toStatisticsMap(statistics, null, null);</span>
+    }
+
+    /**
+     * Convert Statistics to map with enriched data
+     */
+    public Map&lt;String, Object&gt; toStatisticsMap(Statistics statistics,
+                                                Map&lt;Long, Event&gt; eventsById,
+                                                Map&lt;Long, User&gt; usersById) {
+<span class="fc" id="L369">        Map&lt;String, Object&gt; statsMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L370">        statsMap.put(&quot;id&quot;, statistics.getId());</span>
+<span class="fc" id="L371">        statsMap.put(&quot;eventId&quot;, statistics.getEventId());</span>
+<span class="fc" id="L372">        statsMap.put(&quot;playerId&quot;, statistics.getPlayerId());</span>
+<span class="fc" id="L373">        statsMap.put(&quot;statType&quot;, statistics.getStatType());</span>
+<span class="fc" id="L374">        statsMap.put(&quot;opponent&quot;, statistics.getOpponent());</span>
+<span class="fc" id="L375">        statsMap.put(&quot;timestamp&quot;, statistics.getTimestamp());</span>
+<span class="fc" id="L376">        statsMap.put(&quot;values&quot;, buildValues(statistics));</span>
+
+<span class="pc bpc" id="L378" title="1 of 4 branches missed.">        User player = (usersById != null &amp;&amp; statistics.getPlayerId() != null)</span>
+<span class="fc" id="L379">                ? usersById.get(statistics.getPlayerId())</span>
+<span class="fc" id="L380">                : null;</span>
+<span class="pc bpc" id="L381" title="1 of 4 branches missed.">        if (player == null &amp;&amp; statistics.getPlayerId() != null) {</span>
+<span class="fc" id="L382">            player = userRepository.findById(statistics.getPlayerId()).orElse(null);</span>
+        }
+<span class="fc bfc" id="L384" title="All 2 branches covered.">        if (player != null) {</span>
+<span class="fc" id="L385">            statsMap.put(&quot;playerName&quot;, com.basketball.app.util.UserNames.getDisplayName(player));</span>
+<span class="fc" id="L386">            statsMap.put(&quot;playerEmail&quot;, player.getEmail());</span>
+        }
+
+<span class="pc bpc" id="L389" title="1 of 4 branches missed.">        Event event = (eventsById != null &amp;&amp; statistics.getEventId() != null)</span>
+<span class="fc" id="L390">                ? eventsById.get(statistics.getEventId())</span>
+<span class="fc" id="L391">                : null;</span>
+<span class="pc bpc" id="L392" title="1 of 4 branches missed.">        if (event == null &amp;&amp; statistics.getEventId() != null) {</span>
+<span class="fc" id="L393">            event = eventRepository.findById(statistics.getEventId()).orElse(null);</span>
+        }
+<span class="pc bpc" id="L395" title="1 of 2 branches missed.">        if (event != null) {</span>
+<span class="fc" id="L396">            statsMap.put(&quot;eventName&quot;, event.getName());</span>
+<span class="fc" id="L397">            statsMap.put(&quot;eventType&quot;, event.getType());</span>
+<span class="fc" id="L398">            statsMap.put(&quot;eventDate&quot;, event.getDate());</span>
+<span class="fc" id="L399">            statsMap.put(&quot;eventTime&quot;, event.getTime());</span>
+<span class="fc" id="L400">            statsMap.put(&quot;location&quot;, event.getLocation());</span>
+<span class="fc" id="L401">            statsMap.put(&quot;eventOurScore&quot;, event.getOurScore());</span>
+<span class="fc" id="L402">            statsMap.put(&quot;eventOpponentScore&quot;, event.getOpponentScore());</span>
+<span class="fc" id="L403">            statsMap.put(&quot;eventMatchWon&quot;, event.getMatchWon());</span>
+<span class="fc" id="L404">            statsMap.put(&quot;eventCategoryId&quot;, event.getCategoryId());</span>
+        }
+
+<span class="fc" id="L407">        return statsMap;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

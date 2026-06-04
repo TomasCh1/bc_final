@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Individuálne štatistiky - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/statistics-table.css">
+    <style>
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: #2C2C2C;
+        }
+
+        .dashboard-header {
+            background: #FFFFFF;
+            border-bottom: 1px solid #E0E0E0;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-small { width: 40px; height: 40px; flex-shrink: 0; }
+        .logo-small img { width: 100%; height: 100%; object-fit: contain; }
+
+        .team-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #6B2C91;
+        }
+
+        .header-nav { display: flex; gap: 0.5rem; margin-left: 2rem; flex-wrap: wrap; }
+
+        .nav-pill {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #2C2C2C;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .nav-pill.active { background: #E8D5FF; color: #6B2C91; font-weight: 600; }
+        .nav-pill:hover { background: #F5F0FF; }
+
+        .header-right { display: flex; align-items: center; gap: 1rem; }
+
+        .user-info {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            cursor: pointer;
+        }
+        .user-info-header { display: flex; align-items: center; gap: 0.5rem; }
+        .user-name { font-weight: 600; color: #6B2C91; font-size: 0.95rem; }
+        .user-role { font-size: 0.85rem; color: #6B2C91; }
+        .user-dropdown-arrow { font-size: 0.75rem; color: #2C2C2C; transition: transform 0.3s ease; }
+        .user-info.open .user-dropdown-arrow { transform: rotate(180deg); }
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 150px;
+            display: none;
+            z-index: 1000;
+        }
+        .user-info.open .user-dropdown { display: block; }
+        .user-dropdown-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            color: #2C2C2C;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+        .user-dropdown-item:hover { background-color: #F8F9FA; }
+
+        .dashboard-content {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .matches-calendar {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 2px 3px 8px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .section-icon { width: 32px; height: 32px; object-fit: contain; }
+        .section-title { font-size: 1.25rem; font-weight: 700; color: #2C2C2C; }
+
+        .match-pick-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .match-pick-table th,
+        .match-pick-table td {
+            padding: 0.65rem 0.75rem;
+            border-bottom: 1px solid #E0E0E0;
+            text-align: left;
+        }
+        .ref-input {
+            margin-top: 1rem;
+            display: flex;
+        }
+        .ref-input table {
+            width: 45%;
+            border-collapse: collapse;
+        }
+        .ref-input table td {
+            padding: 0.65rem 0.75rem;
+            border-bottom: 1px solid #E0E0E0;
+        }
+        .ref-input table th {
+            padding: 0.65rem 0.75rem;
+            border-bottom: 1px solid #a49d9d;
+        }
+        .ref-input-name {
+            width: 100%;
+            padding: 0.65rem 0.75rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+        }
+        .ref-input-grade {
+            width: 100%;
+            padding: 0.65rem 0.75rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+        }
+        .ref-input-add {
+            font-size: 1.5rem !important;
+        }
+        .ref-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .ref-section-note {
+            font-size: 0.85rem;
+            color: #6B7280;
+            margin-top: 0.5rem;
+        }
+        .ref-remove-btn {
+            padding: 0.4rem 0.65rem;
+            font-size: 0.85rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+        }
+        .ref-remove-btn:hover { background: #F9FAFB; }
+        .ref-remove-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        #refereesSection.referees-section-hidden {
+            display: none;
+        }
+        .match-pick-table th { background: #F9FAFB; font-weight: 600; }
+        tr.match-row { cursor: pointer; }
+        tr.match-row:hover { background: #F8FAFC; }
+        tr.match-row.selected { background: #EDE9FE; }
+
+        .match-filters {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 0.75rem 1rem;
+            margin-bottom: 1rem;
+        }
+        .match-filters label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        .match-filters input[type="date"],
+        .match-filters input[type="search"],
+        .match-filters select {
+            min-width: 10rem;
+            padding: 0.45rem 0.6rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #fff;
+            color: #2C2C2C;
+        }
+        .match-filters input[type="search"] { min-width: 12rem; }
+        .match-filters .filter-reset {
+            align-self: flex-end;
+        }
+
+        .match-pagination {
+            display: none;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        .match-pagination.visible {
+            display: flex;
+        }
+        .match-page-info {
+            font-size: 0.85rem;
+            color: #4b5563;
+            min-width: 12rem;
+            text-align: center;
+        }
+
+        .team-stats-table-wrap {
+            overflow: auto;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            max-width: 100%;
+        }
+
+        .team-stats-grid {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.72rem;
+            min-width: 1100px;
+        }
+
+        .team-stats-grid th,
+        .team-stats-grid td {
+            border: 1px solid #1a1a1a;
+            padding: 4px 5px;
+            text-align: center;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .ts-h-id { background: #D9D9D9; font-weight: 700; }
+        .ts-h-shoot { background: #FFE599; font-weight: 700; }
+        .ts-h-mid { background: #C9DAF8; font-weight: 700; }
+        .ts-h-index { background: #A4C2F4; font-weight: 700; }
+
+        .ts-cell-id { background: #f3f3f3; }
+        .ts-pct { background: #FFF4CC; }
+        .ts-pts { background: #E8EEFC; font-weight: 600; }
+        .ts-index { background: #D6E3FB; font-weight: 600; }
+
+        [data-theme="dark"] body.team-stats-page {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .dashboard-header {
+            background: var(--bg-primary);
+            border-bottom-color: var(--border-color);
+        }
+        [data-theme="dark"] .matches-calendar {
+            background: var(--bg-primary);
+            border-color: var(--border-color);
+        }
+        [data-theme="dark"] .section-title { color: var(--text-primary); }
+        [data-theme="dark"] .match-pick-table th { background: var(--bg-secondary); }
+        [data-theme="dark"] .match-pick-table th,
+        [data-theme="dark"] .match-pick-table td { border-color: var(--border-color); }
+        [data-theme="dark"] .match-filters label { color: var(--text-primary); }
+        [data-theme="dark"] .match-filters input[type="date"],
+        [data-theme="dark"] .match-filters input[type="search"],
+        [data-theme="dark"] .match-filters select {
+            background: var(--bg-secondary);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .match-page-info { color: var(--text-secondary, #9ca3af); }
+        [data-theme="dark"] .ts-h-id { background: #4a4a4a; color: #f0f0f0; }
+        [data-theme="dark"] .ts-h-shoot { background: #6b5a2a; color: #fff; }
+        [data-theme="dark"] .ts-h-mid { background: #2d3d5c; color: #e0e0e0; }
+        [data-theme="dark"] .ts-h-index { background: #3d5580; color: #fff; }
+        [data-theme="dark"] .ts-cell-id { background: #2d2d2d; }
+        [data-theme="dark"] .ts-pct { background: #4a3d1a; }
+        [data-theme="dark"] .ts-pts { background: #1e2a44; }
+        [data-theme="dark"] .ts-index { background: #243552; }
+
+        .empty, .error {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        .empty { background: #f9fafb; color: #6b7280; }
+        .error { background: #fef2f2; color: #991b1b; }
+
+        .toolbar-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+        .btn-outline {
+            padding: 0.5rem 1rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .btn-outline:hover { background: #F9FAFB; }
+        .btn-primary-ts {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            background: #6B2C91;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .btn-primary-ts:hover { opacity: 0.92; }
+        .btn-primary-ts:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-header { padding: 0.75rem 1rem; flex-wrap: nowrap; }
+            .dashboard-header .header-nav { display: none !important; }
+            .hamburger-btn { display: flex; }
+        }
+        .hamburger-btn {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            width: 40px;
+            height: 40px;
+            padding: 8px;
+            background: #E8D5FF;
+            border: 1px solid #C4B5FD;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .hamburger-btn span {
+            display: block;
+            width: 100%;
+            height: 2px;
+            background: #6B2C91;
+            border-radius: 1px;
+        }
+        .nav-slide-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 999;
+        }
+        .nav-slide-overlay.open { display: block; }
+        .nav-slide-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            max-width: 85vw;
+            height: 100%;
+            background: #FFFFFF;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+            z-index: 1001;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            padding: 1.5rem 1rem;
+            padding-top: calc(1.5rem + 60px);
+            overflow-y: auto;
+        }
+        .nav-slide-menu.open { transform: translateX(0); }
+        .nav-slide-menu .nav-pill {
+            display: block;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.5rem;
+            border-radius: 12px;
+        }
+        .nav-menu-divider { height: 1px; background: #E5E7EB; margin: 0.75rem 0; }
+        .nav-menu-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .nav-menu-profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #E8D5FF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #6B2C91;
+        }
+        .nav-menu-profile-name { font-weight: 600; color: #2C2C2C; }
+        .nav-menu-profile-role { font-size: 0.85rem; color: #6B7280; }
+    </style>
+</head>
+<body class="team-stats-page">
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" type="button" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav" id="headerNav"></nav>
+        </div>
+        <div class="header-right">
+            <div class="toolbar-actions">
+                <button class="btn-primary-ts" id="downloadBtn" type="button" disabled>Stiahnuť XLSX</button>
+            </div>
+            <div class="user-info" id="userInfo" data-initial="U" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">-</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu"></nav>
+
+    <main class="dashboard-content">
+        <section class="matches-calendar">
+            <div class="section-header">
+                <img src="/IMG/schedule-calendar-svgrepo-com.svg" alt="" class="section-icon">
+                <h1 class="section-title">Zápas</h1>
+            </div>
+            <div class="match-filters" id="matchFilters">
+                <label for="filterDateFrom">Dátum od
+                    <input type="date" id="filterDateFrom" autocomplete="off">
+                </label>
+                <label for="filterDateTo">Dátum do
+                    <input type="date" id="filterDateTo" autocomplete="off">
+                </label>
+                <label for="filterOpponent">Súper
+                    <input type="search" id="filterOpponent" placeholder="Hľadať súpera…" autocomplete="off">
+                </label>
+                <label for="filterCategory">Kategória
+                    <select id="filterCategory">
+                        <option value="">Všetky kategórie</option>
+                    </select>
+                </label>
+                <button type="button" class="btn-outline filter-reset" id="filterReset">Zrušiť filtre</button>
+            </div>
+            <div style="overflow:auto;">
+                <table class="match-pick-table">
+                    <thead>
+                        <tr>
+                            <th>Dátum</th>
+                            <th>Kategória</th>
+                            <th>Súper</th>
+                            <th>Skóre</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matchesBody"></tbody>
+                </table>
+            </div>
+            <div class="match-pagination" id="matchPagination" aria-label="Stránkovanie zápasov">
+                <button type="button" class="btn-outline" id="matchPagePrev">Predchádzajúca</button>
+                <span class="match-page-info" id="matchPageInfo"></span>
+                <button type="button" class="btn-outline" id="matchPageNext">Ďalšia</button>
+            </div>
+            <div id="matchesState" class="empty">Načítavam zápasy...</div>
+        </section>
+
+        <section class="matches-calendar">
+            <div class="section-header">
+                <img src="/IMG/statistics-svgrepo-com (1).svg" alt="" class="section-icon">
+                <h2 class="section-title" id="playersTitle">Hráči v zápase</h2>
+            </div>
+            <div class="team-stats-table-wrap">
+                <table class="team-stats-grid" id="playersStatsTable">
+                    <thead>
+                        <tr>
+                            <th class="ts-h-id" rowspan="3">Číslo<br>hráča</th>
+                            <th class="ts-h-id" rowspan="3">Priezvisko a meno<br>hráča</th>
+                            <th class="ts-h-id" rowspan="3">MIN</th>
+                            <th class="ts-h-shoot" colspan="12">Vyhodnotenie streľby</th>
+                            <th class="ts-h-mid" rowspan="3">PTS</th>
+                            <th class="ts-h-mid" rowspan="3">OFF</th>
+                            <th class="ts-h-mid" rowspan="3">DEF</th>
+                            <th class="ts-h-mid" rowspan="3">AST</th>
+                            <th class="ts-h-mid" rowspan="3">TO</th>
+                            <th class="ts-h-mid" rowspan="3">STL</th>
+                            <th class="ts-h-mid" rowspan="3">BLK</th>
+                            <th class="ts-h-mid" rowspan="3">PF</th>
+                            <th class="ts-h-mid" rowspan="3">FLS ON</th>
+                            <th class="ts-h-index" rowspan="3">INDEX</th>
+                        </tr>
+                        <tr>
+                            <th class="ts-h-shoot" colspan="3">2P</th>
+                            <th class="ts-h-shoot" colspan="3">3P</th>
+                            <th class="ts-h-shoot" colspan="3">FG</th>
+                            <th class="ts-h-shoot" colspan="3">FT</th>
+                        </tr>
+                        <tr>
+                            <th class="ts-h-shoot">Ú</th>
+                            <th class="ts-h-shoot">C</th>
+                            <th class="ts-h-shoot">%</th>
+                            <th class="ts-h-shoot">Ú</th>
+                            <th class="ts-h-shoot">C</th>
+                            <th class="ts-h-shoot">%</th>
+                            <th class="ts-h-shoot">Ú</th>
+                            <th class="ts-h-shoot">C</th>
+                            <th class="ts-h-shoot">%</th>
+                            <th class="ts-h-shoot">Ú</th>
+                            <th class="ts-h-shoot">C</th>
+                            <th class="ts-h-shoot">%</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playersBody"></tbody>
+                </table>
+            </div>
+            <div id="playersState" class="empty">Vyberte zápas zo zoznamu.</div>
+        </section>
+        <section class="matches-calendar referees-section-hidden" id="refereesSection" aria-hidden="true">
+            <div class="section-header">
+                <img src="/IMG/statistics-svgrepo-com (1).svg" alt="" class="section-icon">
+                <h2 class="section-title">Rozhodcovia</h2>
+            </div>
+            <p id="refereesSectionHint" class="ref-section-note">Vyberte zápas v zozname vyššie.</p>
+            <div class="ref-input" style="overflow:auto;">
+                <table class="match-pick-table">
+                    <thead>
+                        <tr>
+                            <th>Priezvisko a meno rozhodcu</th>
+                            <th>Známka</th>
+                            <th style="width:6rem;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="refereesBody"></tbody>
+                </table>
+            </div>
+            <div class="ref-actions" id="refereesActions">
+                <button type="button" class="btn-primary-ts ref-input-add" id="refAddBtn" disabled title="Max. 5">+</button>
+                <button type="button" class="btn-primary-ts" id="refSaveBtn" disabled>Uložiť rozhodcov</button>
+            </div>
+            <div id="refereesSaveState" class="empty" style="display:none;"></div>
+        </section>
+    </main>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/users.js"></script>
+    <script src="/js/events.js"></script>
+    <script src="/js/statistics.js"></script>
+    <script>
+        let allMatches = [];
+        let selectedMatchId = null;
+        let refereeRows = [];
+        const MAX_REFEREES = 3;
+        const MATCH_PAGE_SIZE = 10;
+        let matchPageIndex = 0;
+
+        function parseYmdLocalStart(ymd) {
+            if (!ymd || typeof ymd !== 'string') return null;
+            const p = ymd.split('-').map(Number);
+            if (p.length < 3 || !p.every(function(n) { return Number.isFinite(n); })) return null;
+            return new Date(p[0], p[1] - 1, p[2], 0, 0, 0, 0);
+        }
+
+        function parseYmdLocalEnd(ymd) {
+            if (!ymd || typeof ymd !== 'string') return null;
+            const p = ymd.split('-').map(Number);
+            if (p.length < 3 || !p.every(function(n) { return Number.isFinite(n); })) return null;
+            return new Date(p[0], p[1] - 1, p[2], 23, 59, 59, 999);
+        }
+
+        function matchDayStart(match) {
+            if (!match || match.date == null || match.date === '') return null;
+            const d = new Date(match.date);
+            if (isNaN(d.getTime())) return null;
+            const s = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+            return s.getTime();
+        }
+
+        function getMatchEffectiveEndTs(match) {
+            if (!match || match.date == null || match.date === '') return null;
+            const raw = String(match.date).trim();
+            if (!raw) return null;
+            if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+                const d = new Date(raw + 'T23:59:59.999');
+                return isNaN(d.getTime()) ? null : d.getTime();
+            }
+            const d = new Date(raw);
+            return isNaN(d.getTime()) ? null : d.getTime();
+        }
+
+        function hasMatchAlreadyHappened(match) {
+            const endTs = getMatchEffectiveEndTs(match);
+            if (endTs == null) return false;
+            return endTs <= Date.now();
+        }
+
+        function getFilteredMatches() {
+            const fromEl = document.getElementById('filterDateFrom');
+            const toEl = document.getElementById('filterDateTo');
+            const oppEl = document.getElementById('filterOpponent');
+            const catEl = document.getElementById('filterCategory');
+            const fromStr = fromEl && fromEl.value ? fromEl.value : '';
+            const toStr = toEl && toEl.value ? toEl.value : '';
+            const opp = oppEl && oppEl.value ? oppEl.value.trim().toLowerCase() : '';
+            const cat = catEl && catEl.value ? catEl.value : '';
+            const fromTs = fromStr ? parseYmdLocalStart(fromStr) : null;
+            const fromTsMs = fromTs && !isNaN(fromTs.getTime()) ? fromTs.getTime() : null;
+            const toTs = toStr ? parseYmdLocalEnd(toStr) : null;
+            const toTsMs = toTs && !isNaN(toTs.getTime()) ? toTs.getTime() : null;
+
+            return allMatches.filter(function(match) {
+                const dayStart = matchDayStart(match);
+                if (fromStr || toStr) {
+                    if (dayStart == null) return false;
+                    if (fromTsMs != null && dayStart < fromTsMs) return false;
+                    if (toTsMs != null && dayStart > toTsMs) return false;
+                }
+                if (opp) {
+                    const o = (match.opponent || '').toLowerCase();
+                    if (!o.includes(opp)) return false;
+                }
+                if (cat) {
+                    if ((match.categoryName || '') !== cat) return false;
+                }
+                return true;
+            });
+        }
+
+        function populateCategoryOptions() {
+            const sel = document.getElementById('filterCategory');
+            if (!sel) return;
+            const preserved = sel.value;
+            const set = new Set();
+            allMatches.forEach(function(m) {
+                const c = m.categoryName;
+                if (c != null && String(c).trim() !== '') set.add(String(c).trim());
+            });
+            const sorted = Array.from(set).sort(function(a, b) { return a.localeCompare(b, 'sk'); });
+            sel.innerHTML = '<option value="">Všetky kategórie</option>';
+            sorted.forEach(function(c) {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                sel.appendChild(opt);
+            });
+            if (preserved && sorted.indexOf(preserved) !== -1) sel.value = preserved;
+        }
+
+        function renderMatchRows(matches) {
+            const body = document.getElementById('matchesBody');
+            if (!body) return;
+            body.innerHTML = matches.map(function(match) {
+                return `
+                        <tr class="match-row" data-id="${match.id}">
+                            <td>${escapeHtml(fmtDate(match.date))}</td>
+                            <td>${escapeHtml(match.categoryName || '-')}</td>
+                            <td>${escapeHtml(match.opponent || '-')}</td>
+                            <td>${escapeHtml(fmtScore(match))}</td>
+                        </tr>
+                    `;
+            }).join('');
+            body.querySelectorAll('tr.match-row').forEach(function(row) {
+                row.addEventListener('click', function() {
+                    const id = Number(row.getAttribute('data-id'));
+                    selectMatch(id);
+                });
+            });
+        }
+
+        function clearMatchSelection() {
+            selectedMatchId = null;
+            const dl = document.getElementById('downloadBtn');
+            if (dl) dl.disabled = true;
+            document.querySelectorAll('#matchesBody tr.match-row').forEach(function(tr) {
+                tr.classList.remove('selected');
+            });
+            const playersState = document.getElementById('playersState');
+            const playersBody = document.getElementById('playersBody');
+            const title = document.getElementById('playersTitle');
+            if (title) title.textContent = 'Hráči v zápase';
+            if (playersBody) playersBody.innerHTML = '';
+            if (playersState) {
+                playersState.style.display = 'block';
+                playersState.className = 'empty';
+                playersState.textContent = 'Vyberte zápas zo zoznamu.';
+            }
+            refereeRows = [{ name: '', grade: '' }];
+            renderRefereeRows();
+            updateRefereesCardVisibility();
+        }
+
+        function hideMatchPaginationBar() {
+            const wrap = document.getElementById('matchPagination');
+            const info = document.getElementById('matchPageInfo');
+            const prevBtn = document.getElementById('matchPagePrev');
+            const nextBtn = document.getElementById('matchPageNext');
+            if (wrap) {
+                wrap.classList.remove('visible');
+                wrap.setAttribute('aria-hidden', 'true');
+            }
+            if (info) info.textContent = '';
+            if (prevBtn) prevBtn.disabled = true;
+            if (nextBtn) nextBtn.disabled = true;
+        }
+
+        function updateMatchPaginationUi(totalFiltered, totalPages) {
+            const wrap = document.getElementById('matchPagination');
+            const info = document.getElementById('matchPageInfo');
+            const prevBtn = document.getElementById('matchPagePrev');
+            const nextBtn = document.getElementById('matchPageNext');
+            if (!wrap || !info) return;
+
+            if (totalFiltered === 0 || totalPages <= 1) {
+                hideMatchPaginationBar();
+                return;
+            }
+
+            wrap.classList.add('visible');
+            wrap.setAttribute('aria-hidden', 'false');
+            const start = matchPageIndex * MATCH_PAGE_SIZE + 1;
+            const end = Math.min((matchPageIndex + 1) * MATCH_PAGE_SIZE, totalFiltered);
+            info.textContent = 'Záznamy ' + start + '–' + end + ' z ' + totalFiltered + ' · Strana ' + (matchPageIndex + 1) + ' z ' + totalPages;
+            if (prevBtn) prevBtn.disabled = matchPageIndex <= 0;
+            if (nextBtn) nextBtn.disabled = matchPageIndex >= totalPages - 1;
+        }
+
+        function syncMatchTable() {
+            const state = document.getElementById('matchesState');
+            const body = document.getElementById('matchesBody');
+            if (!state || !body) return;
+
+            if (!allMatches.length) {
+                return;
+            }
+
+            const filtered = getFilteredMatches();
+            const visibleIds = new Set(filtered.map(function(m) { return Number(m.id); }));
+            if (selectedMatchId != null && !visibleIds.has(Number(selectedMatchId))) {
+                clearMatchSelection();
+            }
+
+            if (!filtered.length) {
+                body.innerHTML = '';
+                hideMatchPaginationBar();
+                state.style.display = 'block';
+                state.className = 'empty';
+                state.textContent = 'Žiadne zápasy nevyhovujú filtrom.';
+                return;
+            }
+
+            const totalPages = Math.max(1, Math.ceil(filtered.length / MATCH_PAGE_SIZE));
+            if (matchPageIndex >= totalPages) matchPageIndex = totalPages - 1;
+            if (matchPageIndex < 0) matchPageIndex = 0;
+
+            const start = matchPageIndex * MATCH_PAGE_SIZE;
+            const pageMatches = filtered.slice(start, start + MATCH_PAGE_SIZE);
+
+            state.style.display = 'none';
+            updateMatchPaginationUi(filtered.length, totalPages);
+            renderMatchRows(pageMatches);
+            if (selectedMatchId != null) {
+                document.querySelectorAll('#matchesBody tr.match-row').forEach(function(tr) {
+                    tr.classList.toggle('selected', Number(tr.getAttribute('data-id')) === Number(selectedMatchId));
+                });
+            }
+        }
+
+        function applyMatchFilters() {
+            matchPageIndex = 0;
+            syncMatchTable();
+        }
+
+        function goMatchPage(delta) {
+            const filtered = getFilteredMatches();
+            const totalPages = Math.max(1, Math.ceil(filtered.length / MATCH_PAGE_SIZE));
+            matchPageIndex += delta;
+            if (matchPageIndex < 0) matchPageIndex = 0;
+            if (matchPageIndex >= totalPages) matchPageIndex = totalPages - 1;
+            syncMatchTable();
+        }
+
+        function canEditReferees() {
+            const u = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+            return u && (u.role === 'ADMIN' || u.role === 'TRAINER');
+        }
+
+        function updateRefereesCardVisibility() {
+            const el = document.getElementById('refereesSection');
+            if (!el) return;
+            const show = selectedMatchId != null;
+            el.classList.toggle('referees-section-hidden', !show);
+            el.setAttribute('aria-hidden', show ? 'false' : 'true');
+        }
+
+        function readRefRowsFromDom() {
+            const tbody = document.getElementById('refereesBody');
+            if (!tbody) return;
+            const trs = tbody.querySelectorAll('tr');
+            refereeRows = Array.from(trs).map(function(tr) {
+                const n = tr.querySelector('.ref-name-field');
+                const g = tr.querySelector('.ref-grade-field');
+                return {
+                    name: n ? n.value : '',
+                    grade: g ? g.value : ''
+                };
+            });
+        }
+
+        function updateRefUiState() {
+            const addBtn = document.getElementById('refAddBtn');
+            const saveBtn = document.getElementById('refSaveBtn');
+            const hint = document.getElementById('refereesSectionHint');
+            const actions = document.getElementById('refereesActions');
+            const edit = canEditReferees();
+            const hasMatch = selectedMatchId != null;
+            if (actions) {
+                actions.style.display = edit ? 'flex' : 'none';
+            }
+            if (addBtn) {
+                addBtn.disabled = !edit || !hasMatch || refereeRows.length >= MAX_REFEREES;
+            }
+            if (saveBtn) {
+                saveBtn.disabled = !edit || !hasMatch;
+            }
+            if (hint) {
+                if (!hasMatch) {
+                    hint.textContent = 'Vyberte zápas v zozname vyššie.';
+                } else if (edit) {
+                    hint.textContent = 'Najviac ' + MAX_REFEREES + ' rozhodcov. Prázdne riadky sa pri uložení vynechajú.';
+                } else {
+                    hint.textContent = 'Údaje sú len na čítanie.';
+                }
+            }
+        }
+
+        function renderRefereeRows() {
+            const tbody = document.getElementById('refereesBody');
+            if (!tbody) return;
+            const edit = canEditReferees();
+            if (!refereeRows.length) {
+                if (edit && selectedMatchId) {
+                    refereeRows = [{ name: '', grade: '' }];
+                }
+            }
+            if (!edit && !refereeRows.length) {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty" style="border:none;">Žiadni rozhodcovia.</td></tr>';
+                updateRefUiState();
+                return;
+            }
+            tbody.innerHTML = refereeRows.map(function(row, i) {
+                let removeCell;
+                if (edit) {
+                    removeCell = '<td><button type="button" class="ref-remove-btn" data-ref-idx="' + i + '"' +
+                        (refereeRows.length <= 1 ? ' disabled' : '') + '>Odstrániť</button></td>';
+                } else {
+                    removeCell = '<td></td>';
+                }
+                return '<tr data-ref-idx="' + i + '">' +
+                    '<td><input type="text" class="ref-input-name ref-name-field" placeholder="Meno rozhodcu" value="' + escapeHtml(row.name) + '"' + (edit ? '' : ' disabled') + '></td>' +
+                    '<td><input type="text" class="ref-input-grade ref-grade-field" placeholder="Známka" value="' + escapeHtml(row.grade) + '"' + (edit ? '' : ' disabled') + '></td>' +
+                    removeCell +
+                    '</tr>';
+            }).join('');
+            updateRefUiState();
+        }
+
+        function applyRefereesResponse(data) {
+            const list = data && Array.isArray(data.referees) ? data.referees : [];
+            if (canEditReferees()) {
+                refereeRows = list.length
+                    ? list.map(function(r) { return { name: r.name || '', grade: r.grade || '' }; })
+                    : [{ name: '', grade: '' }];
+            } else {
+                refereeRows = list.map(function(r) { return { name: r.name || '', grade: r.grade || '' }; });
+            }
+            renderRefereeRows();
+        }
+
+        async function saveReferees() {
+            if (!selectedMatchId || !canEditReferees()) return;
+            readRefRowsFromDom();
+            const payload = refereeRows.map(function(r) {
+                return { name: (r.name || '').trim(), grade: (r.grade || '').trim() };
+            }).filter(function(r) { return r.name.length > 0; });
+            const state = document.getElementById('refereesSaveState');
+            try {
+                if (state) {
+                    state.style.display = 'block';
+                    state.className = 'empty';
+                    state.textContent = 'Ukladám...';
+                }
+                await updateEventReferees(selectedMatchId, payload);
+                const data = await getEventReferees(selectedMatchId);
+                applyRefereesResponse(data);
+                if (state) {
+                    state.textContent = 'Uložené.';
+                    setTimeout(function() { if (state) state.style.display = 'none'; }, 2000);
+                }
+            } catch (e) {
+                if (state) {
+                    state.style.display = 'block';
+                    state.className = 'error';
+                    state.textContent = e.message || 'Uloženie zlyhalo.';
+                } else {
+                    showAppAlert(e.message || 'Uloženie zlyhalo.', { type: 'error' });
+                }
+            }
+        }
+
+        function escapeHtml(text) {
+            if (text == null || text === '') return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function fmtDate(value) {
+            if (!value) return '-';
+            try { return new Date(value).toLocaleDateString('sk-SK'); } catch (_) { return value; }
+        }
+
+        function fmtScore(match) {
+            if (match && match.ourScore != null && match.opponentScore != null) {
+                return `${match.ourScore} : ${match.opponentScore}`;
+            }
+            return '-';
+        }
+
+        function num(v) {
+            const n = Number(v);
+            return Number.isFinite(n) ? n : 0;
+        }
+
+        function computePTS(s) {
+            return num(s['2PÚ']) * 2 + num(s['3PÚ']) * 3 + num(s['FTÚ']);
+        }
+        function computeFGM(s) { return num(s['2PÚ']) + num(s['3PÚ']); }
+        function computeFGA(s) { return num(s['2PC']) + num(s['3PC']); }
+        function computePIR(s) {
+            const pts = computePTS(s);
+            const reb = num(s.OFF) + num(s.DEF);
+            const ast = num(s.AST), stl = num(s.STL), blk = num(s.BLK);
+            const fd = num(s['F+']);
+            const missedFg = computeFGA(s) - computeFGM(s);
+            const missedFt = num(s.FTC) - num(s['FTÚ']);
+            const to = num(s.TO), pf = num(s['F-']);
+            return (pts + reb + ast + stl + blk + fd) - (missedFg + missedFt + to + pf);
+        }
+
+        function pctStr(made, att) {
+            const a = num(att);
+            if (a <= 0) return '0';
+            const p = (num(made) / a) * 100;
+            return (Math.round(p * 10) / 10).toLocaleString('sk-SK');
+        }
+
+        function fmtIndex(v) {
+            const n = Number(v);
+            if (!Number.isFinite(n)) return '0';
+            return (Math.round(n * 100) / 100).toLocaleString('sk-SK');
+        }
+
+        function resolveDashboard(role) {
+            if (role === 'TRAINER') return '/pages/trainer-dashboard.html';
+            if (role === 'ADMIN') return '/pages/admin-dashboard.html';
+            return '/pages/dashboard.html';
+        }
+
+        function buildNavHtml(role) {
+            if (role === 'ADMIN') {
+                return {
+                    header: `
+                        <a href="/pages/admin-dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                        <a href="/pages/admin-matches.html" class="nav-pill active">Zápasy</a>
+                        <a href="/pages/admin-trainings.html" class="nav-pill">Tréningy</a>
+                        <a href="/pages/admin-users.html" class="nav-pill">User Management</a>
+                        <a href="/pages/admin-categories.html" class="nav-pill">Kategórie</a>
+                        <a href="/pages/trainer-attendance-charts.html" class="nav-pill">Grafy účasti</a>`,
+                    slide: `
+                        <div class="nav-menu-profile">
+                            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">A</div>
+                            <div>
+                                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                                <div class="nav-menu-profile-role" id="navMenuProfileRole">Admin</div>
+                            </div>
+                        </div>
+                        <div class="nav-menu-divider"></div>
+                        <a href="/pages/admin-dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+                        <a href="/pages/admin-matches.html" class="nav-pill active" onclick="closeNavMenu()">Zápasy</a>
+                        <a href="/pages/admin-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+                        <a href="/pages/admin-users.html" class="nav-pill" onclick="closeNavMenu()">User Management</a>
+                        <a href="/pages/admin-categories.html" class="nav-pill" onclick="closeNavMenu()">Kategórie</a>
+                        <a href="/pages/trainer-attendance-charts.html" class="nav-pill" onclick="closeNavMenu()">Grafy účasti</a>
+                        <div class="nav-menu-divider"></div>
+                        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>`
+                };
+            }
+            if (role === 'TRAINER') {
+                return {
+                    header: `
+                        <a href="/pages/trainer-dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                        <a href="/pages/coach-matches.html" class="nav-pill active">Zápasy</a>
+                        <a href="/pages/trainer-trainings.html" class="nav-pill">Tréningy</a>`,
+                    slide: `
+                        <div class="nav-menu-profile">
+                            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">T</div>
+                            <div>
+                                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                                <div class="nav-menu-profile-role" id="navMenuProfileRole">Tréner</div>
+                            </div>
+                        </div>
+                        <div class="nav-menu-divider"></div>
+                        <a href="/pages/trainer-dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+                        <a href="/pages/coach-matches.html" class="nav-pill active" onclick="closeNavMenu()">Zápasy</a>
+                        <a href="/pages/trainer-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+                        <a href="/pages/trainer-attendance-charts.html" class="nav-pill" onclick="closeNavMenu()">Grafy účasti</a>
+                        <a href="/pages/trainer-training-stats.html" class="nav-pill" onclick="closeNavMenu()">Záznam štatistík tréningu</a>
+                        <a href="/pages/trainer-drill-mode.html" class="nav-pill" onclick="closeNavMenu()">Režim cvičenia</a>
+                        <div class="nav-menu-divider"></div>
+                        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>`
+                };
+            }
+            return {
+                header: `
+                    <a href="/pages/dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                    <a href="/pages/matches.html" class="nav-pill active">Zápasy</a>
+                    <a href="/pages/trainings.html" class="nav-pill">Tréningy</a>`,
+                slide: `
+                    <a href="/pages/dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+                    <a href="/pages/matches.html" class="nav-pill active" onclick="closeNavMenu()">Zápasy</a>
+                    <a href="/pages/trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>`
+            };
+        }
+
+        function toggleNavMenu() {
+            document.getElementById('hamburgerBtn').classList.toggle('open');
+            document.getElementById('navOverlay').classList.toggle('open');
+            document.getElementById('navSlideMenu').classList.toggle('open');
+            document.body.style.overflow = document.getElementById('navSlideMenu').classList.contains('open') ? 'hidden' : '';
+        }
+        function closeNavMenu() {
+            const hb = document.getElementById('hamburgerBtn');
+            if (hb) hb.classList.remove('open');
+            document.getElementById('navOverlay').classList.remove('open');
+            document.getElementById('navSlideMenu').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function toggleUserDropdown(event) {
+            event.stopPropagation();
+            document.getElementById('userInfo').classList.toggle('open');
+        }
+        function handleSignOut() {
+            if (typeof logout === 'function') logout();
+            else window.location.href = '/pages/login.html';
+        }
+        function handleSignOutFromMenu() {
+            closeNavMenu();
+            handleSignOut();
+        }
+
+        document.addEventListener('click', function(event) {
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo && !userInfo.contains(event.target)) {
+                userInfo.classList.remove('open');
+            }
+        });
+
+        function applyUserChrome(user) {
+            let displayName = formatUserDisplayName(user) || 'Používateľ';
+            displayName = displayName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+            displayName = displayName.replace(/\s*\(PLAYER\)\s*/i, '').trim();
+            const roleLabels = { PLAYER: 'Hráč', TRAINER: 'Tréner', ADMIN: 'Admin' };
+            const displayRole = roleLabels[user.role] || user.role || '';
+
+            const nav = buildNavHtml(user.role);
+            document.getElementById('headerNav').innerHTML = nav.header;
+            document.getElementById('navSlideMenu').innerHTML = nav.slide;
+
+            const userNameEl = document.getElementById('userName');
+            const userRoleEl = document.getElementById('userRole');
+            if (userNameEl) userNameEl.textContent = displayName;
+            if (userRoleEl) userRoleEl.textContent = displayRole;
+
+            const dn = document.getElementById('userDropdownName');
+            const dr = document.getElementById('userDropdownRole');
+            if (dn) dn.textContent = displayName;
+            if (dr) dr.textContent = displayRole;
+
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo) userInfo.setAttribute('data-initial', (displayName.charAt(0) || 'U').toUpperCase());
+
+            const userInitial = (displayName.charAt(0) || 'U').toUpperCase();
+            const navMenuProfileName = document.getElementById('navMenuProfileName');
+            const navMenuProfileRole = document.getElementById('navMenuProfileRole');
+            const navMenuProfileAvatar = document.getElementById('navMenuProfileAvatar');
+            if (navMenuProfileName) navMenuProfileName.textContent = displayName;
+            if (navMenuProfileRole) navMenuProfileRole.textContent = displayRole;
+            if (navMenuProfileAvatar) navMenuProfileAvatar.textContent = userInitial;
+        }
+
+        async function initPage() {
+            if (!isAuthenticated()) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+            const user = getCurrentUser();
+            if (!user) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            applyUserChrome(user);
+
+            document.getElementById('downloadBtn').addEventListener('click', async function() {
+                if (!selectedMatchId) return;
+                try {
+                    await downloadMatchTemplate(selectedMatchId);
+                } catch (e) {
+                    showAppAlert(e.message || 'Export zlyhal.', { type: 'error' });
+                }
+            });
+
+            const refAddBtn = document.getElementById('refAddBtn');
+            if (refAddBtn) {
+                refAddBtn.addEventListener('click', function() {
+                    readRefRowsFromDom();
+                    if (refereeRows.length >= MAX_REFEREES) return;
+                    refereeRows.push({ name: '', grade: '' });
+                    renderRefereeRows();
+                });
+            }
+            const refSaveBtn = document.getElementById('refSaveBtn');
+            if (refSaveBtn) {
+                refSaveBtn.addEventListener('click', function() {
+                    saveReferees();
+                });
+            }
+            const refereesBodyEl = document.getElementById('refereesBody');
+            if (refereesBodyEl) {
+                refereesBodyEl.addEventListener('click', function(ev) {
+                    const btn = ev.target && ev.target.closest ? ev.target.closest('button[data-ref-idx]') : null;
+                    if (!btn) return;
+                    const idx = Number(btn.getAttribute('data-ref-idx'));
+                    if (!Number.isFinite(idx)) return;
+                    readRefRowsFromDom();
+                    refereeRows.splice(idx, 1);
+                    if (!refereeRows.length) refereeRows.push({ name: '', grade: '' });
+                    renderRefereeRows();
+                });
+            }
+            refereeRows = [{ name: '', grade: '' }];
+            renderRefereeRows();
+            updateRefereesCardVisibility();
+
+            const filterReset = document.getElementById('filterReset');
+            if (filterReset) {
+                filterReset.addEventListener('click', function() {
+                    const df = document.getElementById('filterDateFrom');
+                    const dt = document.getElementById('filterDateTo');
+                    const op = document.getElementById('filterOpponent');
+                    const cat = document.getElementById('filterCategory');
+                    if (df) df.value = '';
+                    if (dt) dt.value = '';
+                    if (op) op.value = '';
+                    if (cat) cat.value = '';
+                    applyMatchFilters();
+                });
+            }
+            ['filterDateFrom', 'filterDateTo', 'filterCategory'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('change', function() { applyMatchFilters(); });
+            });
+            const oppEl = document.getElementById('filterOpponent');
+            if (oppEl) oppEl.addEventListener('input', function() { applyMatchFilters(); });
+
+            const matchPagePrev = document.getElementById('matchPagePrev');
+            const matchPageNext = document.getElementById('matchPageNext');
+            if (matchPagePrev) {
+                matchPagePrev.addEventListener('click', function() { goMatchPage(-1); });
+            }
+            if (matchPageNext) {
+                matchPageNext.addEventListener('click', function() { goMatchPage(1); });
+            }
+
+            await loadMatches();
+        }
+
+        async function loadMatches() {
+            const state = document.getElementById('matchesState');
+            const body = document.getElementById('matchesBody');
+            hideMatchPaginationBar();
+            state.textContent = 'Načítavam zápasy...';
+            state.className = 'empty';
+            state.style.display = 'block';
+            body.innerHTML = '';
+            try {
+                const events = await getEvents({ type: 'MATCH' });
+                allMatches = Array.isArray(events)
+                    ? events.filter(function(match) { return hasMatchAlreadyHappened(match); })
+                    : [];
+                allMatches.sort(function(a, b) {
+                    return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
+                });
+
+                if (!allMatches.length) {
+                    state.textContent = 'Nenašli sa žiadne zápasy.';
+                    populateCategoryOptions();
+                    hideMatchPaginationBar();
+                    return;
+                }
+
+                populateCategoryOptions();
+                applyMatchFilters();
+            } catch (e) {
+                hideMatchPaginationBar();
+                state.className = 'error';
+                state.style.display = 'block';
+                state.textContent = e.message || 'Nepodarilo sa načítať zápasy.';
+            }
+        }
+
+        async function selectMatch(matchId) {
+            selectedMatchId = matchId;
+            updateRefereesCardVisibility();
+            document.getElementById('downloadBtn').disabled = false;
+            document.querySelectorAll('#matchesBody tr.match-row').forEach(function(tr) {
+                tr.classList.toggle('selected', Number(tr.getAttribute('data-id')) === matchId);
+            });
+
+            const playersState = document.getElementById('playersState');
+            const playersBody = document.getElementById('playersBody');
+            const title = document.getElementById('playersTitle');
+            playersState.style.display = 'block';
+            playersState.className = 'empty';
+            playersState.textContent = 'Načítavam hráčov a štatistiky...';
+            playersBody.innerHTML = '';
+
+            try {
+                const selectedMatch = allMatches.find(function(m) { return Number(m.id) === Number(matchId); }) || {};
+                title.textContent = `Hráči v zápase · ${fmtDate(selectedMatch.date)} · ${selectedMatch.opponent || selectedMatch.name || ''}`;
+
+                const [nominationsResp, stats, refereesResp] = await Promise.all([
+                    getEventNominations(matchId),
+                    getStatistics({ eventId: matchId }),
+                    getEventReferees(matchId).catch(function() { return { referees: [] }; })
+                ]);
+
+                applyRefereesResponse(refereesResp);
+
+                const nominations = nominationsResp && Array.isArray(nominationsResp.nominations)
+                    ? nominationsResp.nominations : [];
+                const nominatedIds = new Set((nominationsResp && Array.isArray(nominationsResp.playerIds) ? nominationsResp.playerIds : []).map(Number));
+                const jerseyByPlayer = new Map();
+                const usersById = new Map();
+                nominations.forEach(function(n) {
+                    const pid = Number(n.playerId);
+                    jerseyByPlayer.set(pid, n.jerseyNumber);
+                });
+                if (nominatedIds.size > 0) {
+                    try {
+                        const allPlayers = await getUsers({ role: 'PLAYER', summary: true });
+                        (Array.isArray(allPlayers) ? allPlayers : []).forEach(function(u) {
+                            const pid = Number(u.id);
+                            if (nominatedIds.has(pid)) {
+                                usersById.set(pid, userListLabel(u) || ('Hráč #' + pid));
+                            }
+                        });
+                    } catch (e) {
+                        console.warn('Could not load players for name labels:', e);
+                    }
+                }
+                nominations.forEach(function(n) {
+                    const pid = Number(n.playerId);
+                    if (!usersById.has(pid) && n.playerName) {
+                        usersById.set(pid, n.playerName);
+                    }
+                });
+
+                let rows = Array.isArray(stats) ? stats.slice() : [];
+                if (nominatedIds.size > 0) {
+                    rows = rows.filter(function(s) { return nominatedIds.has(Number(s.playerId)); });
+                }
+
+                rows.forEach(function(r) {
+                    if (r.playerId && r.playerName) {
+                        const pid = Number(r.playerId);
+                        const existing = usersById.get(pid) || '';
+                        if (!existing || existing.split(/\s+/).length < 2) {
+                            usersById.set(pid, r.playerName);
+                        }
+                    }
+                });
+
+                const merged = [];
+                if (nominations.length) {
+                    nominations.forEach(function(n) {
+                        const found = rows.find(function(r) { return Number(r.playerId) === Number(n.playerId); });
+                        const row = found
+                            ? Object.assign({}, found)
+                            : { playerId: n.playerId, values: {} };
+                        row.isStartingFive = Boolean(n.isStartingFive);
+                        merged.push(row);
+                    });
+                    merged.sort(function(a, b) {
+                        var aS = a.isStartingFive ? 0 : 1;
+                        var bS = b.isStartingFive ? 0 : 1;
+                        return aS - bS;
+                    });
+                } else {
+                    merged.push.apply(merged, rows);
+                }
+
+                if (!merged.length) {
+                    playersState.textContent = 'Pre tento zápas nie sú dostupné nominácie ani štatistiky.';
+                    return;
+                }
+
+                playersState.style.display = 'none';
+                playersBody.innerHTML = merged.map(function(row) {
+                    const values = row.values || {};
+                    const pid = Number(row.playerId);
+                    const jersey = jerseyByPlayer.get(pid);
+                    const min = Number(values.MIN);
+                    const minStr = Number.isFinite(min) ? String(Math.round(min)) : '0';
+
+                    const fgU = values.FGÚ != null && values.FGÚ !== '' ? num(values.FGÚ) : computeFGM(values);
+                    const fgC = values.FGC != null && values.FGC !== '' ? num(values.FGC) : computeFGA(values);
+                    const p2u = num(values['2PÚ']), p2c = num(values['2PC']);
+                    const p3u = num(values['3PÚ']), p3c = num(values['3PC']);
+                    const ftu = num(values.FTÚ), ftc = num(values.FTC);
+
+                    let pts = values.PTS != null && values.PTS !== '' ? num(values.PTS) : computePTS(values);
+                    let idx = values.INDEX != null && values.INDEX !== '' ? Number(values.INDEX) : computePIR(values);
+                    if (!Number.isFinite(idx)) idx = computePIR(values);
+
+                    const name = usersById.get(pid) || row.playerName || '-';
+
+                    return `
+                        <tr>
+                            <td class="ts-cell-id">${jersey != null ? escapeHtml(String(jersey)) : '0'}</td>
+                            <td class="ts-cell-id" style="text-align:left;min-width:8rem;">${escapeHtml(name)}</td>
+                            <td class="ts-cell-id">${minStr}</td>
+                            <td>${p2u}</td><td>${p2c}</td><td class="ts-pct">${pctStr(p2u, p2c)}</td>
+                            <td>${p3u}</td><td>${p3c}</td><td class="ts-pct">${pctStr(p3u, p3c)}</td>
+                            <td>${fgU}</td><td>${fgC}</td><td class="ts-pct">${pctStr(fgU, fgC)}</td>
+                            <td>${ftu}</td><td>${ftc}</td><td class="ts-pct">${pctStr(ftu, ftc)}</td>
+                            <td class="ts-pts">${pts.toLocaleString('sk-SK')}</td>
+                            <td>${num(values.OFF)}</td>
+                            <td>${num(values.DEF)}</td>
+                            <td>${num(values.AST)}</td>
+                            <td>${num(values.TO)}</td>
+                            <td>${num(values.STL)}</td>
+                            <td>${num(values.BLK)}</td>
+                            <td>${num(values['F-'])}</td>
+                            <td>${num(values['F+'])}</td>
+                            <td class="ts-index">${fmtIndex(idx)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                playersState.className = 'error';
+                playersState.textContent = e.message || 'Nepodarilo sa načítať detaily zápasu.';
+                try {
+                    applyRefereesResponse(await getEventReferees(matchId));
+                } catch (_) {
+                    applyRefereesResponse({ referees: [] });
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

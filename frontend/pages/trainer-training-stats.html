@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Záznam štatistík tréningu (tréner) - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/coach-nav.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: #2C2C2C;
+        }
+        .dashboard-content { padding: 2rem; max-width: 1000px; margin: 0 auto; }
+        .section-card {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 2px 3px 8px 2px rgba(0, 0, 0, 0.05);
+        }
+        .section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+        .section-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+        .section-icon img { width: 100%; height: 100%; object-fit: contain; }
+        .section-title { font-size: 1.25rem; font-weight: 700; color: #2C2C2C; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #2C2C2C;
+            margin-bottom: 0.5rem;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: #FFFFFF;
+            color: #2C2C2C;
+            transition: border-color 0.3s ease;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #6B2C91;
+        }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        .form-group small { display: block; margin-top: 0.25rem; font-size: 0.85rem; color: #6B7280; }
+        .category-fields { display: none; margin-top: 1rem; padding: 1rem; background: #F9FAFB; border-radius: 8px; border: 1px solid #E5E7EB; }
+        .category-fields.active { display: block; }
+        .btn {
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary { background: #6B2C91; color: #FFFFFF; }
+        .btn-primary:hover { background: #5A2380; }
+        .btn-secondary { background: #E5E7EB; color: #2C2C2C; }
+        .btn-secondary:hover { background: #D1D5DB; }
+        .form-actions { display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
+        .message { padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: none; }
+        .message.success { background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+        .message.error { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+        .loading { text-align: center; padding: 2rem; color: #6B7280; }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav">
+                <a href="/pages/trainer-dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                <a href="/pages/coach-matches.html" class="nav-pill">Zápasy</a>
+                <a href="/pages/trainer-trainings.html" class="nav-pill">Tréningy</a>
+                <a href="/pages/trainer-attendance-charts.html" class="nav-pill">Grafy účasti</a>
+                <a href="/pages/trainer-training-stats.html" class="nav-pill active">Záznam štatistík tréningu</a>
+                <a href="/pages/trainer-drill-mode.html" class="nav-pill">Režim cvičenia</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" data-initial="T" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">Tréner</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <div class="nav-menu-profile">
+            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">T</div>
+            <div class="nav-menu-profile-info">
+                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                <div class="nav-menu-profile-role" id="navMenuProfileRole">Tréner</div>
+            </div>
+        </div>
+        <div class="nav-menu-divider"></div>
+        <a href="/pages/trainer-dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/coach-matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>
+        <a href="/pages/trainer-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+        <a href="/pages/trainer-attendance-charts.html" class="nav-pill" onclick="closeNavMenu()">Grafy účasti</a>
+        <a href="/pages/trainer-training-stats.html" class="nav-pill active" onclick="closeNavMenu()">Záznam štatistík tréningu</a>
+        <a href="/pages/trainer-drill-mode.html" class="nav-pill" onclick="closeNavMenu()">Režim cvičenia</a>
+        <div class="nav-menu-divider"></div>
+        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>
+    </nav>
+
+    <div class="dashboard-content">
+        <section class="section-card">
+            <div class="section-header">
+                <div class="section-icon">
+                    <img src="/IMG/statistics-svgrepo-com (1).svg" alt="Štatistiky ikona">
+                </div>
+                <h2 class="section-title">Záznam štatistík tréningu pre hráča</h2>
+            </div>
+
+            <div id="messageArea" class="message"></div>
+            <div id="loadingIndicator" class="loading" style="display: none;">Načítavam hráčov...</div>
+            <form id="trainingStatisticsForm" style="display: none;">
+                <div class="form-group">
+                    <label for="playerId">Hráč *</label>
+                    <select id="playerId" name="playerId" required>
+                        <option value="">Vyberte hráča</option>
+                    </select>
+                    <small>Hráč, pre ktorého zapisujete štatistiky tréningu</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="workoutDate">Dátum tréningu *</label>
+                    <input type="date" id="workoutDate" name="workoutDate" required>
+                    <small>Vyberte dátum, kedy sa tréning uskutočnil</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="exerciseName">Názov cvičenia *</label>
+                    <input type="text" id="exerciseName" name="exerciseName" maxlength="64" required placeholder="Napríklad: Bench press, Biehanie 5km, Streľba z trojky">
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Kategória *</label>
+                    <select id="category" name="category" required>
+                        <option value="">Vyberte kategóriu</option>
+                        <option value="POSLNOVANIE">Poslňovanie - Váha</option>
+                        <option value="BEH">Beh - Vzdialenosť</option>
+                        <option value="STRELBA">Streľba - Úspešnosť</option>
+                    </select>
+                </div>
+
+                <div id="poslnovanieFields" class="category-fields">
+                    <div class="form-group">
+                        <label for="weight">Váha (kg) *</label>
+                        <input type="number" id="weight" name="weight" step="0.01" min="0" placeholder="Napríklad: 50.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="repetitions">Opakovania *</label>
+                        <input type="number" id="repetitions" name="repetitions" min="1" placeholder="Napríklad: 10">
+                    </div>
+                </div>
+
+                <div id="behFields" class="category-fields">
+                    <div class="form-group">
+                        <label for="time">Čas *</label>
+                        <input type="text" id="time" name="time" placeholder="hh:mm:ss, mm:ss alebo ss.ms (napr. 1:23:45, 23:45, 45.5)">
+                        <small>Formát: hh:mm:ss, mm:ss alebo ss.ms</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="distance">Vzdialenosť (km) *</label>
+                        <input type="number" id="distance" name="distance" step="0.01" min="0" placeholder="Napríklad: 5.0">
+                    </div>
+                </div>
+
+                <div id="strelbaFields" class="category-fields">
+                    <div class="form-group">
+                        <label for="shotsAttempted">Počet strel *</label>
+                        <input type="number" id="shotsAttempted" name="shotsAttempted" min="1" placeholder="Napríklad: 20" oninput="updateShotsMadeMax(); calculateSuccessRate();">
+                    </div>
+                    <div class="form-group">
+                        <label for="shotsMade">Počet zásahov *</label>
+                        <input type="number" id="shotsMade" name="shotsMade" min="0" placeholder="Napríklad: 15" oninput="validateShotsMade(); calculateSuccessRate();">
+                        <small id="shotsMadeError" style="color: #DC2626; display: none;">Počet zásahov nemôže byť väčší ako počet strel</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Úspešnosť</label>
+                        <input type="text" id="successRateDisplay" readonly style="background: #F3F4F6; cursor: not-allowed;" placeholder="Vypočíta sa automaticky">
+                        <small>Vypočíta sa automaticky z počtu strel a zásahov</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="courtSpot">Miesto na ihrisku *</label>
+                        <input type="text" id="courtSpot" name="courtSpot" maxlength="255" placeholder="Napríklad: Trojka vpravo, Pod košom">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="note">Poznámka</label>
+                    <textarea id="note" name="note" placeholder="Voliteľná poznámka k tréningu"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Uložiť štatistiky</button>
+                    <a href="/pages/trainer-trainings.html" class="btn btn-secondary">Zrušiť</a>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script>
+        if (typeof API_CONFIG !== 'undefined' && API_CONFIG.BASE_URL) {
+            window.API_BASE = API_CONFIG.BASE_URL;
+        }
+    </script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/users.js"></script>
+    <script src="/js/training-statistics.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            if (typeof isAuthenticated === 'undefined') {
+                setTimeout(arguments.callee, 100);
+                return;
+            }
+            if (!isAuthenticated()) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+            const currentUser = getCurrentUser();
+            if (!currentUser) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+            const role = (currentUser.role || '').toUpperCase();
+            if (role !== 'TRAINER' && role !== 'ADMIN') {
+                window.location.href = '/pages/trainer-trainings.html';
+                return;
+            }
+
+            const userNameEl = document.getElementById('userName');
+            const userRoleEl = document.getElementById('userRole');
+            const userInfo = document.getElementById('userInfo');
+            let displayName = (formatUserDisplayName(currentUser) || 'Používateľ').replace(/\s*\([^)]*\)\s*$/, '').trim();
+            const roleMap = { ADMIN: 'Administrátor', TRAINER: 'Tréner', PLAYER: 'Hráč', GUEST: 'Hosť' };
+            const displayRole = roleMap[currentUser.role] || currentUser.role;
+            if (userNameEl) userNameEl.textContent = displayName;
+            if (userRoleEl) userRoleEl.textContent = displayRole;
+            ['userDropdownName', 'userDropdownRole', 'navMenuProfileName', 'navMenuProfileRole'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = id.indexOf('Name') >= 0 ? displayName : displayRole;
+            });
+            if (document.getElementById('navMenuProfileAvatar')) {
+                document.getElementById('navMenuProfileAvatar').textContent = (displayName.charAt(0) || 'T').toUpperCase();
+            }
+            if (userInfo) userInfo.setAttribute('data-initial', (displayName.charAt(0) || 'T').toUpperCase());
+
+            const loadingEl = document.getElementById('loadingIndicator');
+            const formEl = document.getElementById('trainingStatisticsForm');
+            try {
+                loadingEl.style.display = 'block';
+                const users = await getUsers({ role: 'PLAYER' });
+                const players = Array.isArray(users) ? users : [];
+                const playerSelect = document.getElementById('playerId');
+                playerSelect.innerHTML = '<option value="">Vyberte hráča</option>';
+                players.forEach(function (p) {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = userListLabel(p) || ('Hráč #' + p.id);
+                    playerSelect.appendChild(option);
+                });
+                loadingEl.style.display = 'none';
+                formEl.style.display = 'block';
+            } catch (e) {
+                loadingEl.style.display = 'none';
+                showMessage('Chyba pri načítaní hráčov: ' + (e.message || 'neznáma'), 'error');
+                formEl.style.display = 'block';
+            }
+
+            const workoutDateInput = document.getElementById('workoutDate');
+            if (workoutDateInput && !workoutDateInput.value) {
+                const today = new Date();
+                workoutDateInput.value = today.getFullYear() + '-' +
+                    String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(today.getDate()).padStart(2, '0');
+            }
+
+            const categorySelect = document.getElementById('category');
+            categorySelect.addEventListener('change', function () {
+                const category = this.value;
+                document.getElementById('poslnovanieFields').classList.remove('active');
+                document.getElementById('behFields').classList.remove('active');
+                document.getElementById('strelbaFields').classList.remove('active');
+                ['weight', 'repetitions', 'time', 'distance', 'shotsAttempted', 'shotsMade', 'courtSpot'].forEach(function (id) {
+                    const el = document.getElementById(id);
+                    if (el) el.required = false;
+                });
+                if (category === 'POSLNOVANIE') {
+                    document.getElementById('poslnovanieFields').classList.add('active');
+                    document.getElementById('weight').required = true;
+                    document.getElementById('repetitions').required = true;
+                } else if (category === 'BEH') {
+                    document.getElementById('behFields').classList.add('active');
+                    document.getElementById('time').required = true;
+                    document.getElementById('distance').required = true;
+                } else if (category === 'STRELBA') {
+                    document.getElementById('strelbaFields').classList.add('active');
+                    document.getElementById('shotsAttempted').required = true;
+                    document.getElementById('shotsMade').required = true;
+                    document.getElementById('courtSpot').required = true;
+                    updateShotsMadeMax();
+                }
+            });
+
+            formEl.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const playerId = document.getElementById('playerId').value;
+                if (!playerId) {
+                    showMessage('Vyberte hráča.', 'error');
+                    return;
+                }
+                const formData = {
+                    userId: parseInt(playerId, 10),
+                    workoutDate: document.getElementById('workoutDate').value,
+                    exerciseName: document.getElementById('exerciseName').value.trim(),
+                    category: document.getElementById('category').value,
+                    note: document.getElementById('note').value.trim() || null
+                };
+                const category = formData.category;
+                if (category === 'POSLNOVANIE') {
+                    formData.weight = parseFloat(document.getElementById('weight').value);
+                    formData.repetitions = parseInt(document.getElementById('repetitions').value, 10);
+                } else if (category === 'BEH') {
+                    formData.time = document.getElementById('time').value.trim();
+                    formData.distance = parseFloat(document.getElementById('distance').value);
+                } else if (category === 'STRELBA') {
+                    const shotsAttempted = parseInt(document.getElementById('shotsAttempted').value, 10);
+                    const shotsMade = parseInt(document.getElementById('shotsMade').value, 10);
+                    if (shotsMade > shotsAttempted) {
+                        showMessage('Chyba: Počet zásahov nemôže byť väčší ako počet strel', 'error');
+                        validateShotsMade();
+                        return;
+                    }
+                    formData.shotsAttempted = shotsAttempted;
+                    formData.shotsMade = shotsMade;
+                    formData.courtSpot = document.getElementById('courtSpot').value.trim();
+                }
+                try {
+                    showMessage('Ukladá sa...', 'success');
+                    await createTrainingStatistics(formData);
+                    showMessage('Štatistiky boli úspešne uložené pre vybraného hráča.', 'success');
+                    setTimeout(function () {
+                        window.location.href = '/pages/trainer-trainings.html';
+                    }, 1500);
+                } catch (err) {
+                    showMessage('Chyba: ' + (err.message || 'Nepodarilo sa uložiť štatistiky.'), 'error');
+                }
+            });
+        });
+
+        function updateShotsMadeMax() {
+            const shotsAttempted = parseInt(document.getElementById('shotsAttempted').value, 10) || 0;
+            const shotsMadeInput = document.getElementById('shotsMade');
+            if (shotsAttempted > 0) {
+                shotsMadeInput.max = shotsAttempted;
+                const current = parseInt(shotsMadeInput.value, 10) || 0;
+                if (current > shotsAttempted) shotsMadeInput.value = shotsAttempted;
+            }
+            validateShotsMade();
+        }
+        function validateShotsMade() {
+            const shotsAttempted = parseInt(document.getElementById('shotsAttempted').value, 10) || 0;
+            const shotsMade = parseInt(document.getElementById('shotsMade').value, 10) || 0;
+            const shotsMadeInput = document.getElementById('shotsMade');
+            const shotsMadeError = document.getElementById('shotsMadeError');
+            if (shotsMadeError) shotsMadeError.style.display = 'none';
+            if (shotsMadeInput) shotsMadeInput.style.borderColor = '#E0E0E0';
+            if (shotsAttempted > 0 && shotsMade >= 0 && shotsMade > shotsAttempted) {
+                if (shotsMadeError) shotsMadeError.style.display = 'block';
+                if (shotsMadeInput) shotsMadeInput.style.borderColor = '#DC2626';
+                return false;
+            }
+            return true;
+        }
+        function calculateSuccessRate() {
+            const shotsAttempted = parseInt(document.getElementById('shotsAttempted').value, 10) || 0;
+            const shotsMade = parseInt(document.getElementById('shotsMade').value, 10) || 0;
+            const successRateDisplay = document.getElementById('successRateDisplay');
+            if (!validateShotsMade()) {
+                successRateDisplay.value = '';
+                return;
+            }
+            if (shotsAttempted > 0 && shotsMade >= 0 && shotsMade <= shotsAttempted) {
+                successRateDisplay.value = (shotsMade / shotsAttempted * 100).toFixed(2) + '%';
+            } else {
+                successRateDisplay.value = '';
+            }
+        }
+        function showMessage(text, type) {
+            const messageArea = document.getElementById('messageArea');
+            messageArea.textContent = text;
+            messageArea.className = 'message ' + type;
+            messageArea.style.display = 'block';
+        }
+
+        function toggleNavMenu() {
+            document.getElementById('hamburgerBtn').classList.toggle('open');
+            document.getElementById('navOverlay').classList.toggle('open');
+            document.getElementById('navSlideMenu').classList.toggle('open');
+            document.body.style.overflow = document.getElementById('navSlideMenu').classList.contains('open') ? 'hidden' : '';
+        }
+        function closeNavMenu() {
+            document.getElementById('hamburgerBtn').classList.remove('open');
+            document.getElementById('navOverlay').classList.remove('open');
+            document.getElementById('navSlideMenu').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        async function handleSignOutFromMenu() {
+            closeNavMenu();
+            if (typeof logout === 'function') await logout();
+            else {
+                localStorage.removeItem('basketball_auth_token');
+                localStorage.removeItem('basketball_user');
+                sessionStorage.removeItem('basketball_auth_token');
+                sessionStorage.removeItem('basketball_user');
+            }
+            window.location.href = '/pages/login.html';
+        }
+        function handleSignOut() {
+            if (typeof logout === 'function') logout().then(() => { window.location.href = '/pages/login.html'; });
+            else {
+                localStorage.removeItem('basketball_auth_token');
+                localStorage.removeItem('basketball_user');
+                sessionStorage.removeItem('basketball_auth_token');
+                sessionStorage.removeItem('basketball_user');
+                window.location.href = '/pages/login.html';
+            }
+        }
+        document.addEventListener('click', function (event) {
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo && !userInfo.contains(event.target)) userInfo.classList.remove('open');
+        });
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

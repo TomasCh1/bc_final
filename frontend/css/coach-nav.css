@@ -1,0 +1,629 @@
+/* Coach / trainer header and nav - same look as trainer-dashboard, shared across all coach pages */
+
+.dashboard-header {
+    background: #FFFFFF;
+    border-bottom: 1px solid #E0E0E0;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Keep page content below fixed header across role pages */
+.dashboard-header ~ .dashboard-content {
+    margin-top: 76px !important;
+}
+
+.dashboard-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.dashboard-header .logo-small {
+    width: 40px;
+    height: 40px;
+}
+
+.dashboard-header .logo-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.dashboard-header .team-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #6B2C91;
+}
+
+.dashboard-header .header-nav {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: 2rem;
+}
+
+.dashboard-header .nav-pill {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    text-decoration: none;
+    color: #2C2C2C;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.dashboard-header .nav-pill:hover {
+    background: #F5F0FF;
+    color: #6B2C91;
+}
+
+.dashboard-header .nav-pill.active {
+    background: #E8D5FF;
+    color: #6B2C91;
+    font-weight: 600;
+}
+
+.dashboard-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* User info block with dropdown */
+.dashboard-header .user-info {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    cursor: pointer;
+}
+
+.dashboard-header .user-info-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dashboard-header .user-name {
+    font-weight: 600;
+    color: #6B2C91;
+    font-size: 0.95rem;
+}
+
+.dashboard-header .user-role {
+    font-size: 0.85rem;
+    color: #6B2C91;
+}
+
+.dashboard-header .user-dropdown-arrow {
+    font-size: 0.75rem;
+    color: #2C2C2C;
+    transition: transform 0.3s ease;
+}
+
+.dashboard-header .user-info.open .user-dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dashboard-header .user-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    min-width: 150px;
+    display: none;
+    z-index: 1000;
+}
+
+.dashboard-header .user-info.open .user-dropdown {
+    display: block;
+}
+
+.dashboard-header .user-dropdown-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    color: #2C2C2C;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.dashboard-header .user-dropdown-item:hover {
+    background-color: #F8F9FA;
+}
+
+.dashboard-header .user-dropdown-profile {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #E0E0E0;
+}
+
+.dashboard-header .user-dropdown-profile .user-dropdown-name {
+    font-weight: 600;
+    color: #2C2C2C;
+}
+
+.dashboard-header .user-dropdown-profile .user-dropdown-role {
+    font-size: 0.8rem;
+    color: #6B7280;
+}
+
+/* Slide menu profile (same as Matches sidebar) */
+.nav-slide-menu .nav-menu-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.nav-slide-menu .nav-menu-profile-avatar {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 50%;
+    background: #E8D5FF;
+    border: 1px solid #C4B5FD;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #6B2C91;
+    line-height: 1;
+    text-align: center;
+}
+
+.nav-slide-menu .nav-menu-profile-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.nav-slide-menu .nav-menu-profile-name {
+    font-weight: 600;
+    color: #6B2C91;
+    font-size: 0.95rem;
+    margin-bottom: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-slide-menu .nav-menu-profile-role {
+    font-size: 0.85rem;
+    color: #6B7280;
+}
+
+.nav-slide-menu .nav-menu-divider {
+    height: 1px;
+    background: #E5E7EB;
+    margin: 0.75rem 0;
+}
+
+.nav-slide-menu .nav-pill {
+    display: block;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #2C2C2C;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+
+.nav-slide-menu .nav-pill:hover {
+    background: #F5F0FF;
+}
+
+.nav-slide-menu .nav-pill.active {
+    background: #E8D5FF;
+    color: #6B2C91;
+    font-weight: 600;
+}
+
+/* ========== Shared action button (header + modals) ========== */
+.btn-action {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-action.primary {
+    background: #6B2C91;
+    color: #FFFFFF;
+}
+
+.btn-action.primary:hover {
+    background: #5a2473;
+}
+
+.btn-action.secondary {
+    background: #F3F4F6;
+    color: #374151;
+    border: 1px solid #E5E7EB;
+}
+
+.btn-action.secondary:hover {
+    background: #E5E7EB;
+}
+
+.btn-action.win {
+    background: #10B981;
+    color: #FFFFFF;
+}
+
+.btn-action.win:hover {
+    background: #059669;
+}
+
+.btn-action.loss {
+    background: #EF4444;
+    color: #FFFFFF;
+}
+
+.btn-action.loss:hover {
+    background: #DC2626;
+}
+
+/* ========== Header action buttons (+ Pridať zápas/tréning, Záznam štatistík) ========== */
+.dashboard-header .action-buttons-header {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.dashboard-header .quick-add-wrapper {
+    position: relative;
+    display: none;
+}
+
+.dashboard-header .quick-add-btn {
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    border: none;
+    background: #6B2C91;
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.dashboard-header .quick-add-btn:hover {
+    background: #5a2473;
+    transform: translateY(-1px);
+}
+
+.dashboard-header .quick-add-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.35rem);
+    min-width: 200px;
+    background: #FFFFFF;
+    border-radius: 10px;
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 8px 20px rgba(15,23,42,0.15);
+    padding: 0.4rem 0;
+    display: none;
+    z-index: 1500;
+}
+
+.dashboard-header .quick-add-menu.open {
+    display: block;
+}
+
+.dashboard-header .quick-add-item {
+    padding: 0.6rem 0.9rem;
+    font-size: 0.9rem;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    transition: background 0.2s;
+}
+
+.dashboard-header .quick-add-item:hover {
+    background: #F3F4F6;
+}
+
+.dashboard-header .quick-add-item .quick-add-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #EEF2FF;
+    color: #6B2C91;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* ========== Category filter dropdown ========== */
+.dashboard-header .category-filter {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #E7DFFF;
+    border: 1px solid #C4B5FD;
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dashboard-header .category-filter:hover {
+    background: #DDD6FE;
+}
+
+.dashboard-header .category-filter-text {
+    font-size: 0.9rem;
+    color: #374151;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.dashboard-header .category-filter-caret {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-header .category-filter-caret svg {
+    width: 100%;
+    height: 100%;
+}
+
+.dashboard-header .category-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+    padding: 0.5rem;
+    min-width: 200px;
+    max-width: 300px;
+    z-index: 1000;
+    display: none;
+}
+
+.dashboard-header .category-filter.open .category-dropdown {
+    display: block;
+}
+
+.dashboard-header .category-search {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.dashboard-header .category-search:focus {
+    outline: none;
+    border-color: #6B21A8;
+}
+
+.dashboard-header .category-options-container {
+    max-height: calc(5 * 2.75rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.dashboard-header .category-options-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dashboard-header .category-options-container::-webkit-scrollbar-track {
+    background: #F3F4F6;
+    border-radius: 3px;
+}
+
+.dashboard-header .category-options-container::-webkit-scrollbar-thumb {
+    background: #D1D5DB;
+    border-radius: 3px;
+}
+
+.dashboard-header .category-options-container::-webkit-scrollbar-thumb:hover {
+    background: #9CA3AF;
+}
+
+.dashboard-header .category-option {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    color: #2C2C2C;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+    border-radius: 6px;
+}
+
+.dashboard-header .category-option:hover {
+    background-color: #F8F9FA;
+}
+
+.dashboard-header .category-option.active {
+    background-color: #E7DFFF;
+    color: #6B21A8;
+    font-weight: 600;
+}
+
+.dashboard-header .category-option.hidden {
+    display: none;
+}
+
+/* ========== At 1673px: admin - nav items into hamburger menu ========== */
+@media (max-width: 1682px) {
+    body.admin .dashboard-header .header-nav {
+        display: none !important;
+    }
+
+    body.admin .dashboard-header .hamburger-btn {
+        display: flex !important;
+    }
+
+    body.admin .dashboard-header .user-info .user-info-header {
+        display: none !important;
+    }
+
+    body.admin .dashboard-header .user-info {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+        border-radius: 50%;
+        background: #E8D5FF;
+        border: 1px solid #C4B5FD;
+        align-items: center;
+        justify-content: center;
+    }
+
+    body.admin .dashboard-header .user-info::before {
+        content: attr(data-initial);
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: 700;
+        font-size: 1rem;
+        color: #6B2C91;
+        line-height: 1;
+    }
+
+    body.admin .dashboard-header .user-info .user-dropdown {
+        min-width: 200px;
+        right: 0;
+    }
+
+    body.admin .dashboard-header .user-dropdown-profile {
+        display: block !important;
+    }
+}
+
+/* ========== At 1307px: trainer - hamburger + hide nav links, trainer info to circle ========== */
+@media (max-width: 1307px) {
+    body:not(.admin) .dashboard-header .header-nav {
+        display: none !important;
+    }
+
+    body:not(.admin) .dashboard-header .hamburger-btn {
+        display: flex !important;
+    }
+
+    body:not(.admin) .dashboard-header .user-info .user-info-header {
+        display: none !important;
+    }
+
+    body:not(.admin) .dashboard-header .user-info {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+        border-radius: 50%;
+        background: #E8D5FF;
+        border: 1px solid #C4B5FD;
+        align-items: center;
+        justify-content: center;
+    }
+
+    body:not(.admin) .dashboard-header .user-info::before {
+        content: attr(data-initial);
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: 700;
+        font-size: 1rem;
+        color: #6B2C91;
+        line-height: 1;
+    }
+
+    body:not(.admin) .dashboard-header .user-info .user-dropdown {
+        min-width: 200px;
+        right: 0;
+    }
+
+    body:not(.admin) .dashboard-header .user-dropdown-profile {
+        display: block !important;
+    }
+}
+
+/* ========== At 948px: collapse two header action buttons into one + dropdown ========== */
+@media (max-width: 948px) {
+    .dashboard-header .action-buttons-header .btn-action {
+        display: none;
+    }
+
+    .dashboard-header .action-buttons-header .quick-add-wrapper {
+        display: inline-block;
+    }
+}
+
+/* ========== At 670px: hide plus so actions are only in hamburger menu ========== */
+@media (max-width: 670px) {
+    .dashboard-header .action-buttons-header {
+        display: none !important;
+    }
+}
+
+/* ========== At 424px: user moves into hamburger sidebar ========== */
+@media (max-width: 424px) {
+    .dashboard-header .header-right {
+        display: flex !important;
+    }
+
+    .dashboard-header .user-info {
+        display: none !important;
+    }
+
+    .dashboard-header .hamburger-btn {
+        display: flex !important;
+    }
+
+    .dashboard-header .header-nav {
+        display: none !important;
+    }
+}

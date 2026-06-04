@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MatchStatsTemplateExportService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.service</a> &gt; <span class="el_source">MatchStatsTemplateExportService.java</span></div><h1>MatchStatsTemplateExportService.java</h1><pre class="source lang-java linenums">package com.basketball.app.service;
+
+import com.basketball.app.model.Category;
+import com.basketball.app.model.Event;
+import com.basketball.app.model.EventNominatedPlayer;
+import com.basketball.app.model.Statistics;
+import com.basketball.app.model.User;
+import com.basketball.app.repository.CategoryRepository;
+import com.basketball.app.repository.EventNominatedPlayerRepository;
+import com.basketball.app.repository.EventRepository;
+import com.basketball.app.repository.StatisticsRepository;
+import com.basketball.app.repository.UserRepository;
+import com.basketball.app.util.UserNames;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Service;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Service
+public class MatchStatsTemplateExportService {
+
+    private static final String TEMPLATE_PATH = &quot;static/XLSX/2025_26 - VYHODNOTENIE HERNEJ ŠTATISTIKY.xlsx&quot;;
+    private static final String STATS_SHEET_NAME = &quot;Štatistiky&quot;;
+    private static final int PLAYER_START_ROW = 15; // Excel row 16 (0-based index)
+    private static final int PLAYER_END_ROW = 34;   // Excel row 35 (0-based index)
+
+<span class="fc" id="L45">    private static final int REFEREE_NAME_COL = CellReference.convertColStringToIndex(&quot;N&quot;);</span>
+<span class="fc" id="L46">    private static final int REFEREE_GRADE_COL = CellReference.convertColStringToIndex(&quot;Y&quot;);</span>
+    private static final int MAX_REFEREES = 3;
+    private static final int REFEREE_DATA_START_ROW = 51;
+
+    private final EventRepository eventRepository;
+    private final StatisticsRepository statisticsRepository;
+    private final EventNominatedPlayerRepository nominatedPlayerRepository;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+    private final EventRefereeService eventRefereeService;
+
+    public MatchStatsTemplateExportService(
+            EventRepository eventRepository,
+            StatisticsRepository statisticsRepository,
+            EventNominatedPlayerRepository nominatedPlayerRepository,
+            UserRepository userRepository,
+            CategoryRepository categoryRepository,
+            EventRefereeService eventRefereeService
+<span class="fc" id="L64">    ) {</span>
+<span class="fc" id="L65">        this.eventRepository = eventRepository;</span>
+<span class="fc" id="L66">        this.statisticsRepository = statisticsRepository;</span>
+<span class="fc" id="L67">        this.nominatedPlayerRepository = nominatedPlayerRepository;</span>
+<span class="fc" id="L68">        this.userRepository = userRepository;</span>
+<span class="fc" id="L69">        this.categoryRepository = categoryRepository;</span>
+<span class="fc" id="L70">        this.eventRefereeService = eventRefereeService;</span>
+<span class="fc" id="L71">    }</span>
+
+    /**
+     * @param preparedByExportName already formatted as &quot;priezvisko meno&quot; (see {@link UserNames#toSurnameAndGivenName(User)})
+     */
+    public byte[] exportMatchTemplate(Long eventId, String preparedByExportName) throws IOException {
+<span class="pc bpc" id="L77" title="1 of 4 branches missed.">        if (eventId == null || eventId &lt;= 0) {</span>
+<span class="fc" id="L78">            throw new RuntimeException(&quot;Event ID is required.&quot;);</span>
+        }
+
+<span class="fc" id="L81">        Event event = eventRepository.findById(eventId)</span>
+<span class="pc" id="L82">                .orElseThrow(() -&gt; new RuntimeException(&quot;Event not found: &quot; + eventId));</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (event.getType() != Event.EventType.MATCH) {</span>
+<span class="fc" id="L84">            throw new RuntimeException(&quot;Template export is allowed only for MATCH events.&quot;);</span>
+        }
+
+<span class="nc" id="L87">        try (InputStream templateStream = new ClassPathResource(TEMPLATE_PATH).getInputStream();</span>
+<span class="nc" id="L88">             Workbook workbook = new XSSFWorkbook(templateStream);</span>
+<span class="nc" id="L89">             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {</span>
+
+<span class="nc" id="L91">            Sheet sheet = Optional.ofNullable(workbook.getSheet(STATS_SHEET_NAME))</span>
+<span class="nc" id="L92">                    .orElse(workbook.getSheetAt(0));</span>
+
+<span class="nc" id="L94">            fillHeader(sheet, event, preparedByExportName);</span>
+<span class="nc" id="L95">            fillReferees(sheet, eventId);</span>
+<span class="nc" id="L96">            fillPlayerRows(sheet, eventId);</span>
+
+<span class="nc" id="L98">            workbook.setForceFormulaRecalculation(true);</span>
+
+<span class="nc" id="L100">            workbook.write(outputStream);</span>
+<span class="nc" id="L101">            return outputStream.toByteArray();</span>
+        }
+    }
+
+    private void fillHeader(Sheet sheet, Event event, String preparedByExportName) {
+<span class="nc" id="L106">        String opponent = defaultString(event.getOpponent());</span>
+<span class="nc" id="L107">        String ownTeamName = &quot;MBK MTF AŠK Slávia Trnava&quot;;</span>
+<span class="nc bnc" id="L108" title="All 4 branches missed.">        boolean homeMatch = event.getIsHomeMatch() == null || Boolean.TRUE.equals(event.getIsHomeMatch());</span>
+
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        String homeTeam = homeMatch ? ownTeamName : opponent;</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        String awayTeam = homeMatch ? opponent : ownTeamName;</span>
+
+<span class="nc" id="L113">        setCellText(sheet, 3, 3, homeTeam);   // D4</span>
+<span class="nc" id="L114">        setCellText(sheet, 3, 13, awayTeam);  // N4</span>
+
+
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        Integer homeScore = homeMatch ? event.getOurScore() : event.getOpponentScore();</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        Integer awayScore = homeMatch ? event.getOpponentScore() : event.getOurScore();</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        if (homeScore != null) {</span>
+<span class="nc" id="L120">            setCellNumber(sheet, 4, 3, homeScore);  // D5 – skóre domácich</span>
+        }
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (awayScore != null) {</span>
+<span class="nc" id="L123">            setCellNumber(sheet, 4, 13, awayScore);  // N5 – skóre hostí</span>
+        }
+
+<span class="nc" id="L126">        setCellDate(sheet, 7, 4, event.getDate());               // E8</span>
+
+
+<span class="nc" id="L129">        setCellText(sheet, 9, 4, defaultString(preparedByExportName));   // E10 – priezvisko meno</span>
+<span class="nc" id="L130">        setCellText(sheet, 10, 4, ownTeamName); // E11</span>
+<span class="nc" id="L131">    }</span>
+
+
+    private void fillReferees(Sheet sheet, Long eventId) {
+<span class="nc" id="L135">        Map&lt;String, Object&gt; data = eventRefereeService.getRefereesForEvent(eventId);</span>
+<span class="nc" id="L136">        Object refObj = data.get(&quot;referees&quot;);</span>
+<span class="nc bnc" id="L137" title="All 4 branches missed.">        if (!(refObj instanceof List&lt;?&gt; list) || list.isEmpty()) {</span>
+<span class="nc" id="L138">            return;</span>
+        }
+<span class="nc bnc" id="L140" title="All 4 branches missed.">        for (int i = 0; i &lt; list.size() &amp;&amp; i &lt; MAX_REFEREES; i++) {</span>
+<span class="nc" id="L141">            Object item = list.get(i);</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (!(item instanceof Map&lt;?, ?&gt; r)) {</span>
+                continue;
+            }
+<span class="nc" id="L145">            Object name = r.get(&quot;name&quot;);</span>
+<span class="nc" id="L146">            Object grade = r.get(&quot;grade&quot;);</span>
+<span class="nc" id="L147">            int rowIdx = REFEREE_DATA_START_ROW + i;</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">            setCellText(sheet, rowIdx, REFEREE_NAME_COL, defaultString(name != null ? String.valueOf(name) : &quot;&quot;));</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">            setCellText(sheet, rowIdx, REFEREE_GRADE_COL, defaultString(grade != null ? String.valueOf(grade) : &quot;&quot;));</span>
+        }
+<span class="nc" id="L151">    }</span>
+    private void fillPlayerRows(Sheet sheet, Long eventId) {
+<span class="nc" id="L153">        List&lt;EventNominatedPlayer&gt; nominations = nominatedPlayerRepository.findByEventId(eventId);</span>
+<span class="nc" id="L154">        Map&lt;Long, EventNominatedPlayer&gt; nominationByPlayerId = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        for (EventNominatedPlayer nomination : nominations) {</span>
+<span class="nc" id="L156">            nominationByPlayerId.put(nomination.getPlayerId(), nomination);</span>
+<span class="nc" id="L157">        }</span>
+
+<span class="nc" id="L159">        Map&lt;Long, Statistics&gt; statsByPlayerId = statisticsRepository.findByEventId(eventId).stream()</span>
+<span class="nc" id="L160">                .collect(Collectors.toMap(Statistics::getPlayerId, s -&gt; s, (first, second) -&gt; first));</span>
+
+<span class="nc" id="L162">        List&lt;EventNominatedPlayer&gt; startingFive = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L163">        List&lt;EventNominatedPlayer&gt; bench = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        for (EventNominatedPlayer nomination : nominations) {</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">            if (Boolean.TRUE.equals(nomination.getStartingFive())) {</span>
+<span class="nc" id="L166">                startingFive.add(nomination);</span>
+            } else {
+<span class="nc" id="L168">                bench.add(nomination);</span>
+            }
+<span class="nc" id="L170">        }</span>
+<span class="nc" id="L171">        bench.sort(Comparator.comparing(EventNominatedPlayer::getJerseyNumber,</span>
+<span class="nc" id="L172">                Comparator.nullsLast(Integer::compareTo)));</span>
+
+<span class="nc" id="L174">        List&lt;Long&gt; playerOrder = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        for (EventNominatedPlayer nomination : startingFive) {</span>
+<span class="nc" id="L176">            playerOrder.add(nomination.getPlayerId());</span>
+<span class="nc" id="L177">        }</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        for (EventNominatedPlayer nomination : bench) {</span>
+<span class="nc" id="L179">            playerOrder.add(nomination.getPlayerId());</span>
+<span class="nc" id="L180">        }</span>
+
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (playerOrder.isEmpty()) {</span>
+<span class="nc" id="L183">            playerOrder.addAll(statsByPlayerId.keySet());</span>
+<span class="nc" id="L184">            playerOrder.sort(Long::compareTo);</span>
+        }
+
+<span class="nc" id="L187">        Set&lt;Long&gt; playerIdsToLoad = new HashSet&lt;&gt;(playerOrder);</span>
+<span class="nc" id="L188">        playerIdsToLoad.addAll(statsByPlayerId.keySet());</span>
+<span class="nc" id="L189">        Map&lt;Long, User&gt; usersById = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        if (!playerIdsToLoad.isEmpty()) {</span>
+<span class="nc" id="L191">            userRepository.findAllById(playerIdsToLoad).forEach(user -&gt; usersById.put(user.getId(), user));</span>
+        }
+
+<span class="nc" id="L194">        int rowIdx = PLAYER_START_ROW;</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        for (Long playerId : playerOrder) {</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            if (rowIdx &gt; PLAYER_END_ROW) break;</span>
+<span class="nc" id="L197">            User user = usersById.get(playerId);</span>
+<span class="nc" id="L198">            Statistics stat = statsByPlayerId.get(playerId);</span>
+<span class="nc" id="L199">            EventNominatedPlayer nomination = nominationByPlayerId.get(playerId);</span>
+
+<span class="nc bnc" id="L201" title="All 4 branches missed.">            if (nomination != null &amp;&amp; nomination.getJerseyNumber() != null) {</span>
+<span class="nc" id="L202">                setCellNumber(sheet, rowIdx, 1, nomination.getJerseyNumber()); // B</span>
+            }
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            setCellText(sheet, rowIdx, 2, user != null</span>
+<span class="nc" id="L205">                    ? defaultString(UserNames.toSurnameAndGivenName(user)) : &quot;&quot;); // C – priezvisko meno</span>
+
+<span class="nc bnc" id="L207" title="All 4 branches missed.">            setCellDouble(sheet, rowIdx, 3, stat != null &amp;&amp; stat.getMin() != null ? Math.ceil(stat.getMin()) : 0d); // D MIN</span>
+<span class="nc bnc" id="L208" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 4, stat != null &amp;&amp; stat.getTwoPMade() != null ? stat.getTwoPMade() : 0); // E 2P made</span>
+<span class="nc bnc" id="L209" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 5, stat != null &amp;&amp; stat.getTwoPAttempts() != null ? stat.getTwoPAttempts() : 0); // F 2P attempts</span>
+<span class="nc bnc" id="L210" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 7, stat != null &amp;&amp; stat.getThreePMade() != null ? stat.getThreePMade() : 0); // H 3P made</span>
+<span class="nc bnc" id="L211" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 8, stat != null &amp;&amp; stat.getThreePAttempts() != null ? stat.getThreePAttempts() : 0); // I 3P attempts</span>
+<span class="nc bnc" id="L212" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 10, stat != null &amp;&amp; stat.getFgMade() != null ? stat.getFgMade() : 0); // K FG made</span>
+<span class="nc bnc" id="L213" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 11, stat != null &amp;&amp; stat.getFgAttempts() != null ? stat.getFgAttempts() : 0); // L FG attempts</span>
+<span class="nc bnc" id="L214" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 13, stat != null &amp;&amp; stat.getFtMade() != null ? stat.getFtMade() : 0); // N FT made</span>
+<span class="nc bnc" id="L215" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 14, stat != null &amp;&amp; stat.getFtAttempts() != null ? stat.getFtAttempts() : 0); // O FT attempts</span>
+<span class="nc bnc" id="L216" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 17, stat != null &amp;&amp; stat.getOffReb() != null ? stat.getOffReb() : 0); // R OFF</span>
+<span class="nc bnc" id="L217" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 18, stat != null &amp;&amp; stat.getDefReb() != null ? stat.getDefReb() : 0); // S DEF</span>
+<span class="nc bnc" id="L218" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 19, stat != null &amp;&amp; stat.getAst() != null ? stat.getAst() : 0); // T AST</span>
+<span class="nc bnc" id="L219" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 20, stat != null &amp;&amp; stat.getTurnovers() != null ? stat.getTurnovers() : 0); // U TO</span>
+<span class="nc bnc" id="L220" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 21, stat != null &amp;&amp; stat.getStl() != null ? stat.getStl() : 0); // V STL</span>
+<span class="nc bnc" id="L221" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 22, stat != null &amp;&amp; stat.getBlk() != null ? stat.getBlk() : 0); // W BLK</span>
+<span class="nc bnc" id="L222" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 23, stat != null &amp;&amp; stat.getFoulsPlus() != null ? stat.getFoulsPlus() : 0); // X PF</span>
+<span class="nc bnc" id="L223" title="All 4 branches missed.">            setCellInteger(sheet, rowIdx, 24, stat != null &amp;&amp; stat.getFoulsMinus() != null ? stat.getFoulsMinus() : 0); // Y FLS ON</span>
+<span class="nc" id="L224">            rowIdx++;</span>
+<span class="nc" id="L225">        }</span>
+<span class="nc" id="L226">    }</span>
+
+    private String resolveCompetition(Long categoryId) {
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (categoryId == null) return &quot;&quot;;</span>
+<span class="nc" id="L230">        return categoryRepository.findById(categoryId)</span>
+<span class="nc" id="L231">                .map(Category::getName)</span>
+<span class="nc" id="L232">                .orElse(&quot;&quot;);</span>
+    }
+
+    private void setCellText(Sheet sheet, int rowIdx, int colIdx, String value) {
+<span class="nc" id="L236">        Row row = getOrCreateRow(sheet, rowIdx);</span>
+<span class="nc" id="L237">        Cell cell = getOrCreateCell(row, colIdx);</span>
+<span class="nc" id="L238">        cell.setCellValue(defaultString(value));</span>
+<span class="nc" id="L239">    }</span>
+
+    private void setCellNumber(Sheet sheet, int rowIdx, int colIdx, Number value) {
+<span class="nc bnc" id="L242" title="All 2 branches missed.">        if (value == null) return;</span>
+<span class="nc" id="L243">        Row row = getOrCreateRow(sheet, rowIdx);</span>
+<span class="nc" id="L244">        Cell cell = getOrCreateCell(row, colIdx);</span>
+<span class="nc" id="L245">        cell.setCellValue(value.doubleValue());</span>
+<span class="nc" id="L246">    }</span>
+
+    private void setCellInteger(Sheet sheet, int rowIdx, int colIdx, Integer value) {
+<span class="nc bnc" id="L249" title="All 2 branches missed.">        if (value == null) return;</span>
+<span class="nc" id="L250">        setCellNumber(sheet, rowIdx, colIdx, value);</span>
+<span class="nc" id="L251">    }</span>
+
+    private void setCellDouble(Sheet sheet, int rowIdx, int colIdx, Double value) {
+<span class="nc bnc" id="L254" title="All 2 branches missed.">        if (value == null) return;</span>
+<span class="nc" id="L255">        setCellNumber(sheet, rowIdx, colIdx, value);</span>
+<span class="nc" id="L256">    }</span>
+
+    private void setCellDate(Sheet sheet, int rowIdx, int colIdx, LocalDate value) {
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        if (value == null) return;</span>
+<span class="nc" id="L260">        Row row = getOrCreateRow(sheet, rowIdx);</span>
+<span class="nc" id="L261">        Cell cell = getOrCreateCell(row, colIdx);</span>
+<span class="nc" id="L262">        cell.setCellValue(value);</span>
+<span class="nc" id="L263">    }</span>
+
+    private Row getOrCreateRow(Sheet sheet, int rowIdx) {
+<span class="nc" id="L266">        Row row = sheet.getRow(rowIdx);</span>
+<span class="nc bnc" id="L267" title="All 2 branches missed.">        return row != null ? row : sheet.createRow(rowIdx);</span>
+    }
+
+    private Cell getOrCreateCell(Row row, int colIdx) {
+<span class="nc" id="L271">        Cell cell = row.getCell(colIdx);</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">        return cell != null ? cell : row.createCell(colIdx);</span>
+    }
+
+    private String defaultString(String value) {
+<span class="nc bnc" id="L276" title="All 2 branches missed.">        return value == null ? &quot;&quot; : value;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

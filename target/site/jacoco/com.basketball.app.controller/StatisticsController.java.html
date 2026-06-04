@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StatisticsController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.controller</a> &gt; <span class="el_source">StatisticsController.java</span></div><h1>StatisticsController.java</h1><pre class="source lang-java linenums">package com.basketball.app.controller;
+
+import com.basketball.app.dto.StatisticsCreateRequest;
+import com.basketball.app.dto.StatisticsUpdateRequest;
+import com.basketball.app.model.Statistics;
+import com.basketball.app.service.MatchStatsTemplateExportService;
+import com.basketball.app.service.StatisticsService;
+import com.basketball.app.service.UserService;
+import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/api/statistics&quot;)
+public class StatisticsController {
+
+    private final StatisticsService statisticsService;
+    private final MatchStatsTemplateExportService matchStatsTemplateExportService;
+    private final UserService userService;
+
+    public StatisticsController(
+            StatisticsService statisticsService,
+            MatchStatsTemplateExportService matchStatsTemplateExportService,
+            UserService userService
+<span class="fc" id="L34">    ) {</span>
+<span class="fc" id="L35">        this.statisticsService = statisticsService;</span>
+<span class="fc" id="L36">        this.matchStatsTemplateExportService = matchStatsTemplateExportService;</span>
+<span class="fc" id="L37">        this.userService = userService;</span>
+<span class="fc" id="L38">    }</span>
+
+    /**
+     * Create statistics record
+     */
+    @PostMapping
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; createStatistics(@Valid @RequestBody StatisticsCreateRequest request) {
+        try {
+<span class="fc" id="L47">            Statistics statistics = statisticsService.createStatistics(request);</span>
+<span class="fc" id="L48">            return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="fc" id="L49">                    .body(statisticsService.toStatisticsMap(statistics));</span>
+<span class="fc" id="L50">        } catch (Exception e) {</span>
+<span class="fc" id="L51">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L52">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Update statistics record
+     */
+    @PutMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; updateStatistics(@PathVariable Long id,
+                                             @Valid @RequestBody StatisticsUpdateRequest request) {
+        try {
+<span class="fc" id="L64">            Statistics statistics = statisticsService.updateStatistics(id, request);</span>
+<span class="fc" id="L65">            return ResponseEntity.ok(statisticsService.toStatisticsMap(statistics));</span>
+<span class="nc" id="L66">        } catch (Exception e) {</span>
+<span class="nc" id="L67">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L68">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get statistics by ID
+     */
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;?&gt; getStatisticsById(@PathVariable Long id) {
+        try {
+<span class="fc" id="L78">            Statistics statistics = statisticsService.findById(id)</span>
+<span class="fc" id="L79">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Statistics not found: &quot; + id));</span>
+<span class="fc" id="L80">            return ResponseEntity.ok(statisticsService.toStatisticsMap(statistics));</span>
+<span class="fc" id="L81">        } catch (Exception e) {</span>
+<span class="fc" id="L82">            return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="fc" id="L83">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get all statistics (match only). statType filter is optional; only GAME is stored.
+     */
+    @GetMapping
+    public ResponseEntity&lt;?&gt; getAllStatistics(
+            @RequestParam(required = false) Long playerId,
+            @RequestParam(required = false) Long eventId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Statistics.StatType statType, // only GAME applies
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String opponent) {
+        try {
+<span class="fc" id="L100">            List&lt;Map&lt;String, Object&gt;&gt; statisticsMaps = statisticsService.findWithFiltersAsMaps(</span>
+                    playerId, eventId, categoryId, statType, startDate, endDate, opponent);
+
+<span class="fc" id="L103">            return ResponseEntity.ok(statisticsMaps);</span>
+<span class="nc" id="L104">        } catch (Exception e) {</span>
+<span class="nc" id="L105">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L106">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get statistics for the most recent N games (lazy load). Returns statistics list plus totalGames and hasMore.
+     */
+    @GetMapping(&quot;/games/recent&quot;)
+    public ResponseEntity&lt;?&gt; getRecentGameStatistics(
+            @RequestParam(defaultValue = &quot;10&quot;) int limit,
+            @RequestParam(defaultValue = &quot;0&quot;) int offset,
+            @RequestParam(required = false) Long categoryId) {
+        try {
+<span class="fc" id="L119">            limit = Math.min(Math.max(1, limit), 100);</span>
+<span class="fc" id="L120">            offset = Math.max(0, offset);</span>
+<span class="fc" id="L121">            return ResponseEntity.ok(statisticsService.findRecentGameStatistics(categoryId, limit, offset));</span>
+<span class="nc" id="L122">        } catch (Exception e) {</span>
+<span class="nc" id="L123">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L124">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get statistics by event
+     */
+    @GetMapping(&quot;/event/{eventId}&quot;)
+    public ResponseEntity&lt;?&gt; getStatisticsByEvent(@PathVariable Long eventId) {
+        try {
+<span class="fc" id="L134">            List&lt;Statistics&gt; statistics = statisticsService.findByEvent(eventId);</span>
+<span class="fc" id="L135">            List&lt;Map&lt;String, Object&gt;&gt; statisticsMaps = statistics.stream()</span>
+<span class="fc" id="L136">                    .map(statisticsService::toStatisticsMap)</span>
+<span class="fc" id="L137">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L138">            return ResponseEntity.ok(statisticsMaps);</span>
+<span class="nc" id="L139">        } catch (Exception e) {</span>
+<span class="nc" id="L140">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L141">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get statistics by player
+     */
+    @GetMapping(&quot;/player/{playerId}&quot;)
+    public ResponseEntity&lt;?&gt; getStatisticsByPlayer(@PathVariable Long playerId) {
+        try {
+<span class="fc" id="L151">            List&lt;Statistics&gt; statistics = statisticsService.findByPlayer(playerId);</span>
+<span class="fc" id="L152">            List&lt;Map&lt;String, Object&gt;&gt; statisticsMaps = statistics.stream()</span>
+<span class="fc" id="L153">                    .map(statisticsService::toStatisticsMap)</span>
+<span class="fc" id="L154">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L155">            return ResponseEntity.ok(statisticsMaps);</span>
+<span class="nc" id="L156">        } catch (Exception e) {</span>
+<span class="nc" id="L157">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L158">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get statistics by stat type (only GAME/match is stored).
+     */
+    @GetMapping(&quot;/type/{statType}&quot;)
+    public ResponseEntity&lt;?&gt; getStatisticsByType(@PathVariable Statistics.StatType statType) {
+        try {
+<span class="fc" id="L168">            List&lt;Statistics&gt; statistics = statisticsService.findByStatType(statType);</span>
+<span class="fc" id="L169">            List&lt;Map&lt;String, Object&gt;&gt; statisticsMaps = statistics.stream()</span>
+<span class="fc" id="L170">                    .map(statisticsService::toStatisticsMap)</span>
+<span class="fc" id="L171">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L172">            return ResponseEntity.ok(statisticsMaps);</span>
+<span class="nc" id="L173">        } catch (Exception e) {</span>
+<span class="nc" id="L174">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L175">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Delete statistics
+     */
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; deleteStatistics(@PathVariable Long id) {
+        try {
+<span class="fc" id="L186">            statisticsService.deleteStatistics(id);</span>
+<span class="fc" id="L187">            return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Statistics deleted successfully&quot;));</span>
+<span class="fc" id="L188">        } catch (Exception e) {</span>
+<span class="fc" id="L189">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L190">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Calculate INDEX from stat values
+     */
+    @PostMapping(&quot;/calculate-index&quot;)
+    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    public ResponseEntity&lt;?&gt; calculateIndex(@RequestBody Map&lt;String, Object&gt; values) {
+        try {
+<span class="fc" id="L201">            Double index = statisticsService.calculateIndex(values);</span>
+<span class="fc" id="L202">            return ResponseEntity.ok(Map.of(&quot;INDEX&quot;, index));</span>
+<span class="nc" id="L203">        } catch (Exception e) {</span>
+<span class="nc" id="L204">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L205">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Export one match into the pre-formatted XLSX template.
+     */
+    @GetMapping(&quot;/export/match-template&quot;)
+    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    public ResponseEntity&lt;?&gt; exportMatchTemplate(@RequestParam Long eventId) {
+        try {
+<span class="fc" id="L216">            String preparedBy = com.basketball.app.util.UserNames.toSurnameAndGivenName(userService.getCurrentUser());</span>
+<span class="fc" id="L217">            byte[] excelData = matchStatsTemplateExportService.exportMatchTemplate(eventId, preparedBy);</span>
+
+<span class="fc" id="L219">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L220">            headers.setContentType(MediaType.parseMediaType(</span>
+                    &quot;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet&quot;));
+<span class="fc" id="L222">            headers.setContentDispositionFormData(</span>
+                    &quot;attachment&quot;, &quot;match_statistics_&quot; + eventId + &quot;.xlsx&quot;);
+
+<span class="fc" id="L225">            return ResponseEntity.ok()</span>
+<span class="fc" id="L226">                    .headers(headers)</span>
+<span class="fc" id="L227">                    .body(excelData);</span>
+<span class="fc" id="L228">        } catch (Exception e) {</span>
+<span class="fc" id="L229">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L230">                    .body(Map.of(&quot;error&quot;, &quot;Failed to export match template: &quot; + e.getMessage()));</span>
+        }
+    }
+}
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

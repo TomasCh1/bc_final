@@ -1,0 +1,944 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DataInitializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.config</a> &gt; <span class="el_source">DataInitializer.java</span></div><h1>DataInitializer.java</h1><pre class="source lang-java linenums">package com.basketball.app.config;
+
+import com.basketball.app.model.Attendance;
+import com.basketball.app.model.BehStats;
+import com.basketball.app.model.Category;
+import com.basketball.app.model.Event;
+import com.basketball.app.model.EventNominatedPlayer;
+import com.basketball.app.model.EventOpponentPlayer;
+import com.basketball.app.model.EventReferee;
+import com.basketball.app.model.PoslnovanieStats;
+import com.basketball.app.model.Statistics;
+import com.basketball.app.model.StrelbaStats;
+import com.basketball.app.model.User;
+import com.basketball.app.repository.AttendanceRepository;
+import com.basketball.app.repository.CategoryRepository;
+import com.basketball.app.repository.EventRepository;
+import com.basketball.app.repository.EventNominatedPlayerRepository;
+import com.basketball.app.repository.EventOpponentPlayerRepository;
+import com.basketball.app.repository.EventRefereeRepository;
+import com.basketball.app.repository.StatisticsRepository;
+import com.basketball.app.repository.TrainingStatisticsRepository;
+import com.basketball.app.repository.UserRepository;
+import com.basketball.app.util.UserNames;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.Arrays;
+import java.util.Comparator;
+
+/**
+ * Creates deterministic development data on startup for local and docker profiles.
+ * In prod profile, ensures a single admin account exists when configured via env vars.
+ */
+@Component
+@Profile({&quot;local&quot;, &quot;docker&quot;, &quot;prod&quot;})
+public class DataInitializer implements CommandLineRunner {
+    private static final String SEASON = &quot;2025/2026&quot;;
+    private static final String DEFAULT_LOCATION = &quot;Mestska sportova hala Trnava&quot;;
+<span class="nc" id="L58">    private static final Random RANDOM = new Random(20260502L);</span>
+    private static final int PLAYERS_PER_CATEGORY = 12;
+<span class="nc" id="L60">    private static final List&lt;String&gt; CATEGORY_NAMES = List.of(&quot;U11&quot;, &quot;U13&quot;, &quot;U15&quot;, &quot;U17&quot;, &quot;U19&quot;);</span>
+
+<span class="nc" id="L62">    private static final String[][] ADMIN_ACCOUNTS = {</span>
+        {&quot;System Admin&quot;, &quot;admin@basketball.com&quot;, &quot;admin123&quot;},
+        {&quot;Operations Admin&quot;, &quot;ops.admin@basketball.com&quot;, &quot;opsAdmin123&quot;}
+    };
+
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+    private final EventRepository eventRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final TrainingStatisticsRepository trainingStatisticsRepository;
+    private final StatisticsRepository statisticsRepository;
+    private final EventNominatedPlayerRepository eventNominatedPlayerRepository;
+    private final EventOpponentPlayerRepository eventOpponentPlayerRepository;
+    private final EventRefereeRepository eventRefereeRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final Environment environment;
+
+    private static final String PROD_ADMIN_NAME_KEY = &quot;app.bootstrap.admin.name&quot;;
+    private static final String PROD_ADMIN_SURNAME_KEY = &quot;app.bootstrap.admin.surname&quot;;
+    private static final String PROD_ADMIN_EMAIL_KEY = &quot;app.bootstrap.admin.email&quot;;
+    private static final String PROD_ADMIN_PASSWORD_KEY = &quot;app.bootstrap.admin.password&quot;;
+
+    public DataInitializer(UserRepository userRepository,
+                           CategoryRepository categoryRepository,
+                           EventRepository eventRepository,
+                           AttendanceRepository attendanceRepository,
+                           TrainingStatisticsRepository trainingStatisticsRepository,
+                           StatisticsRepository statisticsRepository,
+                           EventNominatedPlayerRepository eventNominatedPlayerRepository,
+                           EventOpponentPlayerRepository eventOpponentPlayerRepository,
+                           EventRefereeRepository eventRefereeRepository,
+                           PasswordEncoder passwordEncoder,
+<span class="nc" id="L94">                           Environment environment) {</span>
+<span class="nc" id="L95">        this.userRepository = userRepository;</span>
+<span class="nc" id="L96">        this.categoryRepository = categoryRepository;</span>
+<span class="nc" id="L97">        this.eventRepository = eventRepository;</span>
+<span class="nc" id="L98">        this.attendanceRepository = attendanceRepository;</span>
+<span class="nc" id="L99">        this.trainingStatisticsRepository = trainingStatisticsRepository;</span>
+<span class="nc" id="L100">        this.statisticsRepository = statisticsRepository;</span>
+<span class="nc" id="L101">        this.eventNominatedPlayerRepository = eventNominatedPlayerRepository;</span>
+<span class="nc" id="L102">        this.eventOpponentPlayerRepository = eventOpponentPlayerRepository;</span>
+<span class="nc" id="L103">        this.eventRefereeRepository = eventRefereeRepository;</span>
+<span class="nc" id="L104">        this.passwordEncoder = passwordEncoder;</span>
+<span class="nc" id="L105">        this.environment = environment;</span>
+<span class="nc" id="L106">    }</span>
+
+    @Override
+    @Transactional
+    public void run(String... args) {
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (isProdProfile()) {</span>
+<span class="nc" id="L112">            createProdAdmin();</span>
+<span class="nc" id="L113">            return;</span>
+        }
+
+<span class="nc" id="L116">        createFixedAdmins();</span>
+<span class="nc" id="L117">        List&lt;User&gt; trainers = ensureTrainers();</span>
+<span class="nc" id="L118">        List&lt;Category&gt; categories = ensureCategories(trainers);</span>
+<span class="nc" id="L119">        Map&lt;Long, List&lt;User&gt;&gt; playersByCategory = ensurePlayers(categories);</span>
+<span class="nc" id="L120">        seedTrainings(categories);</span>
+<span class="nc" id="L121">        seedMatches(categories);</span>
+<span class="nc" id="L122">        seedTrainingAttendance(categories, playersByCategory, trainers);</span>
+<span class="nc" id="L123">        seedTrainingStatistics();</span>
+<span class="nc" id="L124">        seedMatchDetailsAndStatistics(playersByCategory);</span>
+<span class="nc" id="L125">    }</span>
+
+    private void createFixedAdmins() {
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        for (String[] account : ADMIN_ACCOUNTS) {</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (userRepository.existsByEmail(account[1])) {</span>
+<span class="nc" id="L130">                continue;</span>
+            }
+<span class="nc" id="L132">            User admin = new User();</span>
+<span class="nc" id="L133">            UserNames.applyFullName(admin, account[0]);</span>
+<span class="nc" id="L134">            admin.setEmail(account[1]);</span>
+<span class="nc" id="L135">            admin.setPassword(passwordEncoder.encode(account[2]));</span>
+<span class="nc" id="L136">            admin.setRole(User.Role.ADMIN);</span>
+<span class="nc" id="L137">            admin.setIsActive(true);</span>
+<span class="nc" id="L138">            admin.setMustChangePassword(false);</span>
+<span class="nc" id="L139">            admin.setDeleted(false);</span>
+<span class="nc" id="L140">            userRepository.save(admin);</span>
+        }
+
+<span class="nc" id="L143">        System.out.println(&quot;==========================================&quot;);</span>
+<span class="nc" id="L144">        System.out.println(&quot;Local seed admin accounts:&quot;);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        for (String[] account : ADMIN_ACCOUNTS) {</span>
+<span class="nc" id="L146">            System.out.printf(&quot;Email: %s | Password: %s%n&quot;, account[1], account[2]);</span>
+        }
+<span class="nc" id="L148">        System.out.println(&quot;==========================================&quot;);</span>
+<span class="nc" id="L149">    }</span>
+
+    private boolean isProdProfile() {
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        if (environment.matchesProfiles(&quot;prod&quot;)) {</span>
+<span class="nc" id="L153">            return true;</span>
+        }
+<span class="nc" id="L155">        String active = environment.getProperty(&quot;spring.profiles.active&quot;, &quot;&quot;);</span>
+<span class="nc" id="L156">        return Arrays.stream(active.split(&quot;,&quot;))</span>
+<span class="nc" id="L157">            .map(String::trim)</span>
+<span class="nc" id="L158">            .anyMatch(&quot;prod&quot;::equalsIgnoreCase);</span>
+    }
+
+    private void createProdAdmin() {
+<span class="nc" id="L162">        String email = resolveBootstrap(PROD_ADMIN_EMAIL_KEY, &quot;PROD_ADMIN_EMAIL&quot;);</span>
+<span class="nc" id="L163">        String password = resolveBootstrap(PROD_ADMIN_PASSWORD_KEY, &quot;PROD_ADMIN_PASSWORD&quot;);</span>
+<span class="nc" id="L164">        String name = resolveBootstrap(PROD_ADMIN_NAME_KEY, &quot;PROD_ADMIN_NAME&quot;, &quot;System&quot;);</span>
+<span class="nc" id="L165">        String surname = resolveBootstrap(PROD_ADMIN_SURNAME_KEY, &quot;PROD_ADMIN_SURNAME&quot;, &quot;Admin&quot;);</span>
+
+<span class="nc bnc" id="L167" title="All 4 branches missed.">        if (!StringUtils.hasText(email) || !StringUtils.hasText(password)) {</span>
+<span class="nc" id="L168">            System.out.println(</span>
+                &quot;Prod admin bootstrap skipped: set PROD_ADMIN_EMAIL and PROD_ADMIN_PASSWORD &quot;
+                    + &quot;(or app.bootstrap.admin.email / app.bootstrap.admin.password).&quot;
+            );
+<span class="nc" id="L172">            return;</span>
+        }
+
+<span class="nc" id="L175">        email = email.trim();</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">        if (userRepository.existsByEmailAndDeletedFalse(email)) {</span>
+<span class="nc" id="L177">            System.out.println(&quot;Prod admin bootstrap skipped: active user already exists for &quot; + email);</span>
+<span class="nc" id="L178">            return;</span>
+        }
+
+<span class="nc" id="L181">        User admin = new User();</span>
+<span class="nc" id="L182">        admin.setName(UserNames.normalize(name));</span>
+<span class="nc" id="L183">        admin.setSurname(UserNames.normalize(surname));</span>
+<span class="nc" id="L184">        admin.setEmail(email);</span>
+<span class="nc" id="L185">        admin.setPassword(passwordEncoder.encode(password));</span>
+<span class="nc" id="L186">        admin.setRole(User.Role.ADMIN);</span>
+<span class="nc" id="L187">        admin.setIsActive(true);</span>
+<span class="nc" id="L188">        admin.setMustChangePassword(false);</span>
+<span class="nc" id="L189">        admin.setDeleted(false);</span>
+<span class="nc" id="L190">        userRepository.save(admin);</span>
+
+<span class="nc" id="L192">        System.out.println(&quot;Prod admin account created: &quot; + email);</span>
+<span class="nc" id="L193">    }</span>
+
+    private String resolveBootstrap(String propertyKey, String legacyEnvKey) {
+<span class="nc" id="L196">        return resolveBootstrap(propertyKey, legacyEnvKey, null);</span>
+    }
+
+    private String resolveBootstrap(String propertyKey, String legacyEnvKey, String defaultValue) {
+<span class="nc" id="L200">        String fromProperty = environment.getProperty(propertyKey);</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        if (StringUtils.hasText(fromProperty)) {</span>
+<span class="nc" id="L202">            return fromProperty.trim();</span>
+        }
+<span class="nc" id="L204">        String fromLegacyProperty = environment.getProperty(legacyEnvKey);</span>
+<span class="nc bnc" id="L205" title="All 2 branches missed.">        if (StringUtils.hasText(fromLegacyProperty)) {</span>
+<span class="nc" id="L206">            return fromLegacyProperty.trim();</span>
+        }
+<span class="nc" id="L208">        String fromLegacyEnv = System.getenv(legacyEnvKey);</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (StringUtils.hasText(fromLegacyEnv)) {</span>
+<span class="nc" id="L210">            return fromLegacyEnv.trim();</span>
+        }
+<span class="nc" id="L212">        String fromNestedEnv = System.getenv(toEnvKey(propertyKey));</span>
+<span class="nc bnc" id="L213" title="All 2 branches missed.">        if (StringUtils.hasText(fromNestedEnv)) {</span>
+<span class="nc" id="L214">            return fromNestedEnv.trim();</span>
+        }
+<span class="nc bnc" id="L216" title="All 2 branches missed.">        return defaultValue != null ? defaultValue : &quot;&quot;;</span>
+    }
+
+    private static String toEnvKey(String propertyKey) {
+<span class="nc" id="L220">        return propertyKey.toUpperCase(Locale.ROOT).replace('.', '_');</span>
+    }
+
+    private List&lt;User&gt; ensureTrainers() {
+<span class="nc" id="L224">        String[][] seedTrainers = {</span>
+            {&quot;Head Coach Peter Novak&quot;, &quot;coach.peter@basketball.com&quot;},
+            {&quot;Assistant Coach Milan Hruska&quot;, &quot;coach.milan@basketball.com&quot;},
+            {&quot;Coach Tomas Varga&quot;, &quot;coach.tomas@basketball.com&quot;},
+            {&quot;Coach Martin Sladky&quot;, &quot;coach.martin@basketball.com&quot;},
+            {&quot;Coach Filip Cerny&quot;, &quot;coach.filip@basketball.com&quot;},
+            {&quot;Coach Lukas Bielik&quot;, &quot;coach.lukas@basketball.com&quot;}
+        };
+
+<span class="nc bnc" id="L233" title="All 2 branches missed.">        for (String[] t : seedTrainers) {</span>
+<span class="nc" id="L234">            String name = t[0];</span>
+<span class="nc" id="L235">            String email = t[1];</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">            if (!userRepository.existsByEmail(email)) {</span>
+<span class="nc" id="L237">                User trainer = new User();</span>
+<span class="nc" id="L238">                UserNames.applyFullName(trainer, name);</span>
+<span class="nc" id="L239">                trainer.setEmail(email);</span>
+<span class="nc" id="L240">                trainer.setPassword(passwordEncoder.encode(&quot;trainer123&quot;));</span>
+<span class="nc" id="L241">                trainer.setRole(User.Role.TRAINER);</span>
+<span class="nc" id="L242">                trainer.setIsActive(true);</span>
+<span class="nc" id="L243">                trainer.setMustChangePassword(false);</span>
+<span class="nc" id="L244">                trainer.setDeleted(false);</span>
+<span class="nc" id="L245">                userRepository.save(trainer);</span>
+            }
+        }
+
+<span class="nc" id="L249">        return userRepository.findByRole(User.Role.TRAINER);</span>
+    }
+
+    private List&lt;Category&gt; ensureCategories(List&lt;User&gt; trainers) {
+<span class="nc" id="L253">        int trainerIndex = 0;</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">        for (String name : CATEGORY_NAMES) {</span>
+<span class="nc" id="L255">            Category category = categoryRepository.findByName(name).orElse(null);</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">            if (category == null) {</span>
+<span class="nc" id="L257">                category = new Category();</span>
+<span class="nc" id="L258">                category.setName(name);</span>
+<span class="nc" id="L259">                category.setSeason(SEASON);</span>
+<span class="nc bnc" id="L260" title="All 4 branches missed.">            } else if (category.getSeason() == null || category.getSeason().isBlank()) {</span>
+<span class="nc" id="L261">                category.setSeason(SEASON);</span>
+            }
+
+<span class="nc" id="L264">            category.getCoaches().clear();</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">            if (!trainers.isEmpty()) {</span>
+<span class="nc" id="L266">                User primary = trainers.get(trainerIndex % trainers.size());</span>
+<span class="nc" id="L267">                User secondary = trainers.get((trainerIndex + 1) % trainers.size());</span>
+<span class="nc" id="L268">                category.setCoachId(primary.getId());</span>
+<span class="nc" id="L269">                category.getCoaches().add(primary);</span>
+<span class="nc" id="L270">                category.getCoaches().add(secondary);</span>
+<span class="nc" id="L271">                trainerIndex += 2;</span>
+            }
+
+<span class="nc" id="L274">            categoryRepository.save(category);</span>
+<span class="nc" id="L275">        }</span>
+
+<span class="nc" id="L277">        return categoryRepository.findAll().stream()</span>
+<span class="nc" id="L278">            .filter(c -&gt; CATEGORY_NAMES.contains(c.getName()))</span>
+<span class="nc" id="L279">            .toList();</span>
+    }
+
+    private Map&lt;Long, List&lt;User&gt;&gt; ensurePlayers(List&lt;Category&gt; categories) {
+<span class="nc" id="L283">        Map&lt;Long, List&lt;User&gt;&gt; playersByCategory = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L284" title="All 4 branches missed.">        if (categories == null || categories.isEmpty()) {</span>
+<span class="nc" id="L285">            return playersByCategory;</span>
+        }
+
+<span class="nc" id="L288">        int globalPlayerCounter = 1;</span>
+
+<span class="nc bnc" id="L290" title="All 2 branches missed.">        for (Category category : categories) {</span>
+<span class="nc" id="L291">            List&lt;User&gt; existingPlayersForCategory =</span>
+<span class="nc" id="L292">                userRepository.findByRoleAndCategoryInCategoriesOrCoached(User.Role.PLAYER, category.getId());</span>
+
+<span class="nc" id="L294">            int toCreate = Math.max(0, PLAYERS_PER_CATEGORY - existingPlayersForCategory.size());</span>
+<span class="nc" id="L295">            Set&lt;String&gt; existingEmails = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">            for (User existing : existingPlayersForCategory) {</span>
+<span class="nc" id="L297">                existingEmails.add(existing.getEmail().toLowerCase(Locale.ROOT));</span>
+<span class="nc" id="L298">            }</span>
+
+<span class="nc bnc" id="L300" title="All 2 branches missed.">            for (int i = 0; i &lt; toCreate; i++) {</span>
+<span class="nc" id="L301">                String base = category.getName()</span>
+<span class="nc" id="L302">                    .toLowerCase(Locale.ROOT)</span>
+<span class="nc" id="L303">                    .replace(&quot; &quot;, &quot;&quot;)</span>
+<span class="nc" id="L304">                    .replace(&quot;/&quot;, &quot;&quot;);</span>
+<span class="nc" id="L305">                String email = &quot;player.&quot; + base + &quot;.&quot; + globalPlayerCounter + &quot;@basketball.com&quot;;</span>
+
+<span class="nc bnc" id="L307" title="All 4 branches missed.">                if (existingEmails.contains(email.toLowerCase(Locale.ROOT)) || userRepository.existsByEmail(email)) {</span>
+<span class="nc" id="L308">                    globalPlayerCounter++;</span>
+<span class="nc" id="L309">                    continue;</span>
+                }
+
+<span class="nc" id="L312">                User player = new User();</span>
+<span class="nc" id="L313">                String[] playerNames = randomMaleNameParts(globalPlayerCounter);</span>
+<span class="nc" id="L314">                player.setName(playerNames[0]);</span>
+<span class="nc" id="L315">                player.setSurname(playerNames[1]);</span>
+<span class="nc" id="L316">                player.setEmail(email);</span>
+<span class="nc" id="L317">                player.setPassword(passwordEncoder.encode(&quot;player123&quot;));</span>
+<span class="nc" id="L318">                player.setRole(User.Role.PLAYER);</span>
+<span class="nc" id="L319">                player.setIsActive(true);</span>
+<span class="nc" id="L320">                player.setMustChangePassword(false);</span>
+<span class="nc" id="L321">                player.setDeleted(false);</span>
+
+<span class="nc" id="L323">                player.setDateOfBirth(randomBirthDateForCategory(category.getName(), globalPlayerCounter));</span>
+
+<span class="nc" id="L325">                player.getCategories().add(category);</span>
+
+<span class="nc" id="L327">                userRepository.save(player);</span>
+<span class="nc" id="L328">                globalPlayerCounter++;</span>
+            }
+
+<span class="nc" id="L331">            playersByCategory.put(</span>
+<span class="nc" id="L332">                category.getId(),</span>
+<span class="nc" id="L333">                userRepository.findByRoleAndCategoryInCategoriesOrCoached(User.Role.PLAYER, category.getId())</span>
+            );
+<span class="nc" id="L335">        }</span>
+
+<span class="nc" id="L337">        return playersByCategory;</span>
+    }
+
+    private LocalDate randomBirthDateForCategory(String categoryName, int playerIndex) {
+        int minYear;
+        int maxYear;
+<span class="nc bnc" id="L343" title="All 2 branches missed.">        String name = categoryName != null ? categoryName.trim() : &quot;&quot;;</span>
+<span class="nc bnc" id="L344" title="All 6 branches missed.">        switch (name) {</span>
+            case &quot;U11&quot; -&gt; {
+<span class="nc" id="L346">                minYear = 2013;</span>
+<span class="nc" id="L347">                maxYear = 2014;</span>
+<span class="nc" id="L348">            }</span>
+            case &quot;U13&quot; -&gt; {
+<span class="nc" id="L350">                minYear = 2011;</span>
+<span class="nc" id="L351">                maxYear = 2012;</span>
+<span class="nc" id="L352">            }</span>
+            case &quot;U15&quot; -&gt; {
+<span class="nc" id="L354">                minYear = 2009;</span>
+<span class="nc" id="L355">                maxYear = 2010;</span>
+<span class="nc" id="L356">            }</span>
+            case &quot;U17&quot; -&gt; {
+<span class="nc" id="L358">                minYear = 2007;</span>
+<span class="nc" id="L359">                maxYear = 2008;</span>
+<span class="nc" id="L360">            }</span>
+            case &quot;U19&quot; -&gt; {
+<span class="nc" id="L362">                minYear = 2005;</span>
+<span class="nc" id="L363">                maxYear = 2006;</span>
+<span class="nc" id="L364">            }</span>
+            default -&gt; {
+<span class="nc" id="L366">                minYear = 2004;</span>
+<span class="nc" id="L367">                maxYear = 2010;</span>
+            }
+        }
+<span class="nc" id="L370">        Random rnd = new Random(playerIndex + name.hashCode());</span>
+<span class="nc" id="L371">        int year = minYear + rnd.nextInt(maxYear - minYear + 1);</span>
+<span class="nc" id="L372">        int month = 1 + rnd.nextInt(12);</span>
+<span class="nc" id="L373">        int day = 1 + rnd.nextInt(Math.min(28, LocalDate.of(year, month, 1).lengthOfMonth()));</span>
+<span class="nc" id="L374">        return LocalDate.of(year, month, day);</span>
+    }
+
+    private String[] randomMaleNameParts(int index) {
+<span class="nc" id="L378">        String[] firstNames = {</span>
+            &quot;Adam&quot;, &quot;Matej&quot;, &quot;Samuel&quot;, &quot;Lukas&quot;, &quot;Filip&quot;, &quot;Marek&quot;, &quot;Jakub&quot;, &quot;Peter&quot;,
+            &quot;Tobias&quot;, &quot;Daniel&quot;, &quot;Oliver&quot;, &quot;Patrik&quot;, &quot;Dominik&quot;, &quot;Richard&quot;, &quot;Sebastian&quot;
+        };
+<span class="nc" id="L382">        String[] lastNames = {</span>
+            &quot;Novak&quot;, &quot;Kral&quot;, &quot;Mikula&quot;, &quot;Holes&quot;, &quot;Urban&quot;, &quot;Varga&quot;, &quot;Sklenar&quot;, &quot;Bartos&quot;,
+            &quot;Ziak&quot;, &quot;Pavlik&quot;, &quot;Cerny&quot;, &quot;Kovac&quot;, &quot;Bielik&quot;, &quot;Polak&quot;, &quot;Filo&quot;
+        };
+<span class="nc" id="L386">        return new String[]{</span>
+            firstNames[index % firstNames.length],
+            lastNames[(index * 3) % lastNames.length]
+        };
+    }
+
+    private void seedTrainings(List&lt;Category&gt; categories) {
+<span class="nc bnc" id="L393" title="All 4 branches missed.">        if (categories == null || categories.isEmpty()) {</span>
+<span class="nc" id="L394">            return;</span>
+        }
+
+<span class="nc" id="L397">        LocalDate today = LocalDate.now();</span>
+<span class="nc" id="L398">        LocalDate rangeStart = today.minusWeeks(10).with(DayOfWeek.MONDAY);</span>
+<span class="nc" id="L399">        LocalDate rangeEnd = today.plusWeeks(6).with(DayOfWeek.SUNDAY);</span>
+
+<span class="nc" id="L401">        DayOfWeek[][] trainingPatterns = new DayOfWeek[][]{</span>
+            {DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY},
+            {DayOfWeek.TUESDAY, DayOfWeek.THURSDAY},
+            {DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY},
+            {DayOfWeek.MONDAY, DayOfWeek.THURSDAY},
+            {DayOfWeek.TUESDAY, DayOfWeek.SATURDAY}
+        };
+
+<span class="nc bnc" id="L409" title="All 2 branches missed.">        for (int idx = 0; idx &lt; categories.size(); idx++) {</span>
+<span class="nc" id="L410">            Category category = categories.get(idx);</span>
+<span class="nc" id="L411">            List&lt;Event&gt; existing =</span>
+<span class="nc" id="L412">                eventRepository.findByCategoryIdAndDateBetween(category.getId(), rangeStart, rangeEnd);</span>
+
+<span class="nc" id="L414">            Set&lt;LocalDate&gt; existingDates = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L415" title="All 2 branches missed.">            for (Event e : existing) {</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">                if (e.getType() == Event.EventType.TRAINING) {</span>
+<span class="nc" id="L417">                    existingDates.add(e.getDate());</span>
+                }
+<span class="nc" id="L419">            }</span>
+
+<span class="nc" id="L421">            DayOfWeek[] pattern = trainingPatterns[idx % trainingPatterns.length];</span>
+
+<span class="nc" id="L423">            LocalDate date = rangeStart;</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">            while (!date.isAfter(rangeEnd)) {</span>
+<span class="nc" id="L425">                DayOfWeek dow = date.getDayOfWeek();</span>
+<span class="nc bnc" id="L426" title="All 4 branches missed.">                boolean isTrainingDay = dow == pattern[0] || dow == pattern[1];</span>
+
+<span class="nc bnc" id="L428" title="All 4 branches missed.">                if (isTrainingDay &amp;&amp; !existingDates.contains(date)) {</span>
+<span class="nc" id="L429">                    Event training = new Event();</span>
+<span class="nc" id="L430">                    training.setName(category.getName() + &quot; Training&quot;);</span>
+<span class="nc" id="L431">                    training.setType(Event.EventType.TRAINING);</span>
+<span class="nc" id="L432">                    training.setDate(date);</span>
+<span class="nc bnc" id="L433" title="All 2 branches missed.">                    LocalTime start = LocalTime.of(17 + RANDOM.nextInt(3), RANDOM.nextBoolean() ? 0 : 30);</span>
+<span class="nc" id="L434">                    training.setTime(start);</span>
+<span class="nc" id="L435">                    training.setEndTime(start.plusMinutes(90));</span>
+<span class="nc" id="L436">                    training.setLocation(DEFAULT_LOCATION);</span>
+<span class="nc" id="L437">                    training.setCategoryId(category.getId());</span>
+<span class="nc" id="L438">                    training.setCancelled(false);</span>
+<span class="nc" id="L439">                    eventRepository.save(training);</span>
+                }
+
+<span class="nc" id="L442">                date = date.plusDays(1);</span>
+<span class="nc" id="L443">            }</span>
+        }
+<span class="nc" id="L445">    }</span>
+
+    private void seedMatches(List&lt;Category&gt; categories) {
+<span class="nc bnc" id="L448" title="All 2 branches missed.">        if (categories.isEmpty()) {</span>
+<span class="nc" id="L449">            return;</span>
+        }
+
+<span class="nc" id="L452">        LocalDate today = LocalDate.now();</span>
+<span class="nc" id="L453">        String[] referees = {&quot;Ivan Mraz&quot;, &quot;Jozef Liska&quot;, &quot;Robert Filo&quot;, &quot;Andrej Dolezal&quot;, &quot;Pavol Hronec&quot;};</span>
+<span class="nc" id="L454">        String[] opponents = {</span>
+            &quot;BK Bratislava&quot;,
+            &quot;MBK Nitra&quot;,
+            &quot;SBK Sered&quot;,
+            &quot;BC Prievidza&quot;,
+            &quot;Inter Bratislava&quot;,
+            &quot;Basket Kosice&quot;,
+            &quot;Slavia Trencin&quot;
+        };
+
+<span class="nc bnc" id="L464" title="All 2 branches missed.">        for (int catIndex = 0; catIndex &lt; categories.size(); catIndex++) {</span>
+<span class="nc" id="L465">            Category category = categories.get(catIndex);</span>
+<span class="nc bnc" id="L466" title="All 2 branches missed.">            for (int i = -6; i &lt;= 4; i++) {</span>
+<span class="nc" id="L467">                LocalDate matchDate = today.plusWeeks(i * 2L).with(DayOfWeek.SATURDAY);</span>
+<span class="nc" id="L468">                boolean exists = eventRepository.findByCategoryIdAndDateBetween(category.getId(), matchDate, matchDate)</span>
+<span class="nc" id="L469">                    .stream()</span>
+<span class="nc bnc" id="L470" title="All 2 branches missed.">                    .anyMatch(e -&gt; e.getType() == Event.EventType.MATCH);</span>
+<span class="nc bnc" id="L471" title="All 2 branches missed.">                if (exists) {</span>
+<span class="nc" id="L472">                    continue;</span>
+                }
+<span class="nc" id="L474">                Event match = new Event();</span>
+<span class="nc" id="L475">                match.setType(Event.EventType.MATCH);</span>
+<span class="nc" id="L476">                match.setDate(matchDate);</span>
+<span class="nc" id="L477">                match.setTime(LocalTime.of(10 + (catIndex % 4) * 2, 0));</span>
+<span class="nc" id="L478">                match.setName(&quot;League Match &quot; + category.getName());</span>
+<span class="nc" id="L479">                match.setCategoryId(category.getId());</span>
+<span class="nc" id="L480">                match.setCancelled(false);</span>
+
+<span class="nc" id="L482">                boolean isHome = RANDOM.nextBoolean();</span>
+<span class="nc" id="L483">                match.setIsHomeMatch(isHome);</span>
+<span class="nc bnc" id="L484" title="All 2 branches missed.">                match.setLocation(isHome ? DEFAULT_LOCATION : &quot;Opponent Arena&quot;);</span>
+
+<span class="nc" id="L486">                String opponentName = opponents[(catIndex + Math.abs(i)) % opponents.length] + &quot; &quot; + category.getName();</span>
+<span class="nc" id="L487">                match.setOpponent(opponentName);</span>
+
+<span class="nc bnc" id="L489" title="All 2 branches missed.">                if (!matchDate.isAfter(today)) {</span>
+<span class="nc" id="L490">                    boolean weWon = RANDOM.nextBoolean();</span>
+<span class="nc" id="L491">                    int ourScore = 58 + RANDOM.nextInt(33);</span>
+<span class="nc" id="L492">                    int oppScore = 55 + RANDOM.nextInt(30);</span>
+<span class="nc bnc" id="L493" title="All 2 branches missed.">                    if (ourScore == oppScore) {</span>
+<span class="nc" id="L494">                        oppScore = Math.max(40, oppScore - 1);</span>
+                    }
+<span class="nc bnc" id="L496" title="All 4 branches missed.">                    if (weWon &amp;&amp; ourScore &lt; oppScore) {</span>
+<span class="nc" id="L497">                        ourScore = oppScore + (2 + RANDOM.nextInt(8));</span>
+<span class="nc bnc" id="L498" title="All 4 branches missed.">                    } else if (!weWon &amp;&amp; ourScore &gt; oppScore) {</span>
+<span class="nc" id="L499">                        oppScore = ourScore + (2 + RANDOM.nextInt(8));</span>
+                    }
+<span class="nc bnc" id="L501" title="All 2 branches missed.">                    match.setMatchWon(ourScore &gt; oppScore);</span>
+<span class="nc" id="L502">                    match.setOurScore(ourScore);</span>
+<span class="nc" id="L503">                    match.setOpponentScore(oppScore);</span>
+                }
+
+<span class="nc" id="L506">                Event saved = eventRepository.save(match);</span>
+<span class="nc bnc" id="L507" title="All 2 branches missed.">                if (eventRefereeRepository.findByEventIdOrderBySortOrderAsc(saved.getId()).isEmpty()) {</span>
+<span class="nc" id="L508">                    int refereeCount = 2 + RANDOM.nextInt(2);</span>
+<span class="nc bnc" id="L509" title="All 2 branches missed.">                    for (int r = 0; r &lt; refereeCount; r++) {</span>
+<span class="nc" id="L510">                        EventReferee referee = new EventReferee();</span>
+<span class="nc" id="L511">                        referee.setEventId(saved.getId());</span>
+<span class="nc" id="L512">                        referee.setSortOrder(r + 1);</span>
+<span class="nc" id="L513">                        referee.setName(referees[(catIndex + r) % referees.length]);</span>
+<span class="nc bnc" id="L514" title="All 2 branches missed.">                        referee.setGrade(r == 0 ? &quot;A&quot; : &quot;B&quot;);</span>
+<span class="nc" id="L515">                        eventRefereeRepository.save(referee);</span>
+                    }
+                }
+            }
+        }
+<span class="nc" id="L520">    }</span>
+
+    private void seedTrainingAttendance(List&lt;Category&gt; categories, Map&lt;Long, List&lt;User&gt;&gt; playersByCategory, List&lt;User&gt; trainers) {
+<span class="nc" id="L523">        LocalDate today = LocalDate.now();</span>
+<span class="nc" id="L524">        LocalDate startDate = today.minusMonths(4);</span>
+<span class="nc" id="L525">        LocalDate endDate = today;</span>
+
+<span class="nc bnc" id="L527" title="All 4 branches missed.">        if (categories == null || categories.isEmpty()) {</span>
+<span class="nc" id="L528">            return;</span>
+        }
+
+<span class="nc bnc" id="L531" title="All 2 branches missed.">        for (Category category : categories) {</span>
+<span class="nc" id="L532">            List&lt;Event&gt; trainingsInRange = eventRepository.findByCategoryIdAndDateBetween(</span>
+<span class="nc" id="L533">                category.getId(),</span>
+                startDate,
+                endDate
+            );
+
+            // Only trainings (ignore matches and other events)
+<span class="nc" id="L539">            List&lt;Event&gt; trainings = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L540" title="All 2 branches missed.">            for (Event e : trainingsInRange) {</span>
+<span class="nc bnc" id="L541" title="All 2 branches missed.">                if (e.getType() == Event.EventType.TRAINING) {</span>
+<span class="nc" id="L542">                    trainings.add(e);</span>
+                }
+<span class="nc" id="L544">            }</span>
+
+<span class="nc bnc" id="L546" title="All 2 branches missed.">            if (trainings.isEmpty()) {</span>
+<span class="nc" id="L547">                continue;</span>
+            }
+
+<span class="nc" id="L550">            List&lt;User&gt; players = playersByCategory.getOrDefault(category.getId(), List.of());</span>
+
+<span class="nc bnc" id="L552" title="All 2 branches missed.">            if (players.isEmpty()) {</span>
+<span class="nc" id="L553">                continue;</span>
+            }
+
+<span class="nc bnc" id="L556" title="All 2 branches missed.">            Long defaultTrainerId = trainers.isEmpty() ? null : trainers.get(0).getId();</span>
+
+<span class="nc bnc" id="L558" title="All 2 branches missed.">            for (Event training : trainings) {</span>
+<span class="nc bnc" id="L559" title="All 2 branches missed.">                for (User player : players) {</span>
+<span class="nc bnc" id="L560" title="All 2 branches missed.">                    if (attendanceRepository.findByEventIdAndPlayerId(training.getId(), player.getId()).isPresent()) {</span>
+<span class="nc" id="L561">                        continue;</span>
+                    }
+
+<span class="nc" id="L564">                    double roll = RANDOM.nextDouble();</span>
+                    Attendance.AttendanceStatus status;
+<span class="nc bnc" id="L566" title="All 2 branches missed.">                    if (roll &lt; 0.74) {</span>
+<span class="nc" id="L567">                        status = Attendance.AttendanceStatus.PRESENT;</span>
+<span class="nc bnc" id="L568" title="All 2 branches missed.">                    } else if (roll &lt; 0.86) {</span>
+<span class="nc" id="L569">                        status = Attendance.AttendanceStatus.ABSENT;</span>
+<span class="nc bnc" id="L570" title="All 2 branches missed.">                    } else if (roll &lt; 0.95) {</span>
+<span class="nc" id="L571">                        status = Attendance.AttendanceStatus.LATE;</span>
+                    } else {
+<span class="nc" id="L573">                        status = Attendance.AttendanceStatus.EXCUSED;</span>
+                    }
+
+<span class="nc" id="L576">                    Attendance attendance = new Attendance();</span>
+<span class="nc" id="L577">                    attendance.setEventId(training.getId());</span>
+<span class="nc" id="L578">                    attendance.setPlayerId(player.getId());</span>
+<span class="nc" id="L579">                    attendance.setTrainerId(defaultTrainerId);</span>
+<span class="nc" id="L580">                    attendance.setStatus(status);</span>
+
+<span class="nc" id="L582">                    attendanceRepository.save(attendance);</span>
+<span class="nc" id="L583">                }</span>
+<span class="nc" id="L584">            }</span>
+<span class="nc" id="L585">        }</span>
+<span class="nc" id="L586">    }</span>
+
+    private void seedTrainingStatistics() {
+<span class="nc bnc" id="L589" title="All 2 branches missed.">        if (!trainingStatisticsRepository.findAll().isEmpty()) {</span>
+<span class="nc" id="L590">            return;</span>
+        }
+
+<span class="nc" id="L593">        LocalDate today = LocalDate.now();</span>
+<span class="nc" id="L594">        LocalDate startDate = today.minusMonths(4);</span>
+<span class="nc" id="L595">        LocalDate endDate = today.minusDays(1);</span>
+
+<span class="nc" id="L597">        List&lt;Category&gt; categories = categoryRepository.findAll().stream()</span>
+<span class="nc" id="L598">            .filter(c -&gt; CATEGORY_NAMES.contains(c.getName()))</span>
+<span class="nc" id="L599">            .toList();</span>
+<span class="nc bnc" id="L600" title="All 2 branches missed.">        if (categories.isEmpty()) {</span>
+<span class="nc" id="L601">            return;</span>
+        }
+
+<span class="nc bnc" id="L604" title="All 2 branches missed.">        for (Category category : categories) {</span>
+<span class="nc" id="L605">            List&lt;User&gt; players = userRepository.findByRoleAndCategoryInCategoriesOrCoached(</span>
+                User.Role.PLAYER,
+<span class="nc" id="L607">                category.getId()</span>
+            );
+
+<span class="nc bnc" id="L610" title="All 2 branches missed.">            if (players.isEmpty()) {</span>
+<span class="nc" id="L611">                continue;</span>
+            }
+
+<span class="nc" id="L614">            List&lt;Event&gt; trainingsInRange = eventRepository.findByCategoryIdAndDateBetween(</span>
+<span class="nc" id="L615">                category.getId(),</span>
+                startDate,
+                endDate
+            );
+
+<span class="nc" id="L620">            List&lt;Event&gt; trainings = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L621" title="All 2 branches missed.">            for (Event e : trainingsInRange) {</span>
+<span class="nc bnc" id="L622" title="All 6 branches missed.">                if (e.getType() == Event.EventType.TRAINING &amp;&amp; (e.getCancelled() == null || !e.getCancelled())) {</span>
+<span class="nc" id="L623">                    trainings.add(e);</span>
+                }
+<span class="nc" id="L625">            }</span>
+
+<span class="nc bnc" id="L627" title="All 2 branches missed.">            if (trainings.isEmpty()) {</span>
+<span class="nc" id="L628">                continue;</span>
+            }
+
+<span class="nc bnc" id="L631" title="All 2 branches missed.">            for (User player : players) {</span>
+                // For each player, pick a subset of trainings to attach stats to
+<span class="nc bnc" id="L633" title="All 2 branches missed.">                for (Event training : trainings) {</span>
+<span class="nc bnc" id="L634" title="All 2 branches missed.">                    if (training.getDate().isAfter(endDate)) {</span>
+<span class="nc" id="L635">                        continue;</span>
+                    }
+
+                    // Only generate stats if player was present/late (if attendance exists)
+<span class="nc" id="L639">                    var attendanceOpt = attendanceRepository.findByEventIdAndPlayerId(training.getId(), player.getId());</span>
+<span class="nc bnc" id="L640" title="All 2 branches missed.">                    if (attendanceOpt.isEmpty()) {</span>
+<span class="nc" id="L641">                        continue;</span>
+                    }
+<span class="nc" id="L643">                    Attendance.AttendanceStatus status = attendanceOpt.get().getStatus();</span>
+<span class="nc bnc" id="L644" title="All 4 branches missed.">                    if (status != Attendance.AttendanceStatus.PRESENT &amp;&amp; status != Attendance.AttendanceStatus.LATE) {</span>
+<span class="nc" id="L645">                        continue;</span>
+                    }
+
+<span class="nc bnc" id="L648" title="All 2 branches missed.">                    if (RANDOM.nextDouble() &gt; 0.32) {</span>
+<span class="nc" id="L649">                        continue;</span>
+                    }
+
+<span class="nc" id="L652">                    int exercisesCount = 2 + RANDOM.nextInt(2);</span>
+<span class="nc bnc" id="L653" title="All 2 branches missed.">                    for (int i = 0; i &lt; exercisesCount; i++) {</span>
+<span class="nc" id="L654">                        int kind = RANDOM.nextInt(3);</span>
+<span class="nc bnc" id="L655" title="All 4 branches missed.">                        switch (kind) {</span>
+                            case 0 -&gt; {
+<span class="nc" id="L657">                                PoslnovanieStats ps = new PoslnovanieStats();</span>
+<span class="nc" id="L658">                                ps.setUserId(player.getId());</span>
+<span class="nc" id="L659">                                ps.setExerciseName(&quot;Strength &quot; + (i + 1));</span>
+<span class="nc" id="L660">                                ps.setWorkoutDate(training.getDate());</span>
+<span class="nc" id="L661">                                ps.setNote(&quot;Auto-seeded strength workout&quot;);</span>
+<span class="nc" id="L662">                                ps.setWeight(BigDecimal.valueOf(12 + RANDOM.nextInt(39)));</span>
+<span class="nc" id="L663">                                ps.setRepetitions(6 + RANDOM.nextInt(10));</span>
+<span class="nc" id="L664">                                trainingStatisticsRepository.save(ps);</span>
+<span class="nc" id="L665">                            }</span>
+                            case 1 -&gt; {
+<span class="nc" id="L667">                                BehStats bs = new BehStats();</span>
+<span class="nc" id="L668">                                bs.setUserId(player.getId());</span>
+<span class="nc" id="L669">                                bs.setExerciseName(&quot;Run &quot; + (i + 1));</span>
+<span class="nc" id="L670">                                bs.setWorkoutDate(training.getDate());</span>
+<span class="nc" id="L671">                                bs.setNote(&quot;Auto-seeded running workout&quot;);</span>
+<span class="nc" id="L672">                                int minutes = 5 + RANDOM.nextInt(18);</span>
+<span class="nc" id="L673">                                int seconds = RANDOM.nextInt(60);</span>
+<span class="nc" id="L674">                                bs.setTime(String.format(&quot;%02d:%02d&quot;, minutes, seconds));</span>
+<span class="nc" id="L675">                                bs.setDistance(BigDecimal.valueOf(1 + RANDOM.nextInt(4)));</span>
+<span class="nc" id="L676">                                trainingStatisticsRepository.save(bs);</span>
+<span class="nc" id="L677">                            }</span>
+                            case 2 -&gt; {
+<span class="nc" id="L679">                                StrelbaStats ss = new StrelbaStats();</span>
+<span class="nc" id="L680">                                ss.setUserId(player.getId());</span>
+<span class="nc" id="L681">                                ss.setExerciseName(&quot;Shooting &quot; + (i + 1));</span>
+<span class="nc" id="L682">                                ss.setWorkoutDate(training.getDate());</span>
+<span class="nc" id="L683">                                ss.setNote(&quot;Auto-seeded shooting practice&quot;);</span>
+<span class="nc" id="L684">                                int attempts = 20 + RANDOM.nextInt(25);</span>
+<span class="nc" id="L685">                                int made = 6 + RANDOM.nextInt(Math.max(1, attempts - 5));</span>
+<span class="nc" id="L686">                                ss.setShotsAttempted(attempts);</span>
+<span class="nc" id="L687">                                ss.setShotsMade(Math.min(made, attempts));</span>
+<span class="nc bnc" id="L688" title="All 2 branches missed.">                                ss.setCourtSpot(RANDOM.nextBoolean() ? &quot;Top key&quot; : &quot;Corner&quot;);</span>
+
+<span class="nc" id="L690">                                BigDecimal successRate = BigDecimal</span>
+<span class="nc" id="L691">                                    .valueOf(ss.getShotsMade())</span>
+<span class="nc" id="L692">                                    .divide(BigDecimal.valueOf(ss.getShotsAttempted()), 4, RoundingMode.HALF_UP)</span>
+<span class="nc" id="L693">                                    .multiply(BigDecimal.valueOf(100))</span>
+<span class="nc" id="L694">                                    .setScale(2, RoundingMode.HALF_UP);</span>
+<span class="nc" id="L695">                                ss.setSuccessRate(successRate);</span>
+
+<span class="nc" id="L697">                                trainingStatisticsRepository.save(ss);</span>
+                            }
+                        }
+                    }
+<span class="nc" id="L701">                }</span>
+<span class="nc" id="L702">            }</span>
+<span class="nc" id="L703">        }</span>
+<span class="nc" id="L704">    }</span>
+
+    private void seedMatchDetailsAndStatistics(Map&lt;Long, List&lt;User&gt;&gt; playersByCategory) {
+<span class="nc" id="L707">        LocalDate today = LocalDate.now();</span>
+<span class="nc" id="L708">        List&lt;Event&gt; matches = eventRepository.findByDateBetween(today.minusMonths(4), today.plusMonths(3)).stream()</span>
+<span class="nc bnc" id="L709" title="All 4 branches missed.">            .filter(e -&gt; e.getType() == Event.EventType.MATCH &amp;&amp; e.getCategoryId() != null)</span>
+<span class="nc" id="L710">            .toList();</span>
+
+<span class="nc bnc" id="L712" title="All 2 branches missed.">        for (Event match : matches) {</span>
+<span class="nc" id="L713">            List&lt;User&gt; roster = new ArrayList&lt;&gt;(playersByCategory.getOrDefault(match.getCategoryId(), List.of()));</span>
+<span class="nc bnc" id="L714" title="All 2 branches missed.">            if (roster.isEmpty()) {</span>
+<span class="nc" id="L715">                continue;</span>
+            }
+
+<span class="nc" id="L718">            List&lt;EventNominatedPlayer&gt; existingNominations = eventNominatedPlayerRepository.findByEventId(match.getId());</span>
+<span class="nc" id="L719">            List&lt;EventNominatedPlayer&gt; nominations = new ArrayList&lt;&gt;(existingNominations);</span>
+<span class="nc bnc" id="L720" title="All 2 branches missed.">            if (existingNominations.isEmpty()) {</span>
+<span class="nc" id="L721">                Collections.shuffle(roster, RANDOM);</span>
+<span class="nc" id="L722">                int nominatedCount = Math.max(8, Math.min(12, roster.size()));</span>
+<span class="nc bnc" id="L723" title="All 2 branches missed.">                for (int i = 0; i &lt; nominatedCount; i++) {</span>
+<span class="nc" id="L724">                    User nominatedUser = roster.get(i);</span>
+<span class="nc" id="L725">                    EventNominatedPlayer nominated = new EventNominatedPlayer();</span>
+<span class="nc" id="L726">                    nominated.setEventId(match.getId());</span>
+<span class="nc" id="L727">                    nominated.setPlayerId(nominatedUser.getId());</span>
+<span class="nc" id="L728">                    nominated.setJerseyNumber(4 + i);</span>
+<span class="nc bnc" id="L729" title="All 2 branches missed.">                    nominated.setStartingFive(i &lt; 5);</span>
+<span class="nc" id="L730">                    nominations.add(eventNominatedPlayerRepository.save(nominated));</span>
+                }
+            }
+
+<span class="nc bnc" id="L734" title="All 2 branches missed.">            if (eventOpponentPlayerRepository.findByEventIdOrderByJerseyNumberAsc(match.getId()).isEmpty()) {</span>
+<span class="nc" id="L735">                int opponentsCount = 8 + RANDOM.nextInt(5);</span>
+<span class="nc" id="L736">                Set&lt;Integer&gt; usedJerseys = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L737" title="All 2 branches missed.">                while (usedJerseys.size() &lt; opponentsCount) {</span>
+<span class="nc" id="L738">                    int jersey = 4 + RANDOM.nextInt(40);</span>
+<span class="nc bnc" id="L739" title="All 2 branches missed.">                    if (!usedJerseys.add(jersey)) {</span>
+<span class="nc" id="L740">                        continue;</span>
+                    }
+<span class="nc" id="L742">                    EventOpponentPlayer opponentPlayer = new EventOpponentPlayer();</span>
+<span class="nc" id="L743">                    opponentPlayer.setEventId(match.getId());</span>
+<span class="nc" id="L744">                    opponentPlayer.setJerseyNumber(jersey);</span>
+<span class="nc" id="L745">                    eventOpponentPlayerRepository.save(opponentPlayer);</span>
+<span class="nc" id="L746">                }</span>
+            }
+
+<span class="nc bnc" id="L749" title="All 6 branches missed.">            if (match.getDate().isAfter(today) || match.getOurScore() == null || match.getOpponentScore() == null) {</span>
+<span class="nc" id="L750">                continue;</span>
+            }
+<span class="nc bnc" id="L752" title="All 2 branches missed.">            if (!statisticsRepository.findByEventId(match.getId()).isEmpty()) {</span>
+<span class="nc" id="L753">                continue;</span>
+            }
+
+<span class="nc" id="L756">            int ourScore = match.getOurScore();</span>
+<span class="nc" id="L757">            List&lt;EventNominatedPlayer&gt; participatingPlayers = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L758">            Set&lt;Long&gt; participatingPlayerIds = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L759" title="All 2 branches missed.">            for (EventNominatedPlayer nomination : nominations) {</span>
+<span class="nc bnc" id="L760" title="All 2 branches missed.">                if (Boolean.TRUE.equals(nomination.getStartingFive())) {</span>
+<span class="nc" id="L761">                    participatingPlayers.add(nomination);</span>
+<span class="nc" id="L762">                    participatingPlayerIds.add(nomination.getPlayerId());</span>
+                }
+<span class="nc" id="L764">            }</span>
+<span class="nc bnc" id="L765" title="All 2 branches missed.">            for (EventNominatedPlayer nomination : nominations) {</span>
+<span class="nc bnc" id="L766" title="All 2 branches missed.">                if (participatingPlayerIds.contains(nomination.getPlayerId())) {</span>
+<span class="nc" id="L767">                    continue;</span>
+                }
+<span class="nc bnc" id="L769" title="All 2 branches missed.">                if (RANDOM.nextDouble() &lt;= 0.82) {</span>
+<span class="nc" id="L770">                    participatingPlayers.add(nomination);</span>
+<span class="nc" id="L771">                    participatingPlayerIds.add(nomination.getPlayerId());</span>
+                }
+<span class="nc" id="L773">            }</span>
+<span class="nc bnc" id="L774" title="All 4 branches missed.">            if (participatingPlayers.isEmpty() &amp;&amp; !nominations.isEmpty()) {</span>
+<span class="nc" id="L775">                participatingPlayers.add(nominations.get(0));</span>
+<span class="nc" id="L776">                participatingPlayerIds.add(nominations.get(0).getPlayerId());</span>
+            }
+<span class="nc bnc" id="L778" title="All 2 branches missed.">            for (EventNominatedPlayer nomination : nominations) {</span>
+<span class="nc bnc" id="L779" title="All 2 branches missed.">                if (participatingPlayers.size() &gt;= 5) {</span>
+<span class="nc" id="L780">                    break;</span>
+                }
+<span class="nc bnc" id="L782" title="All 2 branches missed.">                if (!participatingPlayerIds.contains(nomination.getPlayerId())) {</span>
+<span class="nc" id="L783">                    participatingPlayers.add(nomination);</span>
+<span class="nc" id="L784">                    participatingPlayerIds.add(nomination.getPlayerId());</span>
+                }
+<span class="nc" id="L786">            }</span>
+
+<span class="nc" id="L788">            int remainingScore = ourScore;</span>
+<span class="nc" id="L789">            List&lt;Integer&gt; allocatedMinutes = allocateMatchMinutes(participatingPlayers);</span>
+<span class="nc bnc" id="L790" title="All 2 branches missed.">            for (int i = 0; i &lt; participatingPlayers.size(); i++) {</span>
+<span class="nc" id="L791">                EventNominatedPlayer nomination = participatingPlayers.get(i);</span>
+<span class="nc bnc" id="L792" title="All 2 branches missed.">                if (!statisticsRepository.findByEventIdAndPlayerId(match.getId(), nomination.getPlayerId()).isEmpty()) {</span>
+<span class="nc" id="L793">                    continue;</span>
+                }
+
+<span class="nc" id="L796">                int remainingSlots = participatingPlayers.size() - i;</span>
+<span class="nc" id="L797">                int maxKeepForRest = 22 * Math.max(0, remainingSlots - 1);</span>
+<span class="nc" id="L798">                int minCurrent = Math.max(0, remainingScore - maxKeepForRest);</span>
+<span class="nc" id="L799">                int maxCurrent = Math.min(22, remainingScore);</span>
+                int pts;
+<span class="nc bnc" id="L801" title="All 2 branches missed.">                if (remainingSlots == 1) {</span>
+<span class="nc" id="L802">                    pts = remainingScore;</span>
+                } else {
+<span class="nc" id="L804">                    pts = minCurrent + RANDOM.nextInt(Math.max(1, maxCurrent - minCurrent + 1));</span>
+                }
+
+<span class="nc" id="L807">                remainingScore -= pts;</span>
+
+<span class="nc" id="L809">                Statistics stats = new Statistics();</span>
+<span class="nc" id="L810">                stats.setEventId(match.getId());</span>
+<span class="nc" id="L811">                stats.setPlayerId(nomination.getPlayerId());</span>
+<span class="nc" id="L812">                stats.setStatType(Statistics.StatType.GAME);</span>
+<span class="nc bnc" id="L813" title="All 2 branches missed.">                stats.setOpponent(match.getOpponent() != null ? match.getOpponent() : &quot;Unknown opponent&quot;);</span>
+<span class="nc" id="L814">                stats.setMin((double) allocatedMinutes.get(i));</span>
+<span class="nc" id="L815">                stats.setPts(pts);</span>
+
+<span class="nc" id="L817">                populateScoringFields(stats, pts);</span>
+<span class="nc" id="L818">                stats.setOffReb(RANDOM.nextInt(4));</span>
+<span class="nc" id="L819">                stats.setDefReb(RANDOM.nextInt(7));</span>
+<span class="nc" id="L820">                stats.setAst(RANDOM.nextInt(7));</span>
+<span class="nc" id="L821">                stats.setStl(RANDOM.nextInt(4));</span>
+<span class="nc" id="L822">                stats.setBlk(RANDOM.nextInt(3));</span>
+<span class="nc" id="L823">                stats.setTurnovers(RANDOM.nextInt(5));</span>
+<span class="nc" id="L824">                stats.setFoulsPlus(RANDOM.nextInt(5));</span>
+<span class="nc" id="L825">                stats.setFoulsMinus(RANDOM.nextInt(4));</span>
+<span class="nc" id="L826">                stats.setStatIndex(calculateStatIndex(stats));</span>
+<span class="nc" id="L827">                statisticsRepository.save(stats);</span>
+            }
+<span class="nc" id="L829">        }</span>
+<span class="nc" id="L830">    }</span>
+
+    private List&lt;Integer&gt; allocateMatchMinutes(List&lt;EventNominatedPlayer&gt; players) {
+<span class="nc bnc" id="L833" title="All 2 branches missed.">        if (players.isEmpty()) {</span>
+<span class="nc" id="L834">            return List.of();</span>
+        }
+
+<span class="nc" id="L837">        final int totalMinutes = 200;</span>
+<span class="nc" id="L838">        List&lt;Integer&gt; allocation = new ArrayList&lt;&gt;(Collections.nCopies(players.size(), 0));</span>
+<span class="nc" id="L839">        List&lt;Double&gt; fractions = new ArrayList&lt;&gt;(Collections.nCopies(players.size(), 0.0));</span>
+
+<span class="nc" id="L841">        int totalWeight = 0;</span>
+<span class="nc" id="L842">        int[] weights = new int[players.size()];</span>
+<span class="nc bnc" id="L843" title="All 2 branches missed.">        for (int i = 0; i &lt; players.size(); i++) {</span>
+<span class="nc bnc" id="L844" title="All 2 branches missed.">            int weight = Boolean.TRUE.equals(players.get(i).getStartingFive()) ? 5 : 3;</span>
+<span class="nc" id="L845">            weights[i] = weight;</span>
+<span class="nc" id="L846">            totalWeight += weight;</span>
+        }
+
+<span class="nc" id="L849">        int allocated = 0;</span>
+<span class="nc bnc" id="L850" title="All 2 branches missed.">        for (int i = 0; i &lt; players.size(); i++) {</span>
+<span class="nc" id="L851">            double exact = (double) totalMinutes * weights[i] / totalWeight;</span>
+<span class="nc" id="L852">            int floor = (int) Math.floor(exact);</span>
+<span class="nc" id="L853">            allocation.set(i, floor);</span>
+<span class="nc" id="L854">            fractions.set(i, exact - floor);</span>
+<span class="nc" id="L855">            allocated += floor;</span>
+        }
+
+<span class="nc" id="L858">        int remainder = totalMinutes - allocated;</span>
+<span class="nc" id="L859">        List&lt;Integer&gt; indexes = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L860" title="All 2 branches missed.">        for (int i = 0; i &lt; players.size(); i++) {</span>
+<span class="nc" id="L861">            indexes.add(i);</span>
+        }
+<span class="nc" id="L863">        indexes.sort(Comparator.comparingDouble((Integer idx) -&gt; fractions.get(idx)).reversed());</span>
+
+<span class="nc bnc" id="L865" title="All 2 branches missed.">        for (int i = 0; i &lt; remainder; i++) {</span>
+<span class="nc" id="L866">            int idx = indexes.get(i % indexes.size());</span>
+<span class="nc" id="L867">            allocation.set(idx, allocation.get(idx) + 1);</span>
+        }
+
+<span class="nc" id="L870">        ensureStartingFiveHaveMinutes(players, allocation);</span>
+
+<span class="nc" id="L872">        return allocation;</span>
+    }
+
+    /** Starters must have played time; bench may stay at 0 if not used. */
+    private void ensureStartingFiveHaveMinutes(List&lt;EventNominatedPlayer&gt; players, List&lt;Integer&gt; allocation) {
+<span class="nc" id="L877">        final int starterFloor = 8;</span>
+<span class="nc bnc" id="L878" title="All 2 branches missed.">        for (int i = 0; i &lt; players.size(); i++) {</span>
+<span class="nc bnc" id="L879" title="All 2 branches missed.">            if (!Boolean.TRUE.equals(players.get(i).getStartingFive())) {</span>
+<span class="nc" id="L880">                continue;</span>
+            }
+<span class="nc" id="L882">            int current = allocation.get(i);</span>
+<span class="nc bnc" id="L883" title="All 2 branches missed.">            if (current &gt;= starterFloor) {</span>
+<span class="nc" id="L884">                continue;</span>
+            }
+<span class="nc" id="L886">            int needed = starterFloor - current;</span>
+<span class="nc" id="L887">            allocation.set(i, starterFloor);</span>
+<span class="nc bnc" id="L888" title="All 4 branches missed.">            for (int j = 0; j &lt; players.size() &amp;&amp; needed &gt; 0; j++) {</span>
+<span class="nc bnc" id="L889" title="All 2 branches missed.">                if (Boolean.TRUE.equals(players.get(j).getStartingFive())) {</span>
+<span class="nc" id="L890">                    continue;</span>
+                }
+<span class="nc" id="L892">                int benchMinutes = allocation.get(j);</span>
+<span class="nc bnc" id="L893" title="All 2 branches missed.">                if (benchMinutes &lt;= 0) {</span>
+<span class="nc" id="L894">                    continue;</span>
+                }
+<span class="nc" id="L896">                int take = Math.min(needed, benchMinutes);</span>
+<span class="nc" id="L897">                allocation.set(j, benchMinutes - take);</span>
+<span class="nc" id="L898">                needed -= take;</span>
+            }
+        }
+<span class="nc" id="L901">    }</span>
+
+    /**
+     * (PTS + OFF + DEF + AST + STL + BLK) - ((FGC - FGÚ) + (FTC - FTÚ) + TO)
+     * Same formula as {@link Statistics} entity / {@link com.basketball.app.service.StatisticsService}.
+     */
+    private double calculateStatIndex(Statistics stats) {
+<span class="nc bnc" id="L908" title="All 2 branches missed.">        double pts = stats.getPts() != null ? stats.getPts() : 0;</span>
+<span class="nc bnc" id="L909" title="All 2 branches missed.">        double off = stats.getOffReb() != null ? stats.getOffReb() : 0;</span>
+<span class="nc bnc" id="L910" title="All 2 branches missed.">        double def = stats.getDefReb() != null ? stats.getDefReb() : 0;</span>
+<span class="nc bnc" id="L911" title="All 2 branches missed.">        double ast = stats.getAst() != null ? stats.getAst() : 0;</span>
+<span class="nc bnc" id="L912" title="All 2 branches missed.">        double stl = stats.getStl() != null ? stats.getStl() : 0;</span>
+<span class="nc bnc" id="L913" title="All 2 branches missed.">        double blk = stats.getBlk() != null ? stats.getBlk() : 0;</span>
+<span class="nc bnc" id="L914" title="All 2 branches missed.">        double fgc = stats.getFgAttempts() != null ? stats.getFgAttempts() : 0;</span>
+<span class="nc bnc" id="L915" title="All 2 branches missed.">        double fgu = stats.getFgMade() != null ? stats.getFgMade() : 0;</span>
+<span class="nc bnc" id="L916" title="All 2 branches missed.">        double ftc = stats.getFtAttempts() != null ? stats.getFtAttempts() : 0;</span>
+<span class="nc bnc" id="L917" title="All 2 branches missed.">        double ftu = stats.getFtMade() != null ? stats.getFtMade() : 0;</span>
+<span class="nc bnc" id="L918" title="All 2 branches missed.">        double to = stats.getTurnovers() != null ? stats.getTurnovers() : 0;</span>
+<span class="nc" id="L919">        double index = (pts + off + def + ast + stl + blk) - ((fgc - fgu) + (ftc - ftu) + to);</span>
+<span class="nc" id="L920">        return Math.round(index * 100.0) / 100.0;</span>
+    }
+
+    private void populateScoringFields(Statistics stats, int pts) {
+<span class="nc" id="L924">        int maxThrees = Math.min(4, pts / 3);</span>
+<span class="nc bnc" id="L925" title="All 2 branches missed.">        int threePMade = maxThrees &gt; 0 ? RANDOM.nextInt(maxThrees + 1) : 0;</span>
+<span class="nc" id="L926">        int remainingAfterThrees = pts - (threePMade * 3);</span>
+<span class="nc" id="L927">        int ftMade = remainingAfterThrees % 2;</span>
+<span class="nc" id="L928">        int twoPMade = (remainingAfterThrees - ftMade) / 2;</span>
+<span class="nc" id="L929">        int fgMade = twoPMade + threePMade;</span>
+<span class="nc" id="L930">        int twoAttempts = twoPMade + RANDOM.nextInt(4);</span>
+<span class="nc" id="L931">        int threeAttempts = threePMade + RANDOM.nextInt(4);</span>
+
+<span class="nc" id="L933">        stats.setTwoPMade(twoPMade);</span>
+<span class="nc" id="L934">        stats.setTwoPAttempts(twoAttempts);</span>
+<span class="nc" id="L935">        stats.setThreePMade(threePMade);</span>
+<span class="nc" id="L936">        stats.setThreePAttempts(threeAttempts);</span>
+<span class="nc" id="L937">        stats.setFgMade(fgMade);</span>
+<span class="nc" id="L938">        stats.setFgAttempts(Math.max(fgMade, twoAttempts + threeAttempts));</span>
+<span class="nc" id="L939">        stats.setFtMade(ftMade);</span>
+<span class="nc bnc" id="L940" title="All 2 branches missed.">        stats.setFtAttempts(ftMade + RANDOM.nextInt(ftMade == 0 ? 2 : 3));</span>
+<span class="nc" id="L941">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

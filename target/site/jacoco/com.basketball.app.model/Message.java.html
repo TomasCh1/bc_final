@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Message.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.model</a> &gt; <span class="el_source">Message.java</span></div><h1>Message.java</h1><pre class="source lang-java linenums">package com.basketball.app.model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = &quot;messages&quot;)
+<span class="pc bnc" id="L12" title="All 62 branches missed.">@Data</span>
+<span class="fc" id="L13">@NoArgsConstructor</span>
+<span class="nc" id="L14">@AllArgsConstructor</span>
+public class Message {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+<span class="nc" id="L18">    private Long id;</span>
+
+    @Column(name = &quot;sender_id&quot;, nullable = false)
+<span class="nc" id="L21">    private Long senderId;</span>
+
+    @Column(name = &quot;receiver_id&quot;)
+<span class="nc" id="L24">    private Long receiverId;</span>
+
+    @Column(name = &quot;group_id&quot;)
+<span class="nc" id="L27">    private Long groupId;</span>
+
+    @Column(nullable = false, columnDefinition = &quot;TEXT&quot;)
+<span class="nc" id="L30">    private String content;</span>
+
+    @Column(name = &quot;telegram_message_id&quot;)
+<span class="nc" id="L33">    private Long telegramMessageId;</span>
+
+    @Column(name = &quot;created_at&quot;)
+<span class="nc" id="L36">    private LocalDateTime createdAt;</span>
+
+    @PrePersist
+    protected void onCreate() {
+<span class="fc" id="L40">        createdAt = LocalDateTime.now();</span>
+<span class="fc" id="L41">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>História účasti - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/coach-nav.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #FFFFFF; color: #2C2C2C; }
+        .dashboard-content { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .filters {
+            background: #FFFFFF;
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #E0E0E0;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .filters form { display: flex; gap: 1rem; flex-wrap: wrap; align-items: end; }
+        .filter-group { flex: 1; min-width: 150px; }
+        .filter-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.9rem; }
+        .filter-group input, .filter-group select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #2C2C2C;
+            font-size: 0.9rem;
+        }
+        .attendance-table {
+            background: #FFFFFF;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #E0E0E0;
+            margin-bottom: 1.5rem;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .attendance-table table { width: 100%; border-collapse: collapse; }
+        .attendance-table th {
+            background: #F3F4F6;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        .attendance-table td { padding: 1rem; border-top: 1px solid #E5E7EB; font-size: 0.9rem; }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-badge.PRESENT { background-color: #28a745; color: white; }
+        .status-badge.ABSENT { background-color: #dc3545; color: white; }
+        .status-badge.LATE { background-color: #ffc107; color: #000; }
+        .status-badge.EXCUSED { background-color: #17a2b8; color: white; }
+        .statistics {
+            background: #FFFFFF;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #E0E0E0;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .statistics h3 { margin-bottom: 1rem; font-size: 1.1rem; color: #111827; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: 600; color: #6B2C91; }
+        .stat-label { color: #6B7280; font-size: 0.875rem; }
+        .loading { text-align: center; padding: 2rem; color: #6B7280; }
+        .calendar-view { display: none; }
+        .calendar-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            border: 1px solid #E0E0E0;
+            padding: 1.5rem;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .calendar-nav-btn {
+            padding: 0.5rem 1rem;
+            background: #F3F4F6;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+        .calendar-nav-btn:hover { background: #E5E7EB; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
+        .calendar-day-header { text-align: center; font-weight: 600; padding: 0.5rem; color: #6B7280; font-size: 0.85rem; }
+        .calendar-day {
+            min-height: 120px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 0.5rem;
+            background: #F9FAFB;
+        }
+        .calendar-day.other-month { opacity: 0.5; }
+        .calendar-day.today { background: #EFF6FF; border-color: #BFDBFE; }
+        .calendar-day-number { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .calendar-attendance {
+            font-size: 0.75rem;
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 6px;
+            overflow: hidden;
+            line-height: 1.3;
+        }
+        .calendar-attendance:hover { opacity: 0.9; transform: scale(1.02); transition: transform 0.2s; }
+        .calendar-attendance.PRESENT { background: #28a745; color: white; }
+        .calendar-attendance.ABSENT { background: #dc3545; color: white; }
+        .calendar-attendance.LATE { background: #ffc107; color: #000; }
+        .calendar-attendance.EXCUSED { background: #17a2b8; color: white; }
+        .view-toggle-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; }
+        .btn {
+            padding: 0.6rem 1.25rem;
+            background: #6B2C91;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        .btn:hover { background: #5A2380; }
+        .btn-secondary { background: #F3F4F6; color: #374151; border: 1px solid #E5E7EB; }
+        .btn-secondary:hover { background: #E5E7EB; }
+        #messageArea .message { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        #messageArea .message.success { background: #D1FAE5; color: #065F46; }
+        #messageArea .message.error { background: #FEE2E2; color: #B91C1C; }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav">
+                <a href="/pages/trainer-dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                <a href="/pages/coach-matches.html" class="nav-pill">Zápasy</a>
+                <a href="/pages/trainer-trainings.html" class="nav-pill">Tréningy</a>
+                <a href="/pages/trainer-attendance-charts.html" class="nav-pill active">Grafy účasti</a>
+                <a href="/pages/trainer-training-stats.html" class="nav-pill">Záznam štatistík</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" data-initial="T" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">Tréner</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <div class="nav-menu-profile">
+            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">T</div>
+            <div class="nav-menu-profile-info">
+                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                <div class="nav-menu-profile-role" id="navMenuProfileRole">Tréner</div>
+            </div>
+        </div>
+        <div class="nav-menu-divider"></div>
+        <a href="/pages/trainer-dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/coach-matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>
+        <a href="/pages/trainer-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+        <a href="/pages/trainer-attendance-charts.html" class="nav-pill active" onclick="closeNavMenu()">Grafy účasti</a>
+        <a href="/pages/trainer-training-stats.html" class="nav-pill" onclick="closeNavMenu()">Záznam štatistík</a>
+        <div class="nav-menu-divider"></div>
+        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>
+    </nav>
+
+    <div class="dashboard-content">
+        <div id="messageArea"></div>
+        <div class="filters">
+            <form id="filterForm" onsubmit="return false;">
+                <div class="filter-group">
+                    <label for="playerId">Hráč</label>
+                    <select id="playerId" name="playerId">
+                        <option value="">Všetci hráči</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="eventId">Udalosť</label>
+                    <select id="eventId" name="eventId">
+                        <option value="">Všetky udalosti</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="startDate">Dátum od</label>
+                    <input type="date" id="startDate" name="startDate">
+                </div>
+                <div class="filter-group">
+                    <label for="endDate">Dátum do</label>
+                    <input type="date" id="endDate" name="endDate">
+                </div>
+                <div class="filter-group">
+                    <label for="status">Stav</label>
+                    <select id="status" name="status">
+                        <option value="">Všetky stavy</option>
+                        <option value="PRESENT">Prítomný</option>
+                        <option value="ABSENT">Neprítomný</option>
+                        <option value="LATE">Meškajúci</option>
+                        <option value="EXCUSED">Ospravedlnený</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <button type="button" class="btn" onclick="loadAttendance()">Filtrovať</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearFilters()">Zrušiť</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="statisticsContainer" class="statistics" style="display: none;"></div>
+
+        <div class="view-toggle-container">
+            <button type="button" class="btn btn-secondary" id="viewToggle" onclick="toggleView()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><span id="viewToggleText">Kalendár</span></button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn" onclick="exportToExcel()" id="exportExcelBtn" style="display: none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>Export do Excelu
+                </button>
+                <button type="button" class="btn" onclick="exportToPdf()" id="exportPdfBtn" style="display: none;">
+                    📄 Export do PDF
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingIndicator" class="loading">Načítava sa...</div>
+        <div id="attendanceContainer" class="attendance-table" style="display: none;"></div>
+        <div id="calendarContainer" class="calendar-view"></div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/attendance.js"></script>
+    <script src="/js/events.js"></script>
+    <script src="/js/users.js"></script>
+    <script>
+        let allAttendance = [];
+        let currentView = 'table'; // 'table' or 'calendar'
+        let currentCalendarDate = new Date();
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', async function initPage() {
+            if (typeof isAuthenticated === 'undefined') {
+                setTimeout(initPage, 100);
+                return;
+            }
+
+            if (!isAuthenticated()) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            currentUser = getCurrentUser();
+            
+            if (currentUser && currentUser.role === 'PLAYER') {
+                const playerFilterGroup = document.querySelector('.filter-group:has(#playerId)');
+                if (playerFilterGroup) {
+                    playerFilterGroup.style.display = 'none';
+                }
+                document.getElementById('playerId').value = currentUser.id;
+            }
+
+            initNavUser(currentUser);
+            await loadFilterOptions();
+            await loadAttendance();
+        });
+
+        function initNavUser(user) {
+            if (!user) return;
+            const name = formatUserDisplayName(user) || (user.role === 'TRAINER' ? 'Tréner' : user.role === 'PLAYER' ? 'Hráč' : 'Používateľ');
+            const role = user.role === 'TRAINER' ? 'Tréner' : user.role === 'PLAYER' ? 'Hráč' : user.role;
+            document.getElementById('userName').textContent = name;
+            document.getElementById('userRole').textContent = role;
+            const initial = (name.charAt(0) || 'U').toUpperCase();
+            document.getElementById('userInfo').setAttribute('data-initial', initial);
+            const dn = document.getElementById('userDropdownName');
+            const dr = document.getElementById('userDropdownRole');
+            const av = document.getElementById('navMenuProfileAvatar');
+            if (dn) dn.textContent = name;
+            if (dr) dr.textContent = role;
+            if (av) av.textContent = initial;
+            document.getElementById('navMenuProfileName').textContent = name;
+            document.getElementById('navMenuProfileRole').textContent = role;
+        }
+        function toggleNavMenu() {
+            document.getElementById('hamburgerBtn').classList.toggle('open');
+            document.getElementById('navOverlay').classList.toggle('open');
+            document.getElementById('navSlideMenu').classList.toggle('open');
+            document.body.style.overflow = document.getElementById('navSlideMenu').classList.contains('open') ? 'hidden' : '';
+        }
+        function closeNavMenu() {
+            document.getElementById('hamburgerBtn').classList.remove('open');
+            document.getElementById('navOverlay').classList.remove('open');
+            document.getElementById('navSlideMenu').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function toggleUserDropdown(e) { e.stopPropagation(); document.getElementById('userInfo').classList.toggle('open'); }
+        document.addEventListener('click', function(e) { if (!e.target.closest('.user-info')) document.getElementById('userInfo').classList.remove('open'); });
+        async function handleSignOut() {
+            if (typeof logout === 'function') await logout();
+            window.location.href = '/pages/login.html';
+        }
+        function handleSignOutFromMenu() { closeNavMenu(); handleSignOut(); }
+
+        async function loadFilterOptions() {
+            try {
+                if (!currentUser || currentUser.role !== 'PLAYER') {
+                    const allUsers = await getAllUsers();
+                    const players = allUsers.filter(u => u.role === 'PLAYER');
+                    const playerSelect = document.getElementById('playerId');
+                    players.forEach(player => {
+                        const option = document.createElement('option');
+                        option.value = player.id;
+                        option.textContent = userListLabel(player);
+                        playerSelect.appendChild(option);
+                    });
+                }
+
+                const events = await getEvents();
+                const eventSelect = document.getElementById('eventId');
+                events.forEach(event => {
+                    const option = document.createElement('option');
+                    option.value = event.id;
+                    option.textContent = `${event.name} - ${formatDate(event.date)}`;
+                    eventSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading filter options:', error);
+            }
+        }
+
+        async function loadAttendance() {
+            try {
+                let playerId = document.getElementById('playerId').value;
+                const eventId = document.getElementById('eventId').value;
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                const status = document.getElementById('status').value;
+
+                if (currentUser && currentUser.role === 'PLAYER') {
+                    playerId = currentUser.id;
+                }
+
+                let attendance = [];
+
+                if (playerId) {
+                    if (startDate && endDate) {
+                        attendance = await getAttendanceByPlayerAndDateRange(playerId, startDate, endDate);
+                    } else {
+                        attendance = await getAttendanceByPlayer(playerId);
+                    }
+                } else if (eventId) {
+                    attendance = await getAttendanceByEvent(eventId);
+                    if (currentUser && currentUser.role === 'PLAYER') {
+                        attendance = attendance.filter(a => a.playerId === currentUser.id);
+                    }
+                } else {
+                    if (currentUser && currentUser.role === 'PLAYER') {
+                        attendance = await getAttendanceByPlayer(currentUser.id);
+                    } else {
+                        document.getElementById('loadingIndicator').style.display = 'none';
+                        document.getElementById('attendanceContainer').innerHTML = 
+                            '<div style="padding: 2rem; text-align: center; color: #6B7280;">Vyberte hráča alebo udalosť pre zobrazenie účasti.</div>';
+                        document.getElementById('attendanceContainer').style.display = 'block';
+                        return;
+                    }
+                }
+
+                if (status) {
+                    attendance = attendance.filter(a => a.status === status);
+                }
+
+                allAttendance = attendance;
+
+                if (attendance.length > 0) {
+                    document.getElementById('exportExcelBtn').style.display = 'inline-block';
+                    document.getElementById('exportPdfBtn').style.display = 'inline-block';
+                } else {
+                    document.getElementById('exportExcelBtn').style.display = 'none';
+                    document.getElementById('exportPdfBtn').style.display = 'none';
+                }
+
+                if (currentView === 'calendar') {
+                    displayAttendanceCalendar(attendance);
+                } else {
+                    displayAttendance(attendance);
+                }
+
+                if (playerId && attendance.length > 0) {
+                    await displayStatistics(playerId, startDate, endDate);
+                } else {
+                    document.getElementById('statisticsContainer').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading attendance:', error);
+                showMessage('Chyba pri načítaní účasti: ' + error.message, 'error');
+            }
+        }
+
+        async function displayStatistics(playerId, startDate, endDate) {
+            try {
+                const stats = await getPlayerStatistics(playerId, startDate, endDate);
+                const container = document.getElementById('statisticsContainer');
+                
+                container.innerHTML = `
+                    <h3>Štatistiky</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.totalEvents || 0}</div>
+                            <div class="stat-label">Počet udalostí</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.present || 0}</div>
+                            <div class="stat-label">Prítomný</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.absent || 0}</div>
+                            <div class="stat-label">Neprítomný</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.late || 0}</div>
+                            <div class="stat-label">Meškajúci</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.excused || 0}</div>
+                            <div class="stat-label">Ospravedlnený</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.attendanceRate ? stats.attendanceRate.toFixed(1) : 0}%</div>
+                            <div class="stat-label">Miera účasti</div>
+                        </div>
+                    </div>
+                `;
+                
+                container.style.display = 'block';
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        function displayAttendance(attendance) {
+            const container = document.getElementById('attendanceContainer');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            if (attendance.length === 0) {
+                container.innerHTML = '<div style="padding: 2rem; text-align: center; color: #6B7280;">Nenašli sa žiadne záznamy účasti.</div>';
+                loadingIndicator.style.display = 'none';
+                container.style.display = 'block';
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Dátum</th>
+                            <th>Udalosť</th>
+                            <th>Hráč</th>
+                            <th>Stav</th>
+                            <th>Poznámky</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${attendance.map(att => `
+                            <tr>
+                                <td>${formatDate(att.eventDate)}</td>
+                                <td>${escapeHtml(att.eventName || 'N/A')}</td>
+                                <td>${escapeHtml(att.playerName || 'N/A')}</td>
+                                <td><span class="status-badge ${att.status}">${statusLabel(att.status)}</span></td>
+                                <td>${escapeHtml(att.notes || '')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            loadingIndicator.style.display = 'none';
+            container.style.display = 'block';
+        }
+
+        function clearFilters() {
+            document.getElementById('playerId').value = '';
+            document.getElementById('eventId').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('status').value = '';
+            loadAttendance();
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('sk-SK', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function statusLabel(status) {
+            const labels = { PRESENT: 'Prítomný', ABSENT: 'Neprítomný', LATE: 'Meškajúci', EXCUSED: 'Ospravedlnený' };
+            return labels[status] || status;
+        }
+
+        function showMessage(message, type = 'info') {
+            const messageArea = document.getElementById('messageArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${type}`;
+            messageDiv.textContent = message;
+            messageArea.innerHTML = '';
+            messageArea.appendChild(messageDiv);
+            setTimeout(() => messageDiv.remove(), 5000);
+        }
+
+        function toggleView() {
+            currentView = currentView === 'table' ? 'calendar' : 'table';
+            const toggleBtn = document.getElementById('viewToggle');
+            const viewToggleText = document.getElementById('viewToggleText');
+            const calendarSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
+            const listSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>';
+            toggleBtn.innerHTML = currentView === 'table' ? calendarSvg + '<span id="viewToggleText">Kalendár</span>' : listSvg + '<span id="viewToggleText">Tabuľka</span>';
+            
+            if (currentView === 'calendar') {
+                displayAttendanceCalendar(allAttendance);
+            } else {
+                displayAttendance(allAttendance);
+            }
+        }
+
+        function displayAttendanceCalendar(attendance) {
+            const container = document.getElementById('calendarContainer');
+            const tableContainer = document.getElementById('attendanceContainer');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            tableContainer.style.display = 'none';
+            container.style.display = 'block';
+            loadingIndicator.style.display = 'none';
+
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+
+            const attendanceByDate = {};
+            attendance.forEach(att => {
+                if (att.eventDate) {
+                    const eventDate = new Date(att.eventDate);
+                    const dateKey = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
+                    if (!attendanceByDate[dateKey]) {
+                        attendanceByDate[dateKey] = [];
+                    }
+                    attendanceByDate[dateKey].push(att);
+                }
+            });
+
+            const monthNames = ['Január', 'Február', 'Marec', 'Apríl', 'Máj', 'Jún',
+                              'Júl', 'August', 'September', 'Október', 'November', 'December'];
+            const dayNames = ['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So'];
+
+            let html = `
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button class="calendar-nav-btn" onclick="changeAttendanceMonth(-1)">← Previous</button>
+                        <h2>${monthNames[month]} ${year}</h2>
+                        <button class="calendar-nav-btn" onclick="changeAttendanceMonth(1)">Next →</button>
+                    </div>
+                    <div class="calendar-grid">
+            `;
+
+            dayNames.forEach(day => {
+                html += `<div class="calendar-day-header">${day}</div>`;
+            });
+
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                html += `<div class="calendar-day other-month"></div>`;
+            }
+
+            const today = new Date();
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayAttendance = attendanceByDate[dateKey] || [];
+                const isToday = year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
+                
+                html += `<div class="calendar-day ${isToday ? 'today' : ''}">
+                    <div class="calendar-day-number">${day}</div>`;
+                
+                dayAttendance.forEach(att => {
+                    const status = att.status || 'UNKNOWN';
+                    const eventName = att.eventName || 'Event';
+                    const eventType = att.eventType || '';
+                    let eventTime = '';
+                    if (att.eventTime) {
+                        eventTime = typeof att.eventTime === 'string' ? att.eventTime.substring(0, 5) : att.eventTime;
+                    }
+                    const location = att.location || '';
+                    const notes = att.notes || '';
+                    const opponent = att.opponent || '';
+                    
+                    let tooltip = `${eventName}`;
+                    if (eventType) tooltip += ` (${eventType})`;
+                    if (eventTime) tooltip += `\nTime: ${eventTime}`;
+                    if (location) tooltip += `\nLocation: ${location}`;
+                    if (opponent) tooltip += `\nOpponent: ${opponent}`;
+                    tooltip += `\nYour Status: ${status}`;
+                    if (notes) tooltip += `\nNotes: ${notes}`;
+                    
+                    html += `<div class="calendar-attendance ${status}" title="${escapeHtml(tooltip)}">
+                        <div style="font-weight: 600; margin-bottom: 0.125rem; font-size: 0.8rem;">${escapeHtml(eventName)}</div>
+                        ${eventType ? `<div style="font-size: 0.65rem; opacity: 0.85; margin-bottom: 0.125rem;">${escapeHtml(eventType)}</div>` : ''}
+                        ${eventTime ? `<div style="font-size: 0.65rem; opacity: 0.85; display: flex; align-items: center; gap: 0.25rem;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>${escapeHtml(eventTime)}</div>` : ''}
+                        ${location ? `<div style="font-size: 0.65rem; opacity: 0.85; display: flex; align-items: center; gap: 0.25rem;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>${escapeHtml(location)}</div>` : ''}
+                        ${opponent ? `<div style="font-size: 0.65rem; opacity: 0.85;">vs ${escapeHtml(opponent)}</div>` : ''}
+                        <div style="font-weight: 600; margin-top: 0.25rem; font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 0.125rem;">${status}</div>
+                    </div>`;
+                });
+                
+                html += `</div>`;
+            }
+
+            const remainingCells = 42 - (startingDayOfWeek + daysInMonth); // 6 rows * 7 days
+            for (let i = 0; i < remainingCells; i++) {
+                html += `<div class="calendar-day other-month"></div>`;
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function changeAttendanceMonth(direction) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+            displayAttendanceCalendar(allAttendance);
+        }
+
+        async function exportToExcel() {
+            try {
+                const params = {
+                    playerId: document.getElementById('playerId').value || null,
+                    eventId: document.getElementById('eventId').value || null,
+                    startDate: document.getElementById('startDate').value || null,
+                    endDate: document.getElementById('endDate').value || null
+                };
+
+                Object.keys(params).forEach(key => params[key] === null && delete params[key]);
+
+                const exportFn = window.exportAttendanceToExcel || exportAttendanceToExcel;
+                if (typeof exportFn === 'function') {
+                    await exportFn(params);
+                    showMessage('Export do Excelu bol spustený.', 'success');
+                } else {
+                    throw new Error('Export function not available');
+                }
+            } catch (error) {
+                console.error('Error exporting to Excel:', error);
+                showMessage('Chyba pri exporte do Excelu: ' + error.message, 'error');
+            }
+        }
+
+        async function exportToPdf() {
+            try {
+                const params = {
+                    playerId: document.getElementById('playerId').value || null,
+                    eventId: document.getElementById('eventId').value || null,
+                    startDate: document.getElementById('startDate').value || null,
+                    endDate: document.getElementById('endDate').value || null
+                };
+
+                Object.keys(params).forEach(key => params[key] === null && delete params[key]);
+
+                const exportFn = window.exportAttendanceToPdf || exportAttendanceToPdf;
+                if (typeof exportFn === 'function') {
+                    await exportFn(params);
+                    showMessage('Export do PDF bol spustený.', 'success');
+                } else {
+                    throw new Error('Export function not available');
+                }
+            } catch (error) {
+                console.error('Error exporting to PDF:', error);
+                showMessage('Chyba pri exporte do PDF: ' + error.message, 'error');
+            }
+        }
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>
+

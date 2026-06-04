@@ -1,0 +1,4372 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Živé štatistiky zápasu - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/coach-nav.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #F8F9FA;
+            color: #2C2C2C;
+        }
+
+        .live-container {
+            display: flex;
+            flex-direction: column;
+            margin-top: 76px;
+            height: calc(100vh - 76px);
+            height: calc(100dvh - 76px);
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .live-top-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.5rem;
+            padding: 0.55rem 1.25rem;
+            background: #FFFFFF;
+            border-bottom: 1px solid #E0E0E0;
+            flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .live-top-primary {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.65rem 1rem;
+            min-width: 0;
+        }
+        .match-info-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            min-width: 0;
+            flex: 0 1 auto;
+        }
+        .match-info-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #9CA3AF;
+            font-weight: 600;
+        }
+        .match-info-text {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1F2937;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+        .match-info-text .match-info-date {
+            font-weight: 600;
+            color: #6B7280;
+            font-size: 0.88rem;
+        }
+        .game-clock-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+            width: 100%;
+            min-width: 0;
+        }
+        .game-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .game-clock-display {
+            font-variant-numeric: tabular-nums;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #6B2C91;
+            min-width: 5ch;
+            text-align: center;
+            flex: 0 0 auto;
+        }
+        .live-top-bar .btn-set-time {
+            padding: 0.28rem 0.5rem;
+            font-size: 0.72rem;
+            border-radius: 6px;
+        }
+        .live-top-bar .btn-clock {
+            padding: 0.42rem 0.7rem;
+            font-size: 0.78rem;
+            border-radius: 8px;
+            min-width: 0;
+        }
+        .live-top-bar .btn-undo,
+        .live-top-bar .btn-save,
+        .live-top-bar .btn-manual {
+            padding: 0.38rem 0.6rem;
+            font-size: 0.74rem;
+            border-radius: 7px;
+        }
+        .live-top-bar .clock-edit-wrap input.clock-edit-input {
+            font-size: 1rem;
+            padding: 0.28rem 0.4rem;
+        }
+        .clock-edit-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .clock-edit-wrap input.clock-edit-input {
+            width: 5ch;
+            padding: 0.35rem 0.5rem;
+            font-size: 1.25rem;
+            font-variant-numeric: tabular-nums;
+            border: 1px solid #E0E0E0;
+            border-radius: 6px;
+            background: #FFFFFF;
+            color: #2C2C2C;
+            text-align: center;
+        }
+        .btn-set-time {
+            padding: 0.35rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid #E5E7EB;
+            background: #F3F4F6;
+            color: #374151;
+            cursor: pointer;
+        }
+        .btn-set-time:hover { background: #E5E7EB; }
+        .btn-clock {
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-clock.start { background: #22c55e; color: #fff; }
+        .btn-clock.start:hover { background: #16a34a; }
+        .btn-clock.stop { background: #ef4444; color: #fff; }
+        .btn-clock.stop:hover { background: #dc2626; }
+        .btn-undo {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: #F3F4F6;
+            color: #374151;
+            border: 1px solid #E5E7EB;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-undo:hover { background: #E5E7EB; }
+        .btn-undo:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-save, .btn-manual {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-save { background: #6b2c91; color: #fff; }
+        .btn-save:hover { background: #5a2473; }
+        .btn-manual { background: #F3F4F6; color: #6B2C91; border: 1px solid #E5E7EB; }
+        .btn-manual:hover { background: #E8D5FF; border-color: #C4B5FD; }
+
+        .live-wl-strip {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .live-wl-strip .live-wl-label { font-size: 0.85rem; color: #6B7280; font-weight: 500; }
+        .live-wl-strip .live-wl-btns { display: flex; gap: 0.25rem; }
+        .live-wl-strip .live-wl-btn {
+            width: 32px; height: 32px;
+            border-radius: 6px;
+            border: 1px solid #E5E7EB;
+            background: #F9FAFB;
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            color: #6B7280;
+        }
+        .live-wl-strip .live-wl-btn:hover { background: #E5E7EB; }
+        .live-wl-strip .live-wl-btn.win { background: #D1FAE5; color: #059669; border-color: #A7F3D0; }
+        .live-wl-strip .live-wl-btn.win.active { background: #10B981; color: #fff; border-color: #10B981; }
+        .live-wl-strip .live-wl-btn.loss { background: #FEE2E2; color: #DC2626; border-color: #FECACA; }
+        .live-wl-strip .live-wl-btn.loss.active { background: #EF4444; color: #fff; border-color: #EF4444; }
+        .live-wl-strip .live-wl-btn.none.active { background: #6B2C91; color: #fff; border-color: #6B2C91; }
+        .live-wl-strip .live-wl-score { font-size: 0.85rem; color: #374151; display: flex; align-items: center; gap: 0.35rem; }
+        .live-wl-strip .live-wl-score input { width: 3.5rem; padding: 0.35rem 0.5rem; border-radius: 6px; border: 1px solid #E0E0E0; font-size: 0.9rem; }
+        .live-wl-strip .live-wl-save { padding: 0.32rem 0.55rem; font-size: 0.72rem; border-radius: 7px; }
+
+        .live-score-strip {
+            display: flex;
+            align-items: stretch;
+            gap: 1rem;
+            padding: 0.75rem 1.5rem;
+            background: #FFFFFF;
+            border-bottom: 1px solid #E0E0E0;
+            flex-shrink: 0;
+        }
+        .live-score-strip .period-wrap {
+            display: flex;
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .live-score-strip .period-wrap label { font-size: 0.8rem; color: #6B7280; }
+        .live-score-strip .period-select {
+            padding: 0.35rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid #E0E0E0;
+            background: #FFFFFF;
+            color: #2C2C2C;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .live-score-strip .team-totals {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+        .live-score-strip .team-total-box {
+            padding: 0.4rem 0.9rem;
+            border-radius: 8px;
+            background: #F8F9FA;
+            border: 1px solid #E0E0E0;
+        }
+        .live-score-strip .team-total-label { font-size: 0.75rem; color: #6B7280; text-transform: uppercase; }
+        .live-score-strip .team-total-value { font-size: 1.35rem; font-weight: 700; color: #6B2C91; }
+        .live-score-strip .team-total-box.fouls .team-total-value { color: #d97706; }
+        .live-score-strip .period-controls {
+            display: flex;
+            gap: 0.75rem;
+            padding: 0.65rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            background: #F8FAFC;
+        }
+        .main-scoreboard {
+            flex: 1;
+            min-width: 0;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 14px;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%);
+        }
+        .score-team {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+        }
+        .score-team span {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #6B7280;
+        }
+        .score-team strong {
+            font-size: 2rem;
+            line-height: 1;
+            font-weight: 800;
+        }
+        .score-team.our strong { color: #2563EB; }
+        .score-team.opp strong { color: #D97706; }
+        .score-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            min-width: 90px;
+        }
+        .vp-badge {
+            min-width: 2.8rem;
+            text-align: center;
+            padding: 0.25rem 0.6rem;
+            border-radius: 8px;
+            border: 1px solid #D1D5DB;
+            background: #F3F4F6;
+            color: #374151;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .vp-badge.win { background: #D1FAE5; border-color: #A7F3D0; color: #047857; }
+        .vp-badge.loss { background: #FEE2E2; border-color: #FECACA; color: #B91C1C; }
+        .score-diff {
+            font-size: 0.8rem;
+            color: #6B7280;
+            font-weight: 600;
+        }
+
+        .live-main {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+        .players-panel {
+            width: 8rem;
+            flex-shrink: 0;
+            background: #FFFFFF;
+            border-right: 1px solid #E0E0E0;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        .players-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .players-panel-header h3 {
+            font-size: 0.85rem;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0;
+            flex: 1;
+            min-width: 0;
+        }
+        .btn-nomination {
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #E8D5FF;
+            color: #6B2C91;
+            border: 1px solid #C4B5FD;
+            cursor: pointer;
+            white-space: nowrap;
+            max-width: 90px;
+        }
+        .btn-nomination:hover { background: #DDD6FE; }
+        .btn-nomination-top {
+            display: none;
+            margin-bottom: 0.6rem;
+        }
+        .players-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+        }
+        .btn-opponents {
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #FCD34D;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-opponents:hover { background: #FDE68A; }
+        .nomination-hint {
+            font-size: 0.9rem;
+            color: #6B7280;
+            margin-bottom: 0.5rem;
+        }
+        .nomination-count {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #6B2C91;
+            margin-bottom: 0.75rem;
+        }
+        .nomination-list {
+            max-height: 50vh;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 0.5rem;
+        }
+        .nomination-list label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        .nomination-list label:hover { background: #F9FAFB; }
+        .nomination-list input[type="checkbox"] { width: 18px; height: 18px; }
+        .player-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 0.75rem;
+            margin-bottom: 0.4rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 2px solid transparent;
+        }
+        .player-row:hover { background: #F5F0FF; }
+        .player-row.selected { border-color: #6B2C91; background: #E8D5FF; }
+        .player-row.on-court { background: #ECFDF5; border-left: 3px solid #22c55e; }
+        .player-row.on-bench { background: #F3F4F6; cursor: not-allowed; opacity: 0.85; }
+        .player-name {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #2C2C2C;
+        }
+        .player-jersey {
+            font-weight: 800;
+            color: #111827;
+            min-width: 2.2rem;
+            display: inline-flex;
+            align-items: center;
+        }
+        .player-full-name {
+            min-width: 0;
+        }
+        .player-pm {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #111827;
+            background: #F3F4F6;
+            border: 1px solid #E5E7EB;
+            border-radius: 999px;
+            padding: 0.1rem 0.45rem;
+        }
+        .player-pm.pos { color: #047857; border-color: #A7F3D0; background: #ECFDF5; }
+        .player-pm.neg { color: #B91C1C; border-color: #FECACA; background: #FEF2F2; }
+        .court-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            margin-left: 0.4rem;
+        }
+        .court-badge.court { background: #22c55e; color: #fff; }
+        .court-badge.bench { background: #9CA3AF; color: #fff; }
+
+        .actions-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            padding: 1rem;
+            background: #F8F9FA;
+        }
+        .opponent-panel {
+            margin-top: 0.85rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            background: #FFFFFF;
+            padding: 0.75rem;
+            max-width: 520px;
+        }
+        .opponent-panel h4 {
+            margin-bottom: 0.5rem;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #6B7280;
+        }
+        .opponent-input-row {
+            display: flex;
+            gap: 0.45rem;
+            align-items: center;
+            margin-bottom: 0.6rem;
+            flex-wrap: wrap;
+        }
+        .opponent-input-row input {
+            width: 5.5rem;
+            padding: 0.45rem 0.55rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .opp-score-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 0.45rem 0.65rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: #FFFFFF;
+        }
+        .opp-score-btn.p1 { background: #F59E0B; }
+        .opp-score-btn.p2 { background: #D97706; }
+        .opp-score-btn.p3 { background: #B45309; }
+        .opponent-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+        .opponent-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 0.35rem 0.55rem;
+            font-size: 0.85rem;
+        }
+        .live-mini-summary {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #374151;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0.1rem;
+        }
+        .live-mini-summary strong { color: #6B2C91; }
+        .court-layout {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) minmax(340px, 2fr) minmax(220px, 1fr);
+            gap: 0.75rem;
+            align-items: stretch;
+        }
+        .court-layout.no-opponent {
+            grid-template-columns: minmax(220px, 1fr) minmax(340px, 2fr);
+        }
+
+        @media (min-width: 1246px) and (max-width: 1785px) {
+            .court-layout {
+                grid-template-columns:minmax(220px, 1fr) minmax(340px, 2fr) minmax(220px, 1fr);
+            }
+            .court-layout.no-opponent {
+                grid-template-columns: minmax(220px, 1fr) minmax(340px, 2fr);
+            }
+            .court-layout > .action-side-panel:first-of-type .action-buttons-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.45rem;
+            }
+            .court-center-panel {
+                max-width: min(720px, 100%);
+                width: 100%;
+                justify-self: center;
+            }
+        }
+
+        .action-side-panel {
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            background: #FFFFFF;
+            padding: 0.75rem;
+        }
+        .action-side-panel h4 {
+            margin-bottom: 0.55rem;
+            font-size: 0.78rem;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .court-center-panel {
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            background: #FFFFFF;
+            padding: 0.75rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+        }
+        .court-team-panel {
+            border: 1px solid #EEF2F7;
+            border-radius: 10px;
+            padding: 0.55rem;
+            background: #FAFAFA;
+        }
+        .court-team-panel h5 {
+            font-size: 0.78rem;
+            color: #6B7280;
+            margin-bottom: 0.45rem;
+            text-transform: uppercase;
+        }
+        .court-mobile-clock {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            padding: 0.4rem 0.5rem;
+            border: 1px dashed #D1D5DB;
+            border-radius: 10px;
+            background: #F8FAFC;
+        }
+        .court-mobile-clock .game-clock-display {
+            font-size: 1.4rem;
+            color: #6B2C91;
+            min-width: 4.5ch;
+        }
+        .court-mobile-clock .btn-clock {
+            min-width: 92px;
+            padding: 0.48rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+        }
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(48px, 1fr));
+            gap: 0.45rem;
+        }
+        .num-box {
+            position: relative;
+            min-height: auto !important;
+            min-width: auto !important;
+            padding: 0;
+            border: 1px solid #D1D5DB;
+            border-radius: 11px;
+            background: #FFFFFF;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #111827;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            box-shadow: 0 1px 2px rgba(17, 24, 39, 0.06);
+            transition: transform 0.14s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+            aspect-ratio: 1 / 1;
+        }
+        .num-box:hover:not(:disabled):not(.empty) {
+            transform: translateY(-1px);
+            border-color: #A5B4FC;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.14);
+        }
+        .num-box:active:not(:disabled):not(.empty) {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.12);
+        }
+        .num-box:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2), 0 4px 12px rgba(79, 70, 229, 0.18);
+        }
+        .num-box.selected {
+            background: linear-gradient(180deg, #E0EEFF 0%, #D3E5FF 100%);
+            border-color: #3B82F6;
+            color: #1E3A8A;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+        .num-box.opp.selected {
+            background: linear-gradient(180deg, #FFF1C6 0%, #FDE68A 100%);
+            border-color: #D97706;
+            color: #92400E;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.22);
+        }
+        .num-box.empty {
+            color: #9CA3AF;
+            font-weight: 600;
+            cursor: default;
+            background: #F9FAFB;
+            box-shadow: none;
+        }
+        .num-box .corner-left,
+        .num-box .corner-right {
+            position: absolute;
+            top: 3px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            line-height: 1;
+            padding: 0.08rem 0.24rem;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.98);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .num-box .corner-left { left: 3px; color: #16A34A; border: 1px solid #BBF7D0; }
+        .num-box .corner-right { right: 3px; color: #DC2626; border: 1px solid #FECACA; }
+        .num-box .num-main {
+            display: inline-block;
+            margin-top: 0;
+        }
+        .opponent-roster-wrap {
+            margin-top: 0.6rem;
+            border-top: 1px dashed #E5E7EB;
+            padding-top: 0.6rem;
+        }
+        .opponent-roster-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+        .opp-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 999px;
+            padding: 0.2rem 0.45rem;
+            background: #FFFFFF;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .opp-chip .sub-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 0.15rem 0.45rem;
+            font-size: 0.68rem;
+            font-weight: 700;
+            background: #E5E7EB;
+            color: #374151;
+            cursor: pointer;
+        }
+        .opp-chip .sub-btn.on {
+            background: #16A34A;
+            color: #FFFFFF;
+        }
+        .opponents-modal-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.45rem;
+            margin: 0.75rem 0;
+        }
+        .opponents-modal-grid input {
+            padding: 0.45rem 0.5rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+        }
+        .action-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            max-width: 100%;
+        }
+        .action-btn {
+            padding: 0.25rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+            min-height: auto !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1 / 1;
+        }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .action-btn.pts-2 { background: #166534; color: #fff; }
+        .action-btn.pts-2:hover:not(:disabled) { background: #15803d; transform: scale(1.02); }
+        .action-btn.miss-2 { background: #FEF3C7; color: #b45309; border: 1px solid #FCD34D; }
+        .action-btn.miss-2:hover:not(:disabled) { background: #FDE68A; transform: scale(1.02); }
+        .action-btn.pts-3 { background: #1e40af; color: #fff; }
+        .action-btn.pts-3:hover:not(:disabled) { background: #1d4ed8; transform: scale(1.02); }
+        .action-btn.miss-3 { background: #DBEAFE; color: #1d4ed8; border: 1px solid #93C5FD; }
+        .action-btn.miss-3:hover:not(:disabled) { background: #BFDBFE; transform: scale(1.02); }
+        .action-btn.ft { background: #c2410c; color: #fff; }
+        .action-btn.ft:hover:not(:disabled) { background: #ea580c; transform: scale(1.02); }
+        .action-btn.miss-ft { background: #FFEDD5; color: #c2410c; border: 1px solid #FDBA74; }
+        .action-btn.miss-ft:hover:not(:disabled) { background: #FED7AA; transform: scale(1.02); }
+        .action-btn.other { background: #FFFFFF; color: #374151; border: 1px solid #E5E7EB; }
+        .action-btn.other:hover:not(:disabled) { background: #F5F0FF; border-color: #C4B5FD; color: #6B2C91; transform: scale(1.02); }
+
+        .court-layout > .action-side-panel:first-of-type .action-btn {
+            border-radius: 6px;
+        }
+
+        .action-log-wrap {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: #FFFFFF;
+            border-radius: 10px;
+            border: 1px solid #E0E0E0;
+            max-height: 140px;
+            overflow-y: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .action-log-wrap h4 { font-size: 0.8rem; color: #6B7280; margin-bottom: 0.5rem; }
+        .action-log-entry {
+            font-size: 0.85rem;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #E5E7EB;
+            color: #6B7280;
+        }
+        .action-log-entry:last-child { border-bottom: none; }
+
+        .stats-table-wrap {
+            flex: 1;
+            overflow: auto;
+            margin-top: 1rem;
+            background: #FFFFFF;
+            border-radius: 10px;
+            border: 1px solid #E0E0E0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .stats-table-wrap h4 {
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            color: #6B7280;
+            border-bottom: 1px solid #E0E0E0;
+        }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .stats-table th, .stats-table td {
+            padding: 0.5rem 0.4rem;
+            text-align: center;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .stats-table th { color: #6B7280; font-weight: 600; }
+        .stats-table td.player-name-cell { text-align: left; font-weight: 600; padding-left: 0.75rem; color: #2C2C2C; }
+        .stats-table tr:hover td { background: #F9FAFB; }
+        .stats-table tr.on-court-row td { background: #ECFDF5; }
+        .stats-table td.editable { cursor: pointer; }
+        .stats-table td.editable:hover { background: #F3F4F6; }
+        .stats-table input.cell-edit {
+            width: 100%;
+            max-width: 48px;
+            padding: 0.25rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 4px;
+            background: #FFFFFF;
+            color: #2C2C2C;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .overlay.open { display: flex; }
+        .modal {
+            background: #FFFFFF;
+            border-radius: 12px;
+            border: 1px solid #E0E0E0;
+            padding: 1.5rem;
+            max-width: 90vw;
+            min-width: 700px;
+            max-height: 90vh;
+            overflow: auto;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        .modal h3 { margin-bottom: 1rem; color: #2C2C2C; }
+        .modal-actions { margin-top: 1rem; display: flex; gap: 0.75rem; justify-content: flex-end; }
+        .btn-primary {
+            padding: 0.58rem 1.15rem;
+            background: linear-gradient(180deg, #7C3AED 0%, #6B2C91 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(107, 44, 145, 0.26);
+            transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.18s ease;
+        }
+        .btn-primary:hover {
+            filter: brightness(1.03);
+            transform: translateY(-1px);
+            box-shadow: 0 9px 22px rgba(107, 44, 145, 0.32);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 5px 14px rgba(107, 44, 145, 0.26);
+        }
+        .btn-secondary {
+            padding: 0.58rem 1.15rem;
+            background: #F8FAFC;
+            color: #374151;
+            border: 1px solid #D1D5DB;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .btn-secondary:hover {
+            background: #F1F5F9;
+            border-color: #C7D2FE;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+        .btn-secondary:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .save-result-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 2500;
+            align-items: center;
+            justify-content: center;
+        }
+        .save-result-overlay.open { display: flex; }
+        .save-result-popup {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 1.5rem;
+            min-width: 280px;
+            max-width: 90vw;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border: 1px solid #E0E0E0;
+            text-align: center;
+        }
+        .save-result-popup.success { border-top: 4px solid #22c55e; }
+        .save-result-popup.error { border-top: 4px solid #ef4444; }
+        .save-result-popup .save-result-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .save-result-popup.success .save-result-title { color: #22c55e; }
+        .save-result-popup.error .save-result-title { color: #ef4444; }
+        .save-result-popup .save-result-text { font-size: 0.95rem; color: #6B7280; margin-bottom: 1.25rem; }
+        .save-result-popup .save-result-ok {
+            padding: 0.5rem 1.5rem;
+            background: #6b2c91;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .save-result-popup .save-result-ok:hover { background: #5a2473; }
+
+        .loading { padding: 2rem; text-align: center; color: #6B7280; }
+        .hint-no-player { color: #6B7280; font-size: 0.9rem; margin-top: 0.5rem; }
+
+        @media (min-width: 1500px) {
+            .live-top-bar {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                padding: 0.6rem 1.5rem;
+            }
+            .live-top-primary {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+            .game-clock-wrap {
+                flex: 0 1 auto;
+                min-width: 0;
+                width: auto;
+                justify-content: flex-end;
+                flex-wrap: nowrap;
+                gap: 0.55rem;
+            }
+            .game-controls {
+                flex-wrap: nowrap;
+                gap: 0.5rem;
+            }
+            .game-clock-display,
+            .clock-edit-wrap,
+            .btn-set-time,
+            .btn-clock,
+            .btn-undo,
+            .btn-save,
+            .btn-manual {
+                flex: 0 0 auto;
+                white-space: nowrap;
+            }
+            .live-top-bar .game-clock-display {
+                font-size: 1.65rem;
+            }
+            .live-top-bar .btn-clock {
+                min-width: 78px;
+            }
+        }
+
+        @media (max-width: 1499px) {
+            .live-container {
+                height: auto;
+                min-height: calc(100vh - 76px);
+                overflow: visible;
+            }
+            .live-top-bar {
+                gap: 0.55rem;
+            }
+            .live-top-primary {
+                flex: 1 1 100%;
+                min-width: 0;
+            }
+            .live-wl-strip {
+                flex: 1 1 auto;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 0.45rem 0.65rem;
+                min-width: 0;
+            }
+            .game-clock-wrap {
+                flex: 1 1 100%;
+                display: grid;
+                grid-template-columns: auto 1fr;
+                grid-auto-flow: row;
+                gap: 0.45rem 0.6rem;
+                width: 100%;
+                align-items: start;
+            }
+            .game-clock-display {
+                grid-column: 1;
+                grid-row: 1;
+                align-self: center;
+            }
+            .game-controls {
+                grid-column: 2;
+                grid-row: 1;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+                gap: 0.4rem;
+                align-items: stretch;
+                justify-items: stretch;
+                min-width: 0;
+            }
+            .game-controls .clock-edit-wrap {
+                grid-column: 1 / -1;
+                display: flex;
+                flex-direction: row;
+                gap: 0.45rem;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+            .game-controls > button {
+                width: 100%;
+                min-width: 0;
+                white-space: nowrap;
+            }
+        }
+
+        /* Compact desktop: more room for middle action area */
+        @media (max-width: 1665px) and (min-width: 901px) {
+            .players-panel {
+                width: 210px;
+                padding: 0.75rem;
+            }
+
+            .player-row {
+                padding: 0.55rem 0.5rem;
+            }
+
+            .player-name {
+                font-size: 0.88rem;
+                gap: 0.25rem;
+            }
+
+            .player-full-name {
+                display: none;
+            }
+
+            .court-layout {
+                grid-template-columns: minmax(220px, 1fr) minmax(340px, 2fr) minmax(220px, 1fr);
+            }
+
+            .court-layout.no-opponent {
+                grid-template-columns: minmax(190px, 1fr) minmax(360px, 2fr);
+            }
+        }
+
+        @media (max-width: 1587px) and (min-width: 901px) {
+            .court-team-panel {
+                padding: 0.5rem;
+            }
+            .number-grid {
+                grid-template-columns: repeat(2,  1fr);
+                gap: 0.4rem;
+            }
+            .num-box {
+                min-height: auto;
+                min-width: auto;
+                padding: 0;
+                font-size: 0.95rem;
+            }
+        }
+
+        /* Hide left players panel sooner and keep nomination accessible above middle */
+        @media (max-width: 1108px) {
+            .players-panel {
+                display: none;
+            }
+
+            .actions-panel {
+                padding: 0.75rem;
+            }
+
+            .btn-nomination-top {
+                display: inline-flex;
+                align-items: center;
+            }
+
+            .live-main {
+                display: block;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .live-score-strip {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+            .live-score-strip .period-controls {
+                flex-wrap: wrap;
+            }
+            .live-score-strip .period-wrap {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.4rem;
+            }
+            .live-score-strip .period-wrap label {
+                font-size: 0.75rem;
+            }
+            .live-score-strip .period-select {
+                width: 100%;
+                max-width: 100%;
+                padding: 0.5rem 0.75rem;
+                font-size: 0.85rem;
+            }
+            .live-score-strip .main-scoreboard {
+                flex: none;
+                width: 100%;
+                min-width: 0;
+                grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            }
+            .live-score-strip .team-totals {
+                width: 100%;
+                flex-direction: row;
+                justify-content: space-around;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+            .live-score-strip .team-total-box {
+                flex: 1 1 120px;
+                min-width: 0;
+                padding: 0.5rem 0.6rem;
+                text-align: center;
+            }
+            .live-score-strip .team-total-label {
+                font-size: 0.7rem;
+            }
+            .live-score-strip .team-total-value {
+                font-size: 1.2rem;
+            }
+            .live-main { 
+                flex-direction: column; 
+                flex: none;
+                min-height: auto;
+            }
+            .players-panel { width: 100%; max-height: 200px; border-right: none; border-bottom: 1px solid #E0E0E0; }
+            .court-layout { grid-template-columns: 1fr 1fr 1fr; }
+            .court-center-panel { grid-template-columns: 1fr 1fr; }
+            .action-buttons-grid { grid-template-columns: repeat(3, 1fr); max-width: 100%; }
+            .actions-panel { 
+                padding: 0.75rem; 
+                flex: none;
+                min-height: auto;
+            }
+        }
+        @media (max-width: 850px) {
+            .live-score-strip .team-totals {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.45rem;
+            }
+
+            .live-score-strip .team-total-box {
+                width: 100%;
+                flex: 0 0 auto;
+            }
+
+            .court-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .court-center-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .court-mobile-clock {
+                display: flex;
+            }
+
+            .game-controls #btnClockStart,
+            .game-controls #btnClockStop {
+                display: none !important;
+            }
+
+            .action-buttons-grid {
+                grid-template-columns: repeat(10, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 640px) {
+            .overlay,
+            .save-result-overlay {
+                align-items: flex-start;
+                justify-content: center;
+                overflow-y: auto;
+                padding: 0.75rem 0.5rem;
+            }
+            .live-container {
+                height: auto;
+                min-height: calc(100vh - 56px);
+                overflow: visible;
+            }
+            body {
+                overflow-x: hidden;
+            }
+            .live-top-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+            .live-top-primary {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            .match-info-text {
+                font-size: 0.9rem;
+            }
+            .game-clock-wrap {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            .game-controls {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            .game-clock-display {
+                font-size: 1.75rem;
+                text-align: center;
+                padding: 0.5rem 0;
+            }
+            .clock-edit-wrap {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .clock-edit-wrap input.clock-edit-input {
+                width: 6ch;
+                font-size: 1.1rem;
+                padding: 0.5rem;
+            }
+            .btn-set-time,
+            .btn-clock,
+            .btn-undo,
+            .btn-save,
+            .btn-manual {
+                padding: 0.65rem 1rem;
+                font-size: 0.85rem;
+                min-height: 44px;
+                width: 100%;
+                text-align: center;
+            }
+            .btn-clock {
+                font-size: 0.95rem;
+                padding: 0.75rem 1rem;
+            }
+            .live-score-strip {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+            .live-score-strip .period-wrap {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.4rem;
+            }
+            .live-score-strip .period-wrap label {
+                font-size: 0.75rem;
+            }
+            .live-score-strip .period-select {
+                width: 100%;
+                padding: 0.5rem 0.75rem;
+                font-size: 0.85rem;
+            }
+            .live-score-strip .team-totals {
+                flex-direction: row;
+                justify-content: space-around;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+            .live-score-strip .team-total-box {
+                flex: 1;
+                min-width: 0;
+                padding: 0.5rem 0.6rem;
+                text-align: center;
+            }
+            .live-score-strip .team-total-label {
+                font-size: 0.7rem;
+                margin-bottom: 0.25rem;
+            }
+            .live-score-strip .team-total-value {
+                font-size: 1.2rem;
+            }
+            .players-panel {
+                padding: 0.75rem;
+                max-height: 180px;
+            }
+            .players-panel h3 {
+                font-size: 0.8rem;
+                margin-bottom: 0.5rem;
+            }
+            .player-row {
+                padding: 0.6rem 0.5rem;
+                margin-bottom: 0.35rem;
+            }
+            .player-name {
+                font-size: 0.85rem;
+            }
+            .court-badge {
+                font-size: 0.65rem;
+                padding: 0.15rem 0.3rem;
+                margin-left: 0.3rem;
+            }
+            .live-main {
+                flex: none;
+                min-height: auto;
+                height: auto;
+            }
+            .actions-panel {
+                padding: 0.75rem;
+                flex: none;
+                min-height: auto;
+                height: auto;
+            }
+            .action-buttons-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 0.5rem;
+            }
+            .action-btn {
+                padding: 0.25rem;
+                font-size: 0.8rem;
+                min-height: auto;
+                font-weight: 600;
+            }
+            .action-log-wrap {
+                margin-top: 0.75rem;
+                padding: 0.6rem;
+                max-height: 120px;
+            }
+            .action-log-wrap h4 {
+                font-size: 0.75rem;
+                margin-bottom: 0.4rem;
+            }
+            .action-log-entry {
+                font-size: 0.75rem;
+                padding: 0.2rem 0;
+            }
+            .stats-table-wrap {
+                margin-top: 0.75rem;
+            }
+            .stats-table-wrap h4 {
+                padding: 0.6rem 0.75rem;
+                font-size: 0.75rem;
+            }
+            .stats-table {
+                font-size: 0.7rem;
+                min-width: 800px;
+            }
+            .stats-table th,
+            .stats-table td {
+                padding: 0.4rem 0.3rem;
+            }
+            .stats-table td.player-name-cell {
+                padding-left: 0.5rem;
+                font-size: 0.75rem;
+                position: sticky;
+                left: 0;
+                background: inherit;
+                z-index: 1;
+            }
+            .stats-table-wrap {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .modal {
+                width: calc(100vw - 1rem) !important;
+                max-width: calc(100vw - 1rem) !important;
+                min-width: 0 !important;
+                max-height: calc(100dvh - 1.5rem);
+                overflow-y: auto;
+                margin: 0;
+                padding: 1rem;
+            }
+            .modal h3 {
+                font-size: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            .modal-actions {
+                flex-direction: column-reverse;
+                gap: 0.5rem;
+            }
+            .nomination-list {
+                max-height: 45dvh;
+            }
+            .opponents-modal-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.4rem;
+            }
+            .btn-primary,
+            .btn-secondary {
+                width: 100%;
+                padding: 0.65rem 1rem;
+                font-size: 0.9rem;
+                min-height: 44px;
+            }
+            .save-result-popup {
+                margin: 0;
+                padding: 1.25rem;
+                width: calc(100vw - 1rem);
+                max-width: calc(100vw - 1rem);
+                min-width: 0;
+                max-height: calc(100dvh - 1.5rem);
+                overflow-y: auto;
+            }
+            .save-result-popup .save-result-title {
+                font-size: 1rem;
+            }
+            .save-result-popup .save-result-text {
+                font-size: 0.85rem;
+                margin-bottom: 1rem;
+            }
+            .save-result-popup .save-result-ok {
+                width: 100%;
+                padding: 0.65rem 1rem;
+                font-size: 0.95rem;
+                min-height: 44px;
+            }
+            .hint-no-player {
+                font-size: 0.8rem;
+                margin-top: 0.4rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .overlay,
+            .save-result-overlay {
+                padding: 0.6rem 0.4rem;
+            }
+            .modal {
+                width: calc(100vw - 0.8rem) !important;
+                max-width: calc(100vw - 0.8rem) !important;
+                max-height: calc(100dvh - 1.2rem);
+                padding: 0.85rem;
+            }
+            .nomination-list {
+                max-height: 42dvh;
+            }
+            .opponents-modal-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .action-buttons-grid {
+                grid-template-columns: repeat(5, 0.85fr);
+                gap: 0.4rem;
+            }
+            .action-btn {
+                font-size: 0.75rem;
+                padding: 0.25rem;
+                min-height: auto;
+            }
+            .game-clock-display {
+                font-size: 1.5rem;
+            }
+            .live-score-strip .team-total-value {
+                font-size: 1.1rem;
+            }
+            .stats-table {
+                font-size: 0.65rem;
+                min-width: 750px;
+            }
+            .stats-table th,
+            .stats-table td {
+                padding: 0.35rem 0.25rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small"><img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo"></div>
+            <span class="team-name">MBK AŠK Slávia Trnava</span>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav">
+                <a href="/pages/dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                <a href="/pages/matches.html" class="nav-pill">Zápasy</a>
+                <a href="/pages/trainer-trainings.html" class="nav-pill">Tréningy</a>
+                <a href="/pages/statistics-entry.html" class="nav-pill">Záznam štatistík</a>
+                <a href="/pages/live-stats.html" class="nav-pill active">Živé štatistiky</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" data-initial="U" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">-</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <div class="nav-menu-profile">
+            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">T</div>
+            <div class="nav-menu-profile-info">
+                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                <div class="nav-menu-profile-role" id="navMenuProfileRole">-</div>
+            </div>
+        </div>
+        <div class="nav-menu-divider"></div>
+        <a href="/pages/dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>
+        <a href="/pages/trainer-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+        <a href="/pages/statistics-entry.html" class="nav-pill" onclick="closeNavMenu()">Záznam štatistík</a>
+        <a href="/pages/live-stats.html" class="nav-pill active" onclick="closeNavMenu()">Živé štatistiky</a>
+        <div class="nav-menu-divider"></div>
+        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>
+    </nav>
+
+    <div class="live-container">
+        <div class="live-score-strip">
+            <div class="period-controls">
+                <div class="period-wrap">
+                    <label for="periodLengthSelect">Dĺžka štvrtiny (min):</label>
+                    <select id="periodLengthSelect" class="period-select" title="Dĺžka jednej štvrtiny v minútach">
+                        <option value="5">5 min</option>
+                        <option value="8">8 min</option>
+                        <option value="10" selected>10 min</option>
+                        <option value="12">12 min</option>
+                    </select>
+                </div>
+                <div class="period-wrap">
+                    <label for="periodSelect">štvrtina:</label>
+                    <select id="periodSelect" class="period-select">
+                        <option value="1">1. štvrtina</option>
+                        <option value="2">2. štvrtina</option>
+                        <option value="3">3. štvrina</option>
+                        <option value="4">4. štvrina</option>
+                        <option value="5">Predĺženie</option>
+                    </select>
+                </div>
+            </div>
+            <div class="main-scoreboard">
+                <div class="score-team our">
+                    <span>Naše body</span>
+                    <strong id="liveOurScoreDisplay">0</strong>
+                </div>
+                <div class="score-center">
+                    <div id="liveVpBadge" class="vp-badge">-</div>
+                    <div id="liveScoreDiff" class="score-diff">Rozdiel: 0</div>
+                </div>
+                <div class="score-team opp">
+                    <span>Súper body</span>
+                    <strong id="liveOpponentScoreDisplay">0</strong>
+                </div>
+            </div>
+            <div class="team-totals">
+                <div class="team-total-box">
+                    <div class="team-total-label">Body (hráči)</div>
+                    <div class="team-total-value" id="teamTotalPts">0</div>
+                </div>
+                <div class="team-total-box fouls">
+                    <div class="team-total-label">Fauly (F−)</div>
+                    <div class="team-total-value" id="teamTotalFouls">0</div>
+                </div>
+                <div class="team-total-box fouls">
+                    <div class="team-total-label">Fauly obdrž. (F+)</div>
+                    <div class="team-total-value" id="teamTotalFoulsDrawn">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="live-top-bar">
+            <div class="live-top-primary">
+                <div class="match-info-wrap" id="liveMatchInfo">
+                    <span class="match-info-label">Zápas</span>
+                    <div class="match-info-text" id="liveMatchInfoText">—</div>
+                </div>
+                <input type="hidden" id="eventId" value="">
+                <div id="liveWlStrip" class="live-wl-strip" style="display: none;">
+                    <span class="live-wl-label">Výsledok V/P:</span>
+                    <div class="live-wl-btns">
+                        <button type="button" class="live-wl-btn win" data-wl="true" title="Výhra">V</button>
+                        <button type="button" class="live-wl-btn loss" data-wl="false" title="Prehra">P</button>
+                        <button type="button" class="live-wl-btn none" data-wl="" title="Ešte neodohraté">-</button>
+                    </div>
+                    <label class="live-wl-score">Naše: <input type="number" id="liveOurScore" min="0" step="1" placeholder="-"></label>
+                    <label class="live-wl-score">Súper: <input type="number" id="liveOpponentScore" min="0" step="1" placeholder="-"></label>
+                    <button type="button" class="btn-save live-wl-save" id="liveWlSave">Uložiť výsledok</button>
+                </div>
+            </div>
+            <div class="game-clock-wrap">
+                <span class="game-clock-display" id="gameClockDisplay">10:00</span>
+                <div class="game-controls">
+                    <div class="clock-edit-wrap" id="clockEditWrap" style="display: none;">
+                        <input type="text" id="clockEditInput" class="clock-edit-input" placeholder="M:SS" maxlength="5" title="Napríklad 5:25">
+                        <button type="button" class="btn-set-time" id="clockEditOk">OK</button>
+                        <button type="button" class="btn-set-time" id="clockEditCancel">Zrušiť</button>
+                    </div>
+                    <button type="button" class="btn-set-time" id="btnEditClock">Upraviť čas</button>
+                    <button type="button" class="btn-clock start" id="btnClockStart">ŠTART</button>
+                    <button type="button" class="btn-clock stop" id="btnClockStop" style="display:none;">STOP</button>
+                    <button type="button" class="btn-undo" id="btnUndo" disabled>Späť (UNDO)</button>
+                    <button type="button" class="btn-save" id="btnSave">Uložiť štatistiky</button>
+                    <button type="button" class="btn-manual" id="btnManual">Manuálna úprava</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="live-main">
+            <aside class="players-panel">
+                <div class="players-panel-header">
+                    <div class="players-header-actions">
+                        <button type="button" class="btn-nomination" id="btnNomination" title="Nominácia hráčov pre tento zápas" style="display: none;">Nominácia</button>
+                        <button type="button" class="btn-manual" id="btnSetStarters">Základ</button>
+                    </div>
+                </div>
+                <div id="playersList"></div>
+                <p class="hint-no-player" id="hintNoPlayer">Max. 5 hráčov na ihrisku. Striedanie robíte tlačidlom Striedanie naši/súper.</p>
+            </aside>
+            <section class="actions-panel">
+                <button type="button" class="btn-nomination btn-nomination-top" id="btnNominationTop" title="Nominácia hráčov pre tento zápas" style="display:none;">Nominácia</button>
+                <div class="court-layout" id="courtLayout">
+                    <div class="action-side-panel">
+                        <h4>Naši - akcie</h4>
+                        <div style="margin-bottom:0.5rem;">
+                            <button type="button" class="btn-secondary" id="btnSubOur" style="width:100%;">Striedanie naši</button>
+                        </div>
+                        <div class="action-buttons-grid">
+                            <button type="button" class="action-btn pts-2" data-action="2pm">+2 body</button>
+                            <button type="button" class="action-btn miss-2" data-action="2pa">Miss 2</button>
+                            <button type="button" class="action-btn pts-3" data-action="3pm">+3 body</button>
+                            <button type="button" class="action-btn miss-3" data-action="3pa">Miss 3</button>
+                            <button type="button" class="action-btn ft" data-action="ftm">+1 HH</button>
+                            <button type="button" class="action-btn miss-ft" data-action="fta">Miss HH</button>
+                            <button type="button" class="action-btn other" data-action="AST">AST</button>
+                            <button type="button" class="action-btn other" data-action="OFF">OFF REB</button>
+                            <button type="button" class="action-btn other" data-action="DEF">DEF REB</button>
+                            <button type="button" class="action-btn other" data-action="STL">STL</button>
+                            <button type="button" class="action-btn other" data-action="BLK">BLK</button>
+                            <button type="button" class="action-btn other" data-action="TO">TO</button>
+                            <button type="button" class="action-btn other" data-action="F-">F-</button>
+                            <button type="button" class="action-btn other" data-action="F+">F+</button>
+                        </div>
+                    </div>
+                    <div class="court-center-panel">
+                        <div class="court-team-panel">
+                            <h5>Naši na ihrisku</h5>
+                            <div class="number-grid" id="ourOnCourtBoxes"></div>
+                        </div>
+                        <div class="court-mobile-clock" id="courtMobileClock">
+                            <button type="button" class="btn-clock start" id="btnClockToggleCompact">ŠTART</button>
+                        </div>
+                        <div class="court-team-panel" id="oppOnCourtPanel">
+                            <h5>Súper na ihrisku</h5>
+                            <div class="number-grid" id="oppOnCourtBoxes"></div>
+                        </div>
+                    </div>
+                    <div class="action-side-panel" id="opponentActionsPanel">
+                        <h4>Súper - akcie</h4>
+                        <button type="button" class="btn-opponents" id="btnOpponents" title="Súperi pre tento zápas" style="margin:0.5rem;">Súperi</button>
+                        <div style="margin-bottom:0.5rem;">
+                            <button type="button" class="btn-secondary" id="btnSubOpp" style="width:100%;">Striedanie súper</button>
+                        </div>
+                        <div class="opponent-input-row">
+                            <label for="oppJerseyInput">Dres #</label>
+                            <input type="number" id="oppJerseyInput" min="1" step="1" placeholder="napr. 9">
+                            <button type="button" class="opp-score-btn p1 opp-action-btn" data-opp-action="score1">+1</button>
+                            <button type="button" class="opp-score-btn p2 opp-action-btn" data-opp-action="score2">+2</button>
+                            <button type="button" class="opp-score-btn p3 opp-action-btn" data-opp-action="score3">+3</button>
+                            <button type="button" class="action-btn other opp-action-btn" data-opp-action="foul" style="min-height:38px;padding:0.45rem 0.6rem;">FAUL</button>
+                        </div>
+                        <div class="opponent-breakdown" id="opponentBreakdown"></div>
+                        <div class="opponent-roster-wrap">
+                            <div style="font-size:0.78rem;color:#6B7280;margin-bottom:0.35rem;text-transform:uppercase;">Striedanie súpera</div>
+                            <div id="opponentRosterList" class="opponent-roster-list"></div>
+                        </div>
+                        <div class="live-mini-summary">
+                            <span>+/- aktuálna päťka:</span>
+                            <strong id="onCourtPlusMinus">0</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="action-log-wrap">
+                    <h4>Posledné akcie</h4>
+                    <div id="actionLog"></div>
+                </div>
+                <div class="stats-table-wrap">
+                    <h4>Štatistiky v priebehu</h4>
+                    <div id="statsTableContainer"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div id="nominationOverlay" class="overlay">
+        <div class="modal" id="nominationModal">
+            <h3>Nominácia hráčov</h3>
+            <p class="nomination-hint">Vyberte hráčov pre tento zápas.</p>
+            <p class="nomination-count" id="nominationCount">Nominovaných: 0</p>
+            <div id="nominationCheckboxList" class="nomination-list"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="nominationSelectAll">Vybrať všetkých</button>
+                <button type="button" class="btn-secondary" id="nominationSelectNone">Zrušiť výber</button>
+                <button type="button" class="btn-primary" id="nominationConfirm">Potvrdiť</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="manualOverrideModal" class="overlay">
+        <div class="modal">
+            <h3>Manuálna úprava hodnôt</h3>
+            <p style="color: #a1a1aa; font-size: 0.9rem; margin-bottom: 1rem;">Kliknite na bunku a zmeňte hodnotu. Po uložení sa prepočítajú PTS, FG a INDEX.</p>
+            <div id="manualOverrideTableContainer"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="manualCancel">Zrušiť</button>
+                <button type="button" class="btn-primary" id="manualApply">Použiť zmeny</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="opponentsOverlay" class="overlay">
+        <div class="modal" id="opponentsModal">
+            <h3>Súperi - čísla dresov</h3>
+            <p class="nomination-hint">Zadajte max. 12 čísel dresov súpera.</p>
+            <div id="opponentsInputsGrid" class="opponents-modal-grid"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="opponentsClear">Vyčistiť</button>
+                <button type="button" class="btn-primary" id="opponentsSave">Uložiť súperov</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="opponentTrackingPromptOverlay" class="overlay">
+        <div class="modal" style="min-width:420px;max-width:520px;">
+            <h3>Zapisovať body súpera?</h3>
+            <p class="nomination-hint">Chcete v tomto zápase zapisovať body súpera?</p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="oppTrackingNo">Nie</button>
+                <button type="button" class="btn-primary" id="oppTrackingYes">Áno</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="startingLineupOverlay" class="overlay">
+        <div class="modal" style="min-width:760px;">
+            <h3>Základné päťky pred štartom</h3>
+            <p class="nomination-hint">Vyberte základné päťky</p>
+            <div class="court-center-panel">
+                <div class="court-team-panel">
+                    <h5>Naš<img src="" alt=""></h5>
+                    <div id="startingOurList" class="opponent-roster-list"></div>
+                </div>
+                <div class="court-team-panel">
+                    <h5>Súper</h5>
+                    <div id="startingOppList" class="opponent-roster-list"></div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="startingLineupCancel">Zrušiť</button>
+                <button type="button" class="btn-primary" id="startingLineupConfirm">Potvrdiť a štart</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="substitutionOverlay" class="overlay">
+        <div class="modal" style="min-width:680px;">
+            <h3 id="substitutionTitle">Striedanie</h3>
+            <p class="nomination-hint">Vyberte hráčov na striedanie.</p>
+            <div class="court-center-panel">
+                <div class="court-team-panel">
+                    <h5>Aktuálne na ihrisku</h5>
+                    <div id="subOutList" class="opponent-roster-list"></div>
+                </div>
+                <div class="court-team-panel">
+                    <h5>IN (lavica)</h5>
+                    <div id="subInList" class="opponent-roster-list"></div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="substitutionCancel">Zrušiť</button>
+                <button type="button" class="btn-primary" id="substitutionConfirm">Potvrdiť striedanie</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="saveResultOverlay" class="save-result-overlay" onclick="closeSaveResultPopup(event)">
+        <div class="save-result-popup" id="saveResultPopupContent" onclick="event.stopPropagation()">
+            <div class="save-result-title" id="saveResultTitle"></div>
+            <div class="save-result-text" id="saveResultText"></div>
+            <button type="button" class="save-result-ok" onclick="closeSaveResultPopup()">OK</button>
+        </div>
+    </div>
+
+    <div id="infoOverlay" class="overlay" onclick="closeInfoModal(event)">
+        <div class="modal" style="min-width: 360px; max-width: 520px;" onclick="event.stopPropagation()">
+            <h3 id="infoModalTitle">Informácia</h3>
+            <p id="infoModalText" style="color: #6B7280; font-size: 0.95rem; margin-bottom: 0.5rem;"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-primary" onclick="closeInfoModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="saveConfirmOverlay" class="overlay" onclick="closeSaveConfirmModal(event)">
+        <div class="modal" style="min-width: 380px; max-width: 560px;" onclick="event.stopPropagation()">
+            <h3>Zápas ešte nie je ukončený</h3>
+            <p style="color: #6B7280; font-size: 0.95rem; margin-bottom: 0.5rem;">
+                Zápas ešte nie je ukončený. Naozaj chcete uložiť štatistiky už teraz?
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="saveConfirmCancel">Zrušiť</button>
+                <button type="button" class="btn-primary" id="saveConfirmProceed">Uložiť aj tak</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rewriteStatsConfirmOverlay" class="overlay" onclick="closeRewriteStatsConfirmModal(event)">
+        <div class="modal" style="min-width: 380px; max-width: 560px;" onclick="event.stopPropagation()">
+            <h3>Prepísať uložené štatistiky?</h3>
+            <p style="color: #6B7280; font-size: 0.95rem; margin-bottom: 0.5rem;">
+                Pre tento zápas už existujú uložené štatistiky. Pokračovaním sa staré riadky zmažú a nahradia novými hodnotami.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="rewriteStatsCancel">Zrušiť</button>
+                <button type="button" class="btn-primary" id="rewriteStatsProceed">Prepísať a uložiť</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/statistics.js"></script>
+    <script src="/js/events.js"></script>
+    <script src="/js/users.js"></script>
+    <script>
+(function() {
+        const MAX_ON_COURT = 5;
+        const ACTION_LOG_MAX = 10;
+        const LIVE_SESSION_KEY_PREFIX = 'liveStats_';
+        const NOMINATION_KEY_PREFIX = 'liveStats_nomination_';
+        const CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours - use cache only if newer
+        const LIVE_INPUT_VISIBLE_WINDOW_MS = 24 * 60 * 60 * 1000; // allow viewing 24h after last live input
+        const LIVE_INPUT_CACHE_TTL_MS = 10 * 60 * 1000; // cache recent live input lookups for dropdown filtering
+        const LIVE_LOOKBACK_DAYS = 3; // do not probe very old matches during initial load
+        const MAX_LIVE_LOOKBACK_FETCHES = 8; // cap live-actions probes during match list load
+
+        let eventId = null;
+        /** Opponent name for statistics sync (mirrors former select option dataset). */
+        let currentEventOpponent = '';
+        let currentPeriod = 1;
+        let periodLengthMinutes = 10; // user choice: length of one period in minutes
+        let allPlayers = [];   // all players for the selected match (from API)
+        let players = [];      // nominated players only (shown in left panel)
+        let nominatedJerseyByPlayerId = {}; // playerId -> jersey number (if nominated)
+        let nominatedStartingByPlayerId = {}; // playerId -> starting five flag from DB nominations
+        let opponentRosterNumbers = []; // persisted 1..12 jersey numbers from DB
+        let opponentOnCourtNumbers = new Set(); // current selected 5 on court
+        let onCourtOrder = []; // fixed slot order for middle console (our team)
+        let opponentOnCourtOrder = []; // fixed slot order for middle console (opponent)
+        let selectedOpponentNumber = null;
+        let playerStats = {}; // playerId -> { 2PÚ, 2PC, 3PÚ, 3PC, FTÚ, FTC, MIN, OFF, DEF, STL, AST, BLK, TO, F+, F- }
+        let selectedPlayerId = null;
+        let onCourtIds = new Set();
+        let gameClockSeconds = 600; // current period: seconds remaining (initialized from getPeriodLengthSeconds())
+        let periodClockSeconds = {}; // period number -> seconds remaining in that period
+        let gameClockInterval = null;
+
+        function getPeriodLengthSeconds() {
+            return (periodLengthMinutes || 10) * 60;
+        }
+        let gameClockRunning = false;
+        let courtTimeAccumulator = {}; // playerId -> seconds on court this session
+        let lastCourtUpdate = null;
+        let actionHistory = [];
+        let undoStack = [];
+        let liveActions = [];
+        let liveInputAtByEventId = {};
+        let gameHasStarted = false;
+        let opponentTrackingEnabled = true;
+        let currentSubTeam = null; // 'OUR' | 'OPPONENT'
+        let selectedSubOut = null;
+        let selectedSubIn = null;
+        let saveInProgress = false;
+        let pendingExistingStatsRows = null;
+        let restoredFromLocalDraft = false;
+        let lineupModalTempOur = null;
+        let lineupModalTempOpp = null;
+        let startingLineupMustBeCompleted = false;
+        let startingLineupStartOnConfirm = false;
+        let liveSummary = {
+            ourScore: 0,
+            opponentScore: 0,
+            matchWon: null,
+            playerPlusMinus: {},
+            opponentByJersey: [],
+            opponentFoulsByJersey: [],
+            onCourtPlayerIds: []
+        };
+
+        const STAT_KEYS = ['2PÚ','2PC','3PÚ','3PC','FTÚ','FTC','MIN','OFF','DEF','STL','AST','BLK','TO','F+','F-'];
+
+        function getDefaultStats() {
+            return { '2PÚ':0,'2PC':0,'3PÚ':0,'3PC':0,'FTÚ':0,'FTC':0,'MIN':0,'OFF':0,'DEF':0,'STL':0,'AST':0,'BLK':0,'TO':0,'F+':0,'F-':0 };
+        }
+
+        function ensurePlayerStats(playerId) {
+            if (!playerStats[playerId]) playerStats[playerId] = getDefaultStats();
+            return playerStats[playerId];
+        }
+
+        function computePTS(s) {
+            return (Number(s['2PÚ'])||0)*2 + (Number(s['3PÚ'])||0)*3 + (Number(s['FTÚ'])||0)*1;
+        }
+        function computeFGM(s) { return (Number(s['2PÚ'])||0) + (Number(s['3PÚ'])||0); }
+        function computeFGA(s) { return (Number(s['2PC'])||0) + (Number(s['3PC'])||0); }
+        function computePIR(s) {
+            const pts = computePTS(s);
+            const reb = (Number(s['OFF'])||0) + (Number(s['DEF'])||0);
+            const ast = Number(s['AST'])||0, stl = Number(s['STL'])||0, blk = Number(s['BLK'])||0;
+            const fd = Number(s['F+'])||0;
+            const missedFg = computeFGA(s) - computeFGM(s);
+            const missedFt = (Number(s['FTC'])||0) - (Number(s['FTÚ'])||0);
+            const to = Number(s['TO'])||0, pf = Number(s['F-'])||0;
+            return (pts + reb + ast + stl + blk + fd) - (missedFg + missedFt + to + pf);
+        }
+
+        function formatMin(sec) {
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return m + ':' + (s < 10 ? '0' : '') + s;
+        }
+        function formatMinutesFromDecimal(min) {
+            if (min == null || min === '' || isNaN(min)) return '0:00';
+            const n = Number(min);
+            const m = Math.floor(n);
+            const s = Math.round((n - m) * 60);
+            return m + ':' + (s < 10 ? '0' : '') + s;
+        }
+        function parseMinutesFromInput(str) {
+            if (str == null || str === '') return 0;
+            const t = String(str).trim();
+            if (t.indexOf(':') >= 0) {
+                const parts = t.split(':');
+                const m = parseInt(parts[0], 10) || 0;
+                const s = parseInt(parts[1], 10) || 0;
+                return m + s / 60;
+            }
+            const n = parseFloat(t);
+            return isNaN(n) ? 0 : n;
+        }
+        function parseTimeToSeconds(str) {
+            if (str == null || str === '') return 0;
+            const t = String(str).trim();
+            if (t.indexOf(':') >= 0) {
+                const parts = t.split(':');
+                const m = parseInt(parts[0], 10) || 0;
+                const s = parseInt(parts[1], 10) || 0;
+                return m * 60 + s;
+            }
+            const n = parseInt(t, 10);
+            return isNaN(n) ? 0 : Math.max(0, n);
+        }
+
+        function getPlayerDisplayName(player) {
+            if (!player) return '#?';
+            const label = typeof userListLabel === 'function' ? userListLabel(player) : (player.displayName || player.name || '');
+            if (label.trim() !== '') {
+                return label;
+            }
+            return '#' + (player.id != null ? player.id : '?');
+        }
+
+        function getPlayerNumber(player) {
+            if (!player) return null;
+            const jersey = nominatedJerseyByPlayerId[String(player.id)];
+            if (jersey != null && jersey !== '') return Number(jersey);
+            return player.id != null ? Number(player.id) : null;
+        }
+
+        function getSelectedOpponentNumber() {
+            const inp = document.getElementById('oppJerseyInput');
+            const raw = inp ? inp.value : '';
+            const n = parseInt(raw, 10);
+            return Number.isInteger(n) && n > 0 ? n : null;
+        }
+
+        function getOpponentPointsByJerseyMap() {
+            const out = {};
+            const rows = Array.isArray(liveSummary.opponentByJersey) ? liveSummary.opponentByJersey : [];
+            rows.forEach(row => {
+                const n = Number(row && row.jerseyNumber);
+                if (Number.isInteger(n) && n > 0) out[n] = Number(row.points) || 0;
+            });
+            return out;
+        }
+
+        function getOpponentFoulsByJerseyMap() {
+            const out = {};
+            const rows = Array.isArray(liveSummary.opponentFoulsByJersey) ? liveSummary.opponentFoulsByJersey : [];
+            rows.forEach(row => {
+                const n = Number(row && row.jerseyNumber);
+                if (Number.isInteger(n) && n > 0) out[n] = Number(row.fouls) || 0;
+            });
+            return out;
+        }
+
+        function syncOnCourtSetFromOrder() {
+            onCourtOrder = onCourtOrder
+                .map(Number)
+                .filter(id => Number.isInteger(id) && id > 0)
+                .filter((id, idx, arr) => arr.indexOf(id) === idx)
+                .slice(0, MAX_ON_COURT);
+            onCourtIds = new Set(onCourtOrder);
+        }
+
+        function syncOpponentSetFromOrder() {
+            opponentOnCourtOrder = opponentOnCourtOrder
+                .map(Number)
+                .filter(n => Number.isInteger(n) && n > 0)
+                .filter((n, idx, arr) => arr.indexOf(n) === idx)
+                .slice(0, MAX_ON_COURT);
+            opponentOnCourtNumbers = new Set(opponentOnCourtOrder);
+        }
+
+        function renderCourtNumberBoxes() {
+            const ourContainer = document.getElementById('ourOnCourtBoxes');
+            const oppContainer = document.getElementById('oppOnCourtBoxes');
+            if (!ourContainer || !oppContainer) return;
+
+            const oppPtsMap = getOpponentPointsByJerseyMap();
+            const oppFoulsMap = getOpponentFoulsByJerseyMap();
+            const ourOnCourtPlayers = onCourtOrder
+                .map(id => players.find(p => Number(p.id) === Number(id)))
+                .filter(Boolean)
+                .slice(0, MAX_ON_COURT);
+            let ourHtml = '';
+            for (let i = 0; i < MAX_ON_COURT; i++) {
+                const p = ourOnCourtPlayers[i];
+                if (!p) {
+                    ourHtml += '<button type="button" class="num-box empty" disabled>-</button>';
+                    continue;
+                }
+                const num = getPlayerNumber(p);
+                const selected = selectedPlayerId === p.id ? ' selected' : '';
+                const st = ensurePlayerStats(p.id);
+                const pts = computePTS(st);
+                const fouls = Number(st['F-']) || 0;
+                ourHtml += '<button type="button" class="num-box' + selected + '" data-our-box-id="' + p.id + '">' +
+                    '<span class="corner-left">' + pts + '</span><span class="corner-right">' + fouls + '</span>' +
+                    '<span class="num-main">' + (num != null ? num : '?') + '</span></button>';
+            }
+            ourContainer.innerHTML = ourHtml;
+            ourContainer.querySelectorAll('[data-our-box-id]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    selectedPlayerId = Number(this.getAttribute('data-our-box-id'));
+                    renderPlayersList();
+                    renderCourtNumberBoxes();
+                });
+            });
+
+            const oppList = opponentOnCourtOrder.slice(0, MAX_ON_COURT);
+            let oppHtml = '';
+            for (let i = 0; i < MAX_ON_COURT; i++) {
+                const n = oppList[i];
+                if (!n) {
+                    oppHtml += '<button type="button" class="num-box empty" disabled>-</button>';
+                    continue;
+                }
+                const selected = selectedOpponentNumber === n ? ' selected' : '';
+                const pts = Number(oppPtsMap[n]) || 0;
+                const fouls = Number(oppFoulsMap[n]) || 0;
+                oppHtml += '<button type="button" class="num-box opp' + selected + '" data-opp-box-number="' + n + '">' +
+                    '<span class="corner-left">' + pts + '</span><span class="corner-right">' + fouls + '</span>' +
+                    '<span class="num-main">' + n + '</span></button>';
+            }
+            oppContainer.innerHTML = oppHtml;
+            oppContainer.querySelectorAll('[data-opp-box-number]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const n = Number(this.getAttribute('data-opp-box-number'));
+                    selectedOpponentNumber = n;
+                    const inp = document.getElementById('oppJerseyInput');
+                    if (inp) inp.value = String(n);
+                    renderCourtNumberBoxes();
+                });
+            });
+        }
+
+        function renderOpponentRosterList() {
+            const container = document.getElementById('opponentRosterList');
+            if (!container) return;
+            if (!opponentRosterNumbers.length) {
+                container.innerHTML = '<div style="font-size:0.8rem;color:#9CA3AF;">Zatiaľ bez súperov.</div>';
+                return;
+            }
+            container.innerHTML = opponentRosterNumbers.map(n => {
+                const on = opponentOnCourtNumbers.has(n);
+                return '<span class="opp-chip">#' + n + ' <span class="sub-btn ' + (on ? 'on' : '') + '">' + (on ? 'IHRISKO' : 'LAVICA') + '</span></span>';
+            }).join('');
+        }
+
+        function openOpponentsModal() {
+            if (!eventId) return;
+            const grid = document.getElementById('opponentsInputsGrid');
+            if (!grid) return;
+            const values = opponentRosterNumbers.slice(0, 12);
+            let html = '';
+            for (let i = 0; i < 12; i++) {
+                const val = values[i] != null ? String(values[i]) : '';
+                html += '<input type="number" min="1" step="1" data-opp-input-idx="' + i + '" placeholder="'+ (i + 1) +'" value="' + val + '">';
+            }
+            grid.innerHTML = html;
+            document.getElementById('opponentsOverlay').classList.add('open');
+        }
+
+        function closeOpponentsModal() {
+            const modal = document.getElementById('opponentsOverlay');
+            if (modal) modal.classList.remove('open');
+        }
+
+        async function saveOpponentsFromModal() {
+            if (!eventId) return;
+            const nums = [];
+            document.querySelectorAll('#opponentsInputsGrid input[data-opp-input-idx]').forEach(inp => {
+                const n = parseInt((inp.value || '').trim(), 10);
+                if (Number.isInteger(n) && n > 0) nums.push(n);
+            });
+            const unique = Array.from(new Set(nums)).slice(0, 12);
+            try {
+                const resp = await updateEventOpponents(eventId, unique);
+                const fromServer = Array.isArray(resp && resp.jerseyNumbers) ? resp.jerseyNumbers : unique;
+                opponentRosterNumbers = fromServer.map(Number).filter(n => Number.isInteger(n) && n > 0).slice(0, 12);
+                opponentOnCourtOrder = opponentOnCourtOrder.filter(n => opponentRosterNumbers.includes(n));
+                syncOpponentSetFromOrder();
+                renderOpponentRosterList();
+                renderCourtNumberBoxes();
+                closeOpponentsModal();
+            } catch (e) {
+                showInfoModal('Chyba pri ukladaní súperov: ' + (e.message || 'Skúste znova'));
+            }
+        }
+
+        async function loadOpponentsForEvent() {
+            opponentRosterNumbers = [];
+            opponentOnCourtNumbers = new Set();
+            opponentOnCourtOrder = [];
+            selectedOpponentNumber = null;
+            if (!eventId || typeof getEventOpponents !== 'function') return;
+            try {
+                const resp = await getEventOpponents(eventId);
+                const nums = Array.isArray(resp && resp.jerseyNumbers) ? resp.jerseyNumbers : [];
+                opponentRosterNumbers = nums.map(Number).filter(n => Number.isInteger(n) && n > 0).slice(0, 12);
+            } catch (e) {
+                console.warn('Could not load opponents for event:', e);
+            }
+        }
+
+        function applyOpponentTrackingState() {
+            document.querySelectorAll('.opp-action-btn').forEach(btn => {
+                btn.disabled = !opponentTrackingEnabled;
+            });
+            const oppInput = document.getElementById('oppJerseyInput');
+            if (oppInput) oppInput.disabled = !opponentTrackingEnabled;
+            const btnSubOpp = document.getElementById('btnSubOpp');
+            if (btnSubOpp) btnSubOpp.disabled = !opponentTrackingEnabled;
+            const opponentPanel = document.getElementById('opponentActionsPanel');
+            if (opponentPanel) opponentPanel.style.display = opponentTrackingEnabled ? '' : 'none';
+            const oppOnCourtPanel = document.getElementById('oppOnCourtPanel');
+            if (oppOnCourtPanel) oppOnCourtPanel.style.display = opponentTrackingEnabled ? '' : 'none';
+            const courtLayout = document.getElementById('courtLayout');
+            if (courtLayout) courtLayout.classList.toggle('no-opponent', !opponentTrackingEnabled);
+            const btnOpp = document.getElementById('btnOpponents');
+            if (btnOpp) btnOpp.style.display = eventId ? 'inline-block' : 'none';
+        }
+
+        function openOpponentTrackingPromptIfNeeded() {
+            if (!eventId) return;
+            const key = getOpponentTrackingChoiceKey();
+            if (!key) return;
+            const saved = localStorage.getItem(key);
+            if (saved === 'yes') {
+                opponentTrackingEnabled = true;
+                applyOpponentTrackingState();
+                return;
+            }
+            if (saved === 'no') {
+                opponentTrackingEnabled = false;
+                applyOpponentTrackingState();
+                return;
+            }
+            const overlay = document.getElementById('opponentTrackingPromptOverlay');
+            if (overlay) overlay.classList.add('open');
+        }
+
+        function closeOpponentTrackingPrompt() {
+            const overlay = document.getElementById('opponentTrackingPromptOverlay');
+            if (overlay) overlay.classList.remove('open');
+        }
+
+        function setOpponentTrackingChoice(enabled) {
+            opponentTrackingEnabled = !!enabled;
+            const key = getOpponentTrackingChoiceKey();
+            if (key) localStorage.setItem(key, enabled ? 'yes' : 'no');
+            applyOpponentTrackingState();
+            closeOpponentTrackingPrompt();
+            if (enabled) {
+                openOpponentsModal();
+            }
+        }
+
+        function renderStartingLineupLists(tempOur, tempOpp) {
+            const ourSet = tempOur || new Set();
+            const oppSet = tempOpp || new Set();
+            const ourWrap = document.getElementById('startingOurList');
+            const oppWrap = document.getElementById('startingOppList');
+            if (!ourWrap || !oppWrap) return;
+
+            ourWrap.innerHTML = players.map(p => {
+                const n = getPlayerNumber(p);
+                const id = Number(p.id);
+                const selected = ourSet.has(id);
+                return '<button type="button" class="num-box' + (selected ? ' selected' : '') + '" data-start-our="' + id + '">' + (n != null ? n : '?') + '</button>';
+            }).join('');
+            oppWrap.innerHTML = opponentRosterNumbers.map(n => {
+                const selected = oppSet.has(n);
+                return '<button type="button" class="num-box opp' + (selected ? ' selected' : '') + '" data-start-opp="' + n + '">' + n + '</button>';
+            }).join('');
+        }
+
+        function bindStartingLineupPickHandlers(tempOur, tempOpp) {
+            document.querySelectorAll('[data-start-our]').forEach(btn => {
+                btn.onclick = function() {
+                    const id = Number(this.getAttribute('data-start-our'));
+                    if (tempOur.has(id)) tempOur.delete(id);
+                    else {
+                        if (tempOur.size >= MAX_ON_COURT) return;
+                        tempOur.add(id);
+                    }
+                    renderStartingLineupLists(tempOur, tempOpp);
+                    bindStartingLineupPickHandlers(tempOur, tempOpp);
+                    wireStartingLineupHandlers(tempOur, tempOpp);
+                };
+            });
+            document.querySelectorAll('[data-start-opp]').forEach(btn => {
+                btn.onclick = function() {
+                    const n = Number(this.getAttribute('data-start-opp'));
+                    if (tempOpp.has(n)) tempOpp.delete(n);
+                    else {
+                        if (tempOpp.size >= MAX_ON_COURT) return;
+                        tempOpp.add(n);
+                    }
+                    renderStartingLineupLists(tempOur, tempOpp);
+                    bindStartingLineupPickHandlers(tempOur, tempOpp);
+                    wireStartingLineupHandlers(tempOur, tempOpp);
+                };
+            });
+        }
+
+        function hasCompleteStartingLineup() {
+            if (onCourtIds.size !== MAX_ON_COURT) return false;
+            if (opponentTrackingEnabled && opponentOnCourtNumbers.size !== MAX_ON_COURT) return false;
+            return true;
+        }
+
+        function updateStarterSetupButtonVisibility() {
+            const btn = document.getElementById('btnSetStarters');
+            if (!btn) return;
+            btn.style.display = (!gameHasStarted && !!eventId) ? 'inline-block' : 'none';
+        }
+
+        function openStartingLineupModal(opts) {
+            if (!eventId) return;
+            if (players.length < MAX_ON_COURT) {
+                showInfoModal('Najprv nominujte aspoň 5 hráčov.');
+                openNominationModal();
+                return;
+            }
+            if (opponentTrackingEnabled && opponentRosterNumbers.length < MAX_ON_COURT) {
+                showInfoModal('Najprv zadajte aspoň 5 súperových čísel dresov.');
+                openOpponentsModal();
+                return;
+            }
+            const overlay = document.getElementById('startingLineupOverlay');
+            if (!overlay) return;
+            const options = opts || {};
+            const requireCompletion = options.requireCompletion === true;
+            const startOnConfirm = options.startOnConfirm === true;
+
+            const tempOur = new Set(Array.from(onCourtIds));
+            const tempOpp = new Set(Array.from(opponentOnCourtNumbers));
+            lineupModalTempOur = tempOur;
+            lineupModalTempOpp = tempOpp;
+            startingLineupMustBeCompleted = requireCompletion;
+            startingLineupStartOnConfirm = startOnConfirm;
+            renderStartingLineupLists(tempOur, tempOpp);
+            bindStartingLineupPickHandlers(tempOur, tempOpp);
+
+            overlay.classList.add('open');
+            wireStartingLineupHandlers(tempOur, tempOpp);
+        }
+
+        function canCloseStartingLineupModal(tempOur, tempOpp) {
+            if (!startingLineupMustBeCompleted) return true;
+            const ourCount = tempOur instanceof Set ? tempOur.size : 0;
+            const oppCount = tempOpp instanceof Set ? tempOpp.size : 0;
+            if (ourCount !== MAX_ON_COURT) return false;
+            if (opponentTrackingEnabled && oppCount !== MAX_ON_COURT) return false;
+            return true;
+        }
+
+        function closeStartingLineupModalSafely(tempOur, tempOpp) {
+            if (!canCloseStartingLineupModal(tempOur, tempOpp)) {
+                showInfoModal('Pred zatvorením vyberte základnú päťku (5 našich hráčov, prípadne aj 5 súperových).');
+                return false;
+            }
+            const overlay = document.getElementById('startingLineupOverlay');
+            if (overlay) overlay.classList.remove('open');
+            lineupModalTempOur = null;
+            lineupModalTempOpp = null;
+            startingLineupMustBeCompleted = false;
+            startingLineupStartOnConfirm = false;
+            return true;
+        }
+
+        function wireStartingLineupHandlers(tempOur, tempOpp) {
+            const cancelBtn = document.getElementById('startingLineupCancel');
+            const confirmBtn = document.getElementById('startingLineupConfirm');
+            if (confirmBtn) {
+                confirmBtn.textContent = startingLineupStartOnConfirm ? 'Potvrdiť a štart' : 'Potvrdiť';
+            }
+            if (cancelBtn) cancelBtn.onclick = function() {
+                closeStartingLineupModalSafely(tempOur, tempOpp);
+            };
+            if (confirmBtn) confirmBtn.onclick = async function() {
+                if (tempOur.size !== MAX_ON_COURT) {
+                    showInfoModal('Musíte vybrať presne 5 našich hráčov.');
+                    return;
+                }
+                if (opponentTrackingEnabled && tempOpp.size !== MAX_ON_COURT) {
+                    showInfoModal('Musíte vybrať presne 5 súperových hráčov.');
+                    return;
+                }
+                const selectedIds = players
+                    .map(p => Number(p && p.id))
+                    .filter(id => Number.isInteger(id) && id > 0);
+                const persisted = await persistNominationsToServer(selectedIds, tempOur);
+                if (!persisted) return;
+                onCourtOrder = Array.from(tempOur).slice(0, MAX_ON_COURT);
+                syncOnCourtSetFromOrder();
+                opponentOnCourtOrder = Array.from(tempOpp).slice(0, MAX_ON_COURT);
+                syncOpponentSetFromOrder();
+                const shouldStart = startingLineupStartOnConfirm === true;
+                if (shouldStart) gameHasStarted = true;
+                closeStartingLineupModalSafely(tempOur, tempOpp);
+                renderPlayersList();
+                renderOpponentRosterList();
+                renderCourtNumberBoxes();
+                updateStarterSetupButtonVisibility();
+                if (shouldStart) startGameClock();
+                saveLiveSessionState();
+            };
+        }
+
+        function openSubstitutionModal(teamSide) {
+            if (!gameHasStarted) {
+                showInfoModal('Najprv nastavte základné päťky a spustite zápas.');
+                return;
+            }
+            if (gameClockRunning) {
+                showInfoModal('Striedanie je možné len pri zastavenom čase (STOP).');
+                return;
+            }
+            currentSubTeam = teamSide;
+            selectedSubOut = null;
+            selectedSubIn = null;
+            const title = document.getElementById('substitutionTitle');
+            if (title) title.textContent = teamSide === 'OUR' ? 'Striedanie naši' : 'Striedanie súper';
+            renderSubstitutionLists();
+            document.getElementById('substitutionOverlay').classList.add('open');
+        }
+
+        function renderSubstitutionLists() {
+            const outWrap = document.getElementById('subOutList');
+            const inWrap = document.getElementById('subInList');
+            if (!outWrap || !inWrap) return;
+
+            if (currentSubTeam === 'OUR') {
+                const outPlayers = players.filter(p => onCourtIds.has(p.id));
+                const inPlayers = players.filter(p => !onCourtIds.has(p.id));
+                outWrap.innerHTML = outPlayers.map(p => {
+                    const id = Number(p.id);
+                    const sel = selectedSubOut === id ? ' selected' : '';
+                    return '<button type="button" class="num-box' + sel + '" data-sub-out="' + id + '">' + (getPlayerNumber(p) || '?') + '</button>';
+                }).join('');
+                inWrap.innerHTML = inPlayers.map(p => {
+                    const id = Number(p.id);
+                    const sel = selectedSubIn === id ? ' selected' : '';
+                    return '<button type="button" class="num-box' + sel + '" data-sub-in="' + id + '">' + (getPlayerNumber(p) || '?') + '</button>';
+                }).join('');
+            } else {
+                const outNums = Array.from(opponentOnCourtNumbers);
+                const inNums = opponentRosterNumbers.filter(n => !opponentOnCourtNumbers.has(n));
+                outWrap.innerHTML = outNums.map(n => {
+                    const sel = selectedSubOut === n ? ' selected' : '';
+                    return '<button type="button" class="num-box opp' + sel + '" data-sub-out="' + n + '">' + n + '</button>';
+                }).join('');
+                inWrap.innerHTML = inNums.map(n => {
+                    const sel = selectedSubIn === n ? ' selected' : '';
+                    return '<button type="button" class="num-box opp' + sel + '" data-sub-in="' + n + '">' + n + '</button>';
+                }).join('');
+            }
+
+            document.querySelectorAll('[data-sub-out]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    selectedSubOut = Number(this.getAttribute('data-sub-out'));
+                    renderSubstitutionLists();
+                });
+            });
+            document.querySelectorAll('[data-sub-in]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    selectedSubIn = Number(this.getAttribute('data-sub-in'));
+                    renderSubstitutionLists();
+                });
+            });
+        }
+
+        async function confirmSubstitution() {
+            if (!currentSubTeam) return;
+            if (gameClockRunning) {
+                showInfoModal('Striedanie je možné len pri zastavenom čase (STOP).');
+                return;
+            }
+            if (selectedSubOut == null || selectedSubIn == null) {
+                showInfoModal('Vyberte hráča na striedanie.');
+                return;
+            }
+            if (selectedSubOut === selectedSubIn) {
+                showInfoModal('Na striedanie nemôže byť ten istý hráč.');
+                return;
+            }
+
+            if (currentSubTeam === 'OUR') {
+                if (!onCourtIds.has(selectedSubOut) || onCourtIds.has(selectedSubIn)) {
+                    showInfoModal('Neplatné striedanie našich.');
+                    return;
+                }
+                const outIdx = onCourtOrder.indexOf(selectedSubOut);
+                if (outIdx < 0) {
+                    showInfoModal('Neplatné striedanie našich.');
+                    return;
+                }
+                onCourtOrder[outIdx] = selectedSubIn;
+                syncOnCourtSetFromOrder();
+                selectedPlayerId = selectedSubIn;
+                try {
+                    await createEventLiveAction(eventId, {
+                        period: currentPeriod,
+                        clockSeconds: gameClockSeconds,
+                        teamSide: 'OUR',
+                        actionType: 'SUB_OUT',
+                        ourPlayerId: selectedSubOut,
+                        points: 0,
+                        onCourtPlayerIds: Array.from(onCourtIds)
+                    });
+                    await createEventLiveAction(eventId, {
+                        period: currentPeriod,
+                        clockSeconds: gameClockSeconds,
+                        teamSide: 'OUR',
+                        actionType: 'SUB_IN',
+                        ourPlayerId: selectedSubIn,
+                        points: 0,
+                        onCourtPlayerIds: Array.from(onCourtIds)
+                    });
+                } catch (e) {
+                    showInfoModal('Chyba pri ukladaní striedania: ' + (e.message || 'Skúste znova'));
+                }
+            } else {
+                if (!opponentTrackingEnabled) {
+                    showInfoModal('Zapisovanie súpera je vypnuté.');
+                    return;
+                }
+                if (!opponentOnCourtNumbers.has(selectedSubOut) || opponentOnCourtNumbers.has(selectedSubIn)) {
+                    showInfoModal('Neplatné striedanie súpera.');
+                    return;
+                }
+                const outIdx = opponentOnCourtOrder.indexOf(selectedSubOut);
+                if (outIdx < 0) {
+                    showInfoModal('Neplatné striedanie súpera.');
+                    return;
+                }
+                opponentOnCourtOrder[outIdx] = selectedSubIn;
+                syncOpponentSetFromOrder();
+                try {
+                    await createEventLiveAction(eventId, {
+                        period: currentPeriod,
+                        clockSeconds: gameClockSeconds,
+                        teamSide: 'OPPONENT',
+                        actionType: 'SUB_OUT',
+                        opponentJerseyNumber: selectedSubOut,
+                        points: 0,
+                        onCourtPlayerIds: Array.from(onCourtIds)
+                    });
+                    await createEventLiveAction(eventId, {
+                        period: currentPeriod,
+                        clockSeconds: gameClockSeconds,
+                        teamSide: 'OPPONENT',
+                        actionType: 'SUB_IN',
+                        opponentJerseyNumber: selectedSubIn,
+                        points: 0,
+                        onCourtPlayerIds: Array.from(onCourtIds)
+                    });
+                } catch (e) {
+                    showInfoModal('Chyba pri ukladaní striedania súpera: ' + (e.message || 'Skúste znova'));
+                }
+            }
+
+            document.getElementById('substitutionOverlay').classList.remove('open');
+            await refreshLiveSummaryFromServer();
+            await refreshLiveActionsFromServer();
+            rebuildHistoryFromLiveActions();
+            renderPlayersList();
+            renderOpponentRosterList();
+            renderCourtNumberBoxes();
+            saveLiveSessionState();
+        }
+
+        function getPlayerPlusMinus(playerId) {
+            if (!liveSummary || !liveSummary.playerPlusMinus) return 0;
+            const val = liveSummary.playerPlusMinus[playerId] ?? liveSummary.playerPlusMinus[String(playerId)];
+            return Number(val) || 0;
+        }
+
+        function getOnCourtPlusMinus() {
+            let total = 0;
+            onCourtIds.forEach(pid => {
+                total += getPlayerPlusMinus(pid);
+            });
+            return total;
+        }
+
+        function formatSigned(num) {
+            const n = Number(num) || 0;
+            return n > 0 ? '+' + n : String(n);
+        }
+
+        function parseToTimestamp(value) {
+            if (!value) return null;
+            const ms = new Date(value).getTime();
+            return Number.isFinite(ms) ? ms : null;
+        }
+
+        function getLiveInputCacheKey(targetEventId) {
+            const key = String(targetEventId || '');
+            return key ? ('liveStats_lastInput_' + key) : null;
+        }
+
+        function readCachedLiveInputTimestamp(targetEventId) {
+            const storageKey = getLiveInputCacheKey(targetEventId);
+            if (!storageKey) return null;
+            try {
+                const raw = localStorage.getItem(storageKey);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== 'object') return null;
+                const checkedAt = Number(parsed.checkedAt);
+                if (!Number.isFinite(checkedAt) || (Date.now() - checkedAt) > LIVE_INPUT_CACHE_TTL_MS) {
+                    return null;
+                }
+                const ts = parsed.ts == null ? null : Number(parsed.ts);
+                return Number.isFinite(ts) ? ts : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function writeCachedLiveInputTimestamp(targetEventId, timestampMs) {
+            const storageKey = getLiveInputCacheKey(targetEventId);
+            if (!storageKey) return;
+            try {
+                localStorage.setItem(storageKey, JSON.stringify({
+                    ts: timestampMs == null ? null : Number(timestampMs),
+                    checkedAt: Date.now()
+                }));
+            } catch (e) {
+            }
+        }
+
+        function getLastLiveInputTimestamp(actions) {
+            if (!Array.isArray(actions) || !actions.length) return null;
+            let maxMs = null;
+            actions.forEach(function(action) {
+                const ms = parseToTimestamp(action && action.createdAt);
+                if (ms == null) return;
+                if (maxMs == null || ms > maxMs) maxMs = ms;
+            });
+            return maxMs;
+        }
+
+        async function getEventLastLiveInputTimestamp(targetEventId, options) {
+            const opts = options && typeof options === 'object' ? options : {};
+            const allowFetch = opts.allowFetch !== false;
+            const key = String(targetEventId || '');
+            if (!key) return null;
+            if (Object.prototype.hasOwnProperty.call(liveInputAtByEventId, key)) {
+                return liveInputAtByEventId[key];
+            }
+            const cached = readCachedLiveInputTimestamp(targetEventId);
+            if (cached != null) {
+                liveInputAtByEventId[key] = cached;
+                return cached;
+            }
+            if (!allowFetch) {
+                return null;
+            }
+            if (typeof getEventLiveActions !== 'function') {
+                liveInputAtByEventId[key] = null;
+                return null;
+            }
+            try {
+                const list = await getEventLiveActions(targetEventId);
+                const ts = getLastLiveInputTimestamp(list);
+                liveInputAtByEventId[key] = ts;
+                writeCachedLiveInputTimestamp(targetEventId, ts);
+                return ts;
+            } catch (e) {
+                liveInputAtByEventId[key] = null;
+                return null;
+            }
+        }
+
+        async function filterLiveVisibleMatches(events) {
+            const allMatches = (events || []).filter(function(e) { return e && e.type === 'MATCH'; });
+            if (!allMatches.length) return [];
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const now = Date.now();
+
+            const result = [];
+            const pastMatches = [];
+
+            allMatches.forEach(function(match) {
+                if (!match.date) {
+                    result.push(match);
+                    return;
+                }
+                const matchDay = new Date(match.date);
+                matchDay.setHours(0, 0, 0, 0);
+                if (matchDay >= today) {
+                    result.push(match);
+                    return;
+                }
+                pastMatches.push(match);
+            });
+
+            if (!pastMatches.length) return result;
+
+            const lookbackThreshold = new Date(today.getTime() - (LIVE_LOOKBACK_DAYS * 24 * 60 * 60 * 1000));
+            const sortedPast = pastMatches.slice().sort(function(a, b) {
+                const ta = parseToTimestamp(a && a.date) || 0;
+                const tb = parseToTimestamp(b && b.date) || 0;
+                return tb - ta;
+            });
+
+            const prechecked = await Promise.all(sortedPast.map(async function(match) {
+                const lastInputTs = await getEventLastLiveInputTimestamp(match.id, { allowFetch: false });
+                if (lastInputTs == null) return null;
+                return (now - lastInputTs) <= LIVE_INPUT_VISIBLE_WINDOW_MS ? match : null;
+            }));
+            prechecked.forEach(function(match) {
+                if (match) result.push(match);
+            });
+
+            const fetchCandidates = sortedPast.filter(function(match) {
+                const key = String(match && match.id);
+                if (Object.prototype.hasOwnProperty.call(liveInputAtByEventId, key)) return false;
+                const dayTs = parseToTimestamp(match && match.date);
+                if (dayTs == null) return false;
+                return dayTs >= lookbackThreshold.getTime();
+            }).slice(0, MAX_LIVE_LOOKBACK_FETCHES);
+
+            const recentPastChecks = await Promise.all(fetchCandidates.map(async function(match) {
+                const lastInputTs = await getEventLastLiveInputTimestamp(match.id, { allowFetch: true });
+                if (lastInputTs == null) return null;
+                return (now - lastInputTs) <= LIVE_INPUT_VISIBLE_WINDOW_MS ? match : null;
+            }));
+
+            recentPastChecks.forEach(function(match) {
+                if (match) result.push(match);
+            });
+
+            return result;
+        }
+
+        function isGameFinishedForVpDisplay() {
+            if (!gameHasStarted) return false;
+            if (gameClockRunning) return false;
+            return Number(currentPeriod) >= 4 && Number(gameClockSeconds) === 0;
+        }
+
+        function updateLiveScoreboard(summary) {
+            const data = summary || liveSummary || {};
+            const our = Number(data.ourScore) || 0;
+            const opp = Number(data.opponentScore) || 0;
+            const diff = our - opp;
+            const ourEl = document.getElementById('liveOurScoreDisplay');
+            const oppEl = document.getElementById('liveOpponentScoreDisplay');
+            const vpEl = document.getElementById('liveVpBadge');
+            const diffEl = document.getElementById('liveScoreDiff');
+            const onCourtPmEl = document.getElementById('onCourtPlusMinus');
+
+            if (ourEl) ourEl.textContent = String(our);
+            if (oppEl) oppEl.textContent = String(opp);
+            if (diffEl) diffEl.textContent = 'Rozdiel: ' + formatSigned(diff);
+            if (onCourtPmEl) onCourtPmEl.textContent = formatSigned(getOnCourtPlusMinus());
+            if (vpEl) {
+                const showVp = isGameFinishedForVpDisplay();
+                vpEl.classList.remove('win', 'loss');
+                if (showVp && data.matchWon === true) {
+                    vpEl.textContent = 'V';
+                    vpEl.classList.add('win');
+                } else if (showVp && data.matchWon === false) {
+                    vpEl.textContent = 'P';
+                    vpEl.classList.add('loss');
+                } else {
+                    vpEl.textContent = '-';
+                }
+            }
+
+            const ourIn = document.getElementById('liveOurScore');
+            const oppIn = document.getElementById('liveOpponentScore');
+            if (ourIn) ourIn.value = String(our);
+            if (oppIn) oppIn.value = String(opp);
+        }
+
+        function renderOpponentBreakdown() {
+            const container = document.getElementById('opponentBreakdown');
+            if (!container) return;
+            const rows = Array.isArray(liveSummary.opponentByJersey) ? liveSummary.opponentByJersey : [];
+            if (!rows.length) {
+                container.innerHTML = '<div class="opponent-row"><span>Zatiaľ bez bodov súpera</span><strong>0</strong></div>';
+                return;
+            }
+            container.innerHTML = rows
+                .slice()
+                .sort((a, b) => (Number(a.jerseyNumber) || 0) - (Number(b.jerseyNumber) || 0))
+                .map(row => '<div class="opponent-row"><span>#' + (row.jerseyNumber || '?') + '</span><strong>' + (row.points || 0) + '</strong></div>')
+                .join('');
+        }
+
+        function renderActionLogFromState() {
+            const logEl = document.getElementById('actionLog');
+            if (!logEl) return;
+            logEl.innerHTML = actionHistory.slice(0, ACTION_LOG_MAX).map(a => {
+                return '<div class="action-log-entry">' + (a.time || '--:--') + ' - ' + (a.actionLabel || '') + '</div>';
+            }).join('');
+            document.getElementById('btnUndo').disabled = undoStack.length === 0;
+        }
+
+        async function refreshLiveSummaryFromServer() {
+            if (!eventId || typeof getEventLiveSummary !== 'function') return;
+            try {
+                const summary = await getEventLiveSummary(eventId);
+                if (summary && typeof summary === 'object') {
+                    liveSummary = summary;
+                    if (Array.isArray(summary.onCourtPlayerIds) && summary.onCourtPlayerIds.length) {
+                        onCourtOrder = summary.onCourtPlayerIds.map(Number).slice(0, MAX_ON_COURT);
+                        syncOnCourtSetFromOrder();
+                    }
+                    updateLiveScoreboard(summary);
+                    renderOpponentBreakdown();
+                    renderCourtNumberBoxes();
+                }
+            } catch (e) {
+                console.warn('Failed to refresh live summary', e);
+            }
+        }
+
+        async function refreshLiveActionsFromServer() {
+            if (!eventId || typeof getEventLiveActions !== 'function') return;
+            try {
+                const list = await getEventLiveActions(eventId);
+                liveActions = Array.isArray(list) ? list : [];
+                const ts = getLastLiveInputTimestamp(liveActions);
+                liveInputAtByEventId[String(eventId)] = ts;
+                writeCachedLiveInputTimestamp(eventId, ts);
+            } catch (e) {
+                liveActions = [];
+                liveInputAtByEventId[String(eventId)] = null;
+            }
+        }
+
+        function getCurrentActionTimeLabel() {
+            const elapsedInPeriod = getPeriodLengthSeconds() - gameClockSeconds;
+            const totalMatchSeconds = (currentPeriod - 1) * getPeriodLengthSeconds() + elapsedInPeriod;
+            return formatMin(totalMatchSeconds);
+        }
+
+        function requireFiveOnCourtForScoring() {
+            if (onCourtIds.size !== MAX_ON_COURT) {
+                showInfoModal('Pre presny +/- musí byť na ihrisku presne 5 našich hráčov.');
+                return false;
+            }
+            if (opponentTrackingEnabled && opponentOnCourtNumbers.size !== MAX_ON_COURT) {
+                showInfoModal('Pre presny +/- musí byť na ihrisku presne 5 súperov.');
+                return false;
+            }
+            return true;
+        }
+
+        function buildLabelFromLiveAction(action) {
+            if (!action || !action.actionType) return 'Akcia';
+            const ourName = getPlayerDisplayName(players.find(p => p.id === Number(action.ourPlayerId))) || ('#' + (action.ourPlayerId || '?'));
+            if (action.actionType === 'SCORE' && action.teamSide === 'OUR') {
+                return ourName + ' - +' + (action.points || 0);
+            }
+            if (action.actionType === 'SCORE' && action.teamSide === 'OPPONENT') {
+                return 'Súper #' + (action.opponentJerseyNumber || '?') + ' - +' + (action.points || 0);
+            }
+            if (action.actionType === 'FOUL') {
+                if (action.teamSide === 'OPPONENT') {
+                    return 'Súper #' + (action.opponentJerseyNumber || '?') + ' - FAUL';
+                }
+                return ourName + ' - FAUL';
+            }
+            if (action.actionType === 'SUB_IN') {
+                if (action.teamSide === 'OPPONENT') {
+                    return 'Súper #' + (action.opponentJerseyNumber || '?') + ' - striedanie IN';
+                }
+                return ourName + ' - striedanie IN';
+            }
+            if (action.actionType === 'SUB_OUT') {
+                if (action.teamSide === 'OPPONENT') {
+                    return 'Súper #' + (action.opponentJerseyNumber || '?') + ' - striedanie OUT';
+                }
+                return ourName + ' - striedanie OUT';
+            }
+            return String(action.actionType);
+        }
+
+        function rebuildHistoryFromLiveActions() {
+            const normalized = (liveActions || []).slice();
+            const mapped = normalized.map(a => ({
+                playerId: a.ourPlayerId != null ? Number(a.ourPlayerId) : null,
+                actionLabel: buildLabelFromLiveAction(a),
+                time: formatMin((Math.max(1, Number(a.period) || 1) - 1) * getPeriodLengthSeconds() + (getPeriodLengthSeconds() - (Number(a.clockSeconds) || 0))),
+                snapshot: null
+            }));
+            actionHistory = mapped.slice().reverse().slice(0, ACTION_LOG_MAX);
+            undoStack = normalized.slice().reverse().map(a => ({
+                playerId: a.ourPlayerId != null ? Number(a.ourPlayerId) : null,
+                actionLabel: buildLabelFromLiveAction(a),
+                snapshot: null,
+                liveActionId: a.id,
+                actionType: a.actionType || null,
+                teamSide: a.teamSide || null,
+                points: Number(a.points) || 0
+            }));
+            renderActionLogFromState();
+        }
+
+        function rebuildPlayerStatsFromLiveActions() {
+            const rebuilt = {};
+            (liveActions || []).forEach(function(action) {
+                if (!action || !action.actionType || action.teamSide !== 'OUR') return;
+                const playerId = Number(action.ourPlayerId);
+                if (!Number.isInteger(playerId) || playerId <= 0) return;
+                if (!rebuilt[playerId]) rebuilt[playerId] = getDefaultStats();
+                const stats = rebuilt[playerId];
+                if (action.actionType === 'SCORE') {
+                    const pts = Number(action.points) || 0;
+                    if (pts === 1) {
+                        stats['FTÚ'] += 1;
+                        stats['FTC'] += 1;
+                    } else if (pts === 2) {
+                        stats['2PÚ'] += 1;
+                        stats['2PC'] += 1;
+                    } else if (pts === 3) {
+                        stats['3PÚ'] += 1;
+                        stats['3PC'] += 1;
+                    }
+                } else if (action.actionType === 'FOUL') {
+                    stats['F-'] += 1;
+                }
+            });
+            playerStats = rebuilt;
+        }
+
+        function rollbackPersistedScoreFromPlayerStats(undoItem) {
+            if (!undoItem || undoItem.actionType !== 'SCORE' || undoItem.teamSide !== 'OUR') return;
+            const pid = Number(undoItem.playerId);
+            if (!Number.isInteger(pid) || pid <= 0) return;
+            const pts = Number(undoItem.points) || 0;
+            const st = ensurePlayerStats(pid);
+            if (pts === 2) {
+                st['2PÚ'] = Math.max(0, (Number(st['2PÚ']) || 0) - 1);
+                st['2PC'] = Math.max(0, (Number(st['2PC']) || 0) - 1);
+            } else if (pts === 3) {
+                st['3PÚ'] = Math.max(0, (Number(st['3PÚ']) || 0) - 1);
+                st['3PC'] = Math.max(0, (Number(st['3PC']) || 0) - 1);
+            } else if (pts === 1) {
+                st['FTÚ'] = Math.max(0, (Number(st['FTÚ']) || 0) - 1);
+                st['FTC'] = Math.max(0, (Number(st['FTC']) || 0) - 1);
+            }
+        }
+
+        function getLiveSessionKey() {
+            return eventId ? LIVE_SESSION_KEY_PREFIX + eventId : null;
+        }
+        function getOpponentTrackingChoiceKey() {
+            return eventId ? 'liveStats_opponentTracking_' + eventId : null;
+        }
+
+        function getNomination(evId) {
+            if (!evId) return null;
+            try {
+                const raw = localStorage.getItem(NOMINATION_KEY_PREFIX + evId);
+                if (!raw) return null;
+                const arr = JSON.parse(raw);
+                return Array.isArray(arr) ? arr : null;
+            } catch (e) { return null; }
+        }
+        function setNomination(evId, playerIds) {
+            if (!evId) return;
+            localStorage.setItem(NOMINATION_KEY_PREFIX + evId, JSON.stringify(playerIds));
+        }
+
+        function applyNominationPayloadToState(payload) {
+            const nominations = Array.isArray(payload && payload.nominations) ? payload.nominations : [];
+            const legacyPlayerIds = Array.isArray(payload && payload.playerIds) ? payload.playerIds : [];
+            const selectedIds = [];
+            const selectedIdSet = new Set();
+            const jerseyMap = {};
+            const startingMap = {};
+
+            nominations.forEach(item => {
+                const pid = Number(item && item.playerId);
+                if (!Number.isInteger(pid) || pid <= 0) return;
+                if (!selectedIdSet.has(pid)) {
+                    selectedIdSet.add(pid);
+                    selectedIds.push(pid);
+                }
+                const jersey = Number(item && item.jerseyNumber);
+                if (Number.isInteger(jersey) && jersey > 0) {
+                    jerseyMap[String(pid)] = jersey;
+                }
+                const isStarting = Boolean(item && (item.isStartingFive === true || item.startingFive === true));
+                startingMap[String(pid)] = isStarting;
+            });
+
+            legacyPlayerIds.forEach(rawId => {
+                const pid = Number(rawId);
+                if (!Number.isInteger(pid) || pid <= 0 || selectedIdSet.has(pid)) return;
+                selectedIdSet.add(pid);
+                selectedIds.push(pid);
+            });
+
+            nominatedJerseyByPlayerId = jerseyMap;
+            nominatedStartingByPlayerId = startingMap;
+            players = allPlayers.filter(p => selectedIdSet.has(Number(p.id)));
+            if (eventId) setNomination(eventId, selectedIds);
+            return selectedIds;
+        }
+
+        function applyStartingLineupFromNominations() {
+            const startingIds = players
+                .map(p => Number(p && p.id))
+                .filter(pid => Number.isInteger(pid) && pid > 0 && nominatedStartingByPlayerId[String(pid)] === true)
+                .slice(0, MAX_ON_COURT);
+            onCourtOrder = startingIds;
+            syncOnCourtSetFromOrder();
+        }
+
+        function buildNominationsPayload(selectedIds, startingIdsSet) {
+            const uniqueSelected = [];
+            const seenPlayers = new Set();
+            (Array.isArray(selectedIds) ? selectedIds : []).forEach(rawId => {
+                const pid = Number(rawId);
+                if (!Number.isInteger(pid) || pid <= 0 || seenPlayers.has(pid)) return;
+                seenPlayers.add(pid);
+                uniqueSelected.push(pid);
+            });
+
+            const starters = startingIdsSet instanceof Set ? startingIdsSet : new Set();
+            const usedJerseys = new Set();
+            const payload = [];
+            let fallbackJersey = 1;
+
+            uniqueSelected.forEach(pid => {
+                let jersey = Number(nominatedJerseyByPlayerId[String(pid)]);
+                if (!Number.isInteger(jersey) || jersey <= 0 || usedJerseys.has(jersey)) {
+                    while (usedJerseys.has(fallbackJersey)) fallbackJersey++;
+                    jersey = fallbackJersey++;
+                }
+                usedJerseys.add(jersey);
+                payload.push({
+                    playerId: pid,
+                    jerseyNumber: jersey,
+                    startingFive: starters.has(pid)
+                });
+            });
+
+            return payload;
+        }
+
+        async function persistNominationsToServer(selectedIds, startingIdsSet) {
+            if (!eventId) return false;
+            const normalizedSelected = Array.isArray(selectedIds) ? selectedIds.map(Number).filter(id => Number.isInteger(id) && id > 0) : [];
+            const starters = startingIdsSet instanceof Set ? startingIdsSet : new Set();
+            const nominationsPayload = buildNominationsPayload(normalizedSelected, starters);
+
+            if (typeof updateEventNominations === 'function') {
+                try {
+                    const serverPayload = await updateEventNominations(eventId, nominationsPayload);
+                    if (serverPayload && typeof serverPayload === 'object') {
+                        applyNominationPayloadToState(serverPayload);
+                    } else {
+                        applyNominationPayloadToState({ playerIds: normalizedSelected, nominations: nominationsPayload });
+                    }
+                } catch (e) {
+                    showInfoModal('Chyba pri ukladaní nominácie: ' + (e && e.message ? e.message : 'Skúste znova.'));
+                    return false;
+                }
+            } else {
+                applyNominationPayloadToState({ playerIds: normalizedSelected, nominations: nominationsPayload });
+            }
+            return true;
+        }
+
+        function updateNominationCount() {
+            const listEl = document.getElementById('nominationCheckboxList');
+            const countEl = document.getElementById('nominationCount');
+            if (!listEl || !countEl) return;
+            const checked = listEl.querySelectorAll('input[type="checkbox"]:checked').length;
+            const total = listEl.querySelectorAll('input[type="checkbox"]').length;
+            countEl.textContent = 'Nominovaných: ' + checked + (total ? ' / ' + total : '');
+        }
+        function openNominationModal() {
+            if (!eventId || !allPlayers.length) return;
+            const listEl = document.getElementById('nominationCheckboxList');
+            const nominatedIds = new Set(players.map(p => p.id));
+            listEl.innerHTML = allPlayers.map(p => {
+                const checked = nominatedIds.has(p.id);
+                return '<label><input type="checkbox" data-player-id="' + p.id + '" ' + (checked ? 'checked' : '') + '> ' + getPlayerDisplayName(p) + '</label>';
+            }).join('');
+            updateNominationCount();
+            document.getElementById('nominationOverlay').classList.add('open');
+        }
+        function closeNominationModal() {
+            if (players.length < MAX_ON_COURT) {
+                showInfoModal('Najprv nominujte aspoň 5 hráčov.');
+                return;
+            }
+            document.getElementById('nominationOverlay').classList.remove('open');
+        }
+        async function applyNomination(selectedIds) {
+            if (!eventId) return;
+            if (!Array.isArray(selectedIds) || selectedIds.length < MAX_ON_COURT) {
+                showInfoModal('Musíte nominovať aspoň 5 hráčov.');
+                return;
+            }
+            const uniqueSelected = Array.from(new Set(selectedIds.map(Number).filter(id => Number.isInteger(id) && id > 0)));
+            const startingSet = new Set(
+                Array.from(onCourtIds)
+                    .map(Number)
+                    .filter(id => uniqueSelected.includes(id))
+                    .slice(0, MAX_ON_COURT)
+            );
+            const persisted = await persistNominationsToServer(uniqueSelected, startingSet);
+            if (!persisted) return;
+            const playerIdSet = new Set(players.map(p => p.id));
+            const stillOnCourt = Array.from(onCourtIds).filter(id => playerIdSet.has(id)).slice(0, MAX_ON_COURT);
+            onCourtIds = new Set(stillOnCourt);
+            onCourtOrder = stillOnCourt;
+            closeNominationModal();
+            renderPlayersList();
+            renderStatsTable();
+            if (!gameHasStarted) {
+                openStartingLineupModal();
+            }
+        }
+        function saveLiveSessionState() {
+            const key = getLiveSessionKey();
+            if (!key) return;
+            try {
+                periodClockSeconds[currentPeriod] = gameClockSeconds;
+                const state = {
+                    period: currentPeriod,
+                    periodLengthMinutes: periodLengthMinutes,
+                    clockSeconds: gameClockSeconds,
+                    periodClockSeconds: periodClockSeconds,
+                    clockRunning: gameClockRunning,
+                    playerStats: playerStats,
+                    onCourtIds: Array.from(onCourtIds),
+                    onCourtOrder: onCourtOrder.slice(0, MAX_ON_COURT),
+                    opponentOnCourtNumbers: Array.from(opponentOnCourtNumbers),
+                    opponentOnCourtOrder: opponentOnCourtOrder.slice(0, MAX_ON_COURT),
+                    gameHasStarted: gameHasStarted,
+                    savedAt: Date.now()
+                };
+                localStorage.setItem(key, JSON.stringify(state));
+            } catch (e) {
+                console.warn('Could not save live session state', e);
+            }
+        }
+
+        /**
+         * True when localStorage looks like an in-progress session worth restoring.
+         * If false, we keep stats/scores already loaded from the API (DB) and only reset clock/court UI state.
+         */
+        function hasMeaningfulLocalDraft(state) {
+            if (!state || typeof state !== 'object') return false;
+            if (state.gameHasStarted === true) return true;
+            if (state.clockRunning === true) return true;
+            const oc = Array.isArray(state.onCourtOrder) ? state.onCourtOrder : [];
+            if (oc.some(id => Number.isInteger(Number(id)) && Number(id) > 0)) return true;
+            const oids = Array.isArray(state.onCourtIds) ? state.onCourtIds : [];
+            if (oids.some(id => Number.isInteger(Number(id)) && Number(id) > 0)) return true;
+            const ooc = Array.isArray(state.opponentOnCourtOrder) ? state.opponentOnCourtOrder : [];
+            if (ooc.some(n => Number.isInteger(Number(n)) && Number(n) > 0)) return true;
+            const oon = Array.isArray(state.opponentOnCourtNumbers) ? state.opponentOnCourtNumbers : [];
+            if (oon.some(n => Number.isInteger(Number(n)) && Number(n) > 0)) return true;
+            if (state.playerStats && typeof state.playerStats === 'object') {
+                for (const pid of Object.keys(state.playerStats)) {
+                    const st = state.playerStats[pid];
+                    if (!st || typeof st !== 'object') continue;
+                    for (let i = 0; i < STAT_KEYS.length; i++) {
+                        const k = STAT_KEYS[i];
+                        const v = st[k];
+                        if (v == null) continue;
+                        if (k === 'MIN') {
+                            if (Math.abs(Number(v)) > 1e-6) return true;
+                        } else if (Number(v) !== 0) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            const plenSec = Math.max(60, (Number(state.periodLengthMinutes) || 10) * 60);
+            if (state.period != null && Number(state.period) > 1) return true;
+            if (state.clockSeconds != null && Number(state.clockSeconds) < plenSec) return true;
+            if (state.periodClockSeconds && typeof state.periodClockSeconds === 'object') {
+                for (const k of Object.keys(state.periodClockSeconds)) {
+                    const v = state.periodClockSeconds[k];
+                    if (v != null && Number(v) < plenSec) return true;
+                }
+            }
+            return false;
+        }
+
+        function loadLiveSessionState() {
+            const key = getLiveSessionKey();
+            restoredFromLocalDraft = false;
+            if (!key) return;
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) {
+                    setDefaultsNoCache();
+                    return;
+                }
+                const state = JSON.parse(raw);
+                const now = Date.now();
+                const cacheAge = state.savedAt != null ? now - state.savedAt : Infinity;
+                const useCache = state.savedAt != null && cacheAge < CACHE_MAX_AGE_MS;
+                const meaningful = hasMeaningfulLocalDraft(state);
+
+                if (!useCache || !meaningful) {
+                    setDefaultsNoCache();
+                    return;
+                }
+
+                if (state.playerStats && typeof state.playerStats === 'object') {
+                    playerStats = state.playerStats;
+                }
+                onCourtOrder = Array.isArray(state.onCourtOrder)
+                    ? state.onCourtOrder.map(Number)
+                    : (Array.isArray(state.onCourtIds) ? state.onCourtIds.map(Number) : []);
+                syncOnCourtSetFromOrder();
+                opponentOnCourtOrder = Array.isArray(state.opponentOnCourtOrder)
+                    ? state.opponentOnCourtOrder.map(Number)
+                    : (Array.isArray(state.opponentOnCourtNumbers) ? state.opponentOnCourtNumbers.map(Number) : []);
+                syncOpponentSetFromOrder();
+                gameHasStarted = state.gameHasStarted === true;
+                if (state.periodLengthMinutes != null) {
+                    periodLengthMinutes = Math.max(1, Math.min(15, parseInt(state.periodLengthMinutes, 10) || 10));
+                    var lenEl = document.getElementById('periodLengthSelect');
+                    if (lenEl) lenEl.value = String(periodLengthMinutes);
+                }
+                if (state.periodClockSeconds && typeof state.periodClockSeconds === 'object') {
+                    periodClockSeconds = state.periodClockSeconds;
+                }
+                if (state.period != null) {
+                    currentPeriod = Math.max(1, Math.min(5, parseInt(state.period, 10) || 1));
+                    const periodSelect = document.getElementById('periodSelect');
+                    if (periodSelect) periodSelect.value = String(currentPeriod);
+                }
+                var saved = periodClockSeconds[currentPeriod];
+                if (saved != null && saved >= 0) {
+                    gameClockSeconds = Math.max(0, Math.floor(Number(saved)));
+                    updateGameClockDisplay();
+                } else if (state.clockSeconds != null) {
+                    gameClockSeconds = Math.max(0, Math.floor(Number(state.clockSeconds)));
+                    updateGameClockDisplay();
+                } else {
+                    gameClockSeconds = getPeriodLengthSeconds();
+                    updateGameClockDisplay();
+                }
+                if (state.clockRunning === true && !gameClockInterval) {
+                    startGameClock();
+                } else if (state.clockRunning === false && gameClockInterval) {
+                    stopGameClock();
+                }
+                restoredFromLocalDraft = true;
+            } catch (e) {
+                console.warn('Could not load live session state', e);
+                setDefaultsNoCache();
+            }
+        }
+        function setDefaultsNoCache() {
+            periodClockSeconds = {};
+            gameClockSeconds = getPeriodLengthSeconds();
+            currentPeriod = 1;
+            onCourtOrder = [];
+            onCourtIds = new Set();
+            opponentOnCourtNumbers = new Set();
+            opponentOnCourtOrder = [];
+            gameHasStarted = false;
+            const periodSelect = document.getElementById('periodSelect');
+            if (periodSelect) periodSelect.value = '1';
+            const lenEl = document.getElementById('periodLengthSelect');
+            if (lenEl && periodLengthMinutes != null) lenEl.value = String(periodLengthMinutes);
+            updateGameClockDisplay();
+            if (gameClockInterval) stopGameClock();
+        }
+
+        function updateGameClockDisplay() {
+            document.getElementById('gameClockDisplay').textContent = formatMin(gameClockSeconds);
+            syncCompactClockLayout();
+        }
+
+        function tickGameClock() {
+            if (!gameClockRunning) return;
+            const now = Date.now() / 1000;
+            if (lastCourtUpdate != null && onCourtIds.size > 0) {
+                const deltaSec = 1;
+                onCourtIds.forEach(pid => {
+                    courtTimeAccumulator[pid] = (courtTimeAccumulator[pid] || 0) + deltaSec;
+                    const st = ensurePlayerStats(pid);
+                    st.MIN = (Number(st.MIN) || 0) + (deltaSec / 60);
+                });
+            }
+            lastCourtUpdate = now;
+            gameClockSeconds = Math.max(0, gameClockSeconds - 1);
+            updateGameClockDisplay();
+            renderStatsTable();
+            if (gameClockSeconds % 10 === 0) saveLiveSessionState();
+        }
+
+        function startGameClock() {
+            if (gameClockInterval) return;
+            gameClockRunning = true;
+            gameHasStarted = true;
+            lastCourtUpdate = Date.now() / 1000;
+            document.getElementById('btnClockStart').style.display = 'none';
+            document.getElementById('btnClockStop').style.display = 'inline-block';
+            syncCompactClockLayout();
+            updateStarterSetupButtonVisibility();
+            updateLiveScoreboard(liveSummary);
+            gameClockInterval = setInterval(tickGameClock, 1000);
+        }
+
+        function stopGameClock() {
+            gameClockRunning = false;
+            if (gameClockInterval) {
+                clearInterval(gameClockInterval);
+                gameClockInterval = null;
+            }
+            document.getElementById('btnClockStart').style.display = 'inline-block';
+            document.getElementById('btnClockStop').style.display = 'none';
+            syncCompactClockLayout();
+            updateStarterSetupButtonVisibility();
+            updateLiveScoreboard(liveSummary);
+            saveLiveSessionState();
+        }
+
+        function syncCompactClockLayout() {
+            const compact = window.matchMedia('(max-width: 850px)').matches;
+            const display = document.getElementById('gameClockDisplay');
+            const compactWrap = document.getElementById('courtMobileClock');
+            const topWrap = document.querySelector('.game-clock-wrap');
+            const controls = document.querySelector('.game-controls');
+            const compactBtn = document.getElementById('btnClockToggleCompact');
+            if (!display || !compactWrap || !topWrap || !controls || !compactBtn) return;
+
+            if (compact) {
+                if (display.parentElement !== compactWrap) {
+                    compactWrap.insertBefore(display, compactBtn);
+                }
+            } else if (display.parentElement !== topWrap) {
+                topWrap.insertBefore(display, controls);
+            }
+
+            const running = !!gameClockRunning;
+            compactBtn.textContent = running ? 'STOP' : 'ŠTART';
+            compactBtn.classList.toggle('start', !running);
+            compactBtn.classList.toggle('stop', running);
+        }
+
+        function pushAction(playerId, actionLabel, snapshotBefore, liveActionId) {
+            actionHistory.unshift({
+                playerId,
+                actionLabel,
+                time: getCurrentActionTimeLabel(),
+                snapshot: snapshotBefore != null ? JSON.parse(JSON.stringify(snapshotBefore)) : null
+            });
+            if (actionHistory.length > ACTION_LOG_MAX) actionHistory.pop();
+            undoStack.push({
+                playerId,
+                actionLabel,
+                snapshot: snapshotBefore != null ? JSON.parse(JSON.stringify(snapshotBefore)) : null,
+                liveActionId: liveActionId || null
+            });
+            renderActionLogFromState();
+        }
+
+        async function applyAction(playerId, action) {
+            const st = ensurePlayerStats(playerId);
+            const snapshotBefore = JSON.parse(JSON.stringify(st));
+            let liveActionId = null;
+            const scoringMap = { '2pm': 2, '3pm': 3, 'ftm': 1 };
+            const scorePoints = scoringMap[action] || 0;
+            const isOurFoul = action === 'F-';
+            if ((scorePoints > 0 || isOurFoul) && eventId) {
+                if (scorePoints > 0 && !requireFiveOnCourtForScoring()) return;
+                try {
+                    const payload = {
+                        period: currentPeriod,
+                        clockSeconds: gameClockSeconds,
+                        teamSide: 'OUR',
+                        actionType: scorePoints > 0 ? 'SCORE' : 'FOUL',
+                        ourPlayerId: playerId,
+                        points: scorePoints > 0 ? scorePoints : 0,
+                        onCourtPlayerIds: Array.from(onCourtIds)
+                    };
+                    const created = await createEventLiveAction(eventId, {
+                        period: payload.period,
+                        clockSeconds: payload.clockSeconds,
+                        teamSide: payload.teamSide,
+                        actionType: payload.actionType,
+                        ourPlayerId: payload.ourPlayerId,
+                        points: payload.points,
+                        onCourtPlayerIds: payload.onCourtPlayerIds
+                    });
+                    liveActionId = created && created.id ? created.id : null;
+                    await refreshLiveSummaryFromServer();
+                } catch (e) {
+                    showInfoModal('Chyba pri ukladaní live akcie: ' + (e.message || 'Skúste znova'));
+                    return;
+                }
+            }
+            switch (action) {
+                case '2pm': st['2PÚ'] = (st['2PÚ']||0) + 1; st['2PC'] = (st['2PC']||0) + 1; break;
+                case '2pa': st['2PC'] = (st['2PC']||0) + 1; break;
+                case '3pm': st['3PÚ'] = (st['3PÚ']||0) + 1; st['3PC'] = (st['3PC']||0) + 1; break;
+                case '3pa': st['3PC'] = (st['3PC']||0) + 1; break;
+                case 'ftm': st['FTÚ'] = (st['FTÚ']||0) + 1; st['FTC'] = (st['FTC']||0) + 1; break;
+                case 'fta': st['FTC'] = (st['FTC']||0) + 1; break;
+                default:
+                    if (['AST','OFF','DEF','STL','BLK','TO','F+','F-'].indexOf(action) >= 0)
+                        st[action] = (st[action]||0) + 1;
+                    break;
+            }
+            const labels = { '2pm':'+2', '2pa':'Miss 2', '3pm':'+3', '3pa':'Miss 3', 'ftm':'+1 HH', 'fta':'Miss HH' };
+            const playerName = getPlayerDisplayName(players.find(p => p.id === playerId));
+            pushAction(playerId, playerName + ' - ' + (labels[action] || action), snapshotBefore, liveActionId);
+            saveLiveSessionState();
+            renderPlayersList();
+            renderStatsTable();
+        }
+
+        async function undoLastAction() {
+            if (undoStack.length === 0) return;
+            const last = undoStack.pop();
+            if (last.liveActionId && eventId && typeof deleteEventLiveAction === 'function') {
+                try {
+                    await deleteEventLiveAction(eventId, last.liveActionId);
+                } catch (e) {
+                    showInfoModal('Nepodarilo sa vrátiť live akciu: ' + (e.message || 'Skúste znova'));
+                    undoStack.push(last);
+                    return;
+                }
+            }
+            if (last.snapshot && last.playerId != null) {
+                playerStats[last.playerId] = JSON.parse(JSON.stringify(last.snapshot));
+            } else {
+                rollbackPersistedScoreFromPlayerStats(last);
+            }
+            actionHistory.shift();
+            await refreshLiveSummaryFromServer();
+            renderActionLogFromState();
+            saveLiveSessionState();
+            renderPlayersList();
+            renderStatsTable();
+        }
+
+        function renderPlayersList() {
+            const container = document.getElementById('playersList');
+            if (!players.length) {
+                container.innerHTML = '<p style="color:#71717a;">Načítajte zápas - hráči sa načítajú podľa kategórie.</p>';
+                updateTeamSummary();
+                return;
+            }
+            updateTeamSummary();
+            container.innerHTML = players.map(p => {
+                const onCourt = onCourtIds.has(p.id);
+                const selected = selectedPlayerId === p.id;
+                const st = ensurePlayerStats(p.id);
+                const pm = getPlayerPlusMinus(p.id);
+                const pmCls = pm > 0 ? 'pos' : (pm < 0 ? 'neg' : '');
+                const jersey = getPlayerNumber(p);
+                return '<div class="player-row ' + (onCourt ? 'on-court' : 'on-bench') + (selected ? ' selected' : '') + '" data-player-id="' + p.id + '">' +
+                    '<span class="player-name"><span class="player-jersey">#' + (jersey || '?') + '</span><span class="player-full-name">' + getPlayerDisplayName(p) + '</span>' +
+                    ' <span class="court-badge ' + (onCourt ? 'court' : 'bench') + '">' + (onCourt ? 'IHRISKO' : 'SEDÍ') + '</span>' +
+                    ' <span class="player-pm ' + pmCls + '">+/- ' + formatSigned(pm) + '</span></span>' +
+                    '</div>';
+            }).join('');
+            container.querySelectorAll('.player-row').forEach(row => {
+                const id = parseInt(row.dataset.playerId, 10);
+                row.addEventListener('click', function() {
+                    if (!onCourtIds.has(id)) {
+                        selectedPlayerId = null;
+                        return;
+                    }
+                    selectedPlayerId = id;
+                    renderPlayersList();
+                });
+            });
+            renderCourtNumberBoxes();
+        }
+
+        function syncNominationButtonsVisibility() {
+            const hasEvent = !!eventId;
+            const compact = window.matchMedia('(max-width: 1108px)').matches;
+            const btnSide = document.getElementById('btnNomination');
+            const btnTop = document.getElementById('btnNominationTop');
+            if (btnSide) btnSide.style.display = hasEvent && !compact ? 'inline-block' : 'none';
+            if (btnTop) btnTop.style.display = hasEvent && compact ? 'inline-flex' : 'none';
+        }
+
+        function getTeamTotals() {
+            let pts = 0, fouls = 0, foulsDrawn = 0;
+            players.forEach(p => {
+                const st = ensurePlayerStats(p.id);
+                pts += computePTS(st);
+                fouls += Number(st['F-']) || 0;
+                foulsDrawn += Number(st['F+']) || 0;
+            });
+            return { pts, fouls, foulsDrawn };
+        }
+
+        function updateTeamSummary() {
+            const tot = getTeamTotals();
+            const ptsEl = document.getElementById('teamTotalPts');
+            const foulsEl = document.getElementById('teamTotalFouls');
+            const foulsDrawnEl = document.getElementById('teamTotalFoulsDrawn');
+            if (ptsEl) ptsEl.textContent = tot.pts;
+            if (foulsEl) foulsEl.textContent = tot.fouls;
+            if (foulsDrawnEl) foulsDrawnEl.textContent = tot.foulsDrawn;
+            updateLiveScoreboard(liveSummary);
+        }
+
+        function renderStatsTable() {
+            const container = document.getElementById('statsTableContainer');
+            const headers = ['Meno','MIN','PTS','+/-','2PÚ','2PC','3PÚ','3PC','FTÚ','FTC','OFF','DEF','AST','STL','BLK','TO','F-','F+','INDEX'];
+            let html = '<table class="stats-table"><thead><tr>';
+            headers.forEach(h => { html += '<th>' + h + '</th>'; });
+            html += '</tr></thead><tbody>';
+            players.forEach(p => {
+                const st = ensurePlayerStats(p.id);
+                const pts = computePTS(st);
+                const fgm = computeFGM(st);
+                const fga = computeFGA(st);
+                const index = computePIR(st);
+                const minVal = formatMinutesFromDecimal(st.MIN);
+                const onCourt = onCourtIds.has(p.id);
+                const pm = getPlayerPlusMinus(p.id);
+                html += '<tr class="' + (onCourt ? 'on-court-row' : '') + '">';
+                html += '<td class="player-name-cell">' + getPlayerDisplayName(p) + '</td>';
+                html += '<td>' + minVal + '</td><td>' + pts + '</td><td>' + formatSigned(pm) + '</td>';
+                html += '<td>' + (st['2PÚ']||0) + '</td><td>' + (st['2PC']||0) + '</td>';
+                html += '<td>' + (st['3PÚ']||0) + '</td><td>' + (st['3PC']||0) + '</td>';
+                html += '<td>' + (st['FTÚ']||0) + '</td><td>' + (st['FTC']||0) + '</td>';
+                html += '<td>' + (st['OFF']||0) + '</td><td>' + (st['DEF']||0) + '</td>';
+                html += '<td>' + (st['AST']||0) + '</td><td>' + (st['STL']||0) + '</td><td>' + (st['BLK']||0) + '</td>';
+                html += '<td>' + (st['TO']||0) + '</td><td>' + (st['F-']||0) + '</td><td>' + (st['F+']||0) + '</td>';
+                html += '<td>' + index + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            updateTeamSummary();
+        }
+
+        function buildValuesForApi(playerId) {
+            const st = ensurePlayerStats(playerId);
+            const pts = computePTS(st);
+            const fgm = computeFGM(st);
+            const fga = computeFGA(st);
+            const index = computePIR(st);
+            return {
+                MIN: Number(st.MIN) || 0,
+                '2PÚ': Number(st['2PÚ'])||0, '2PC': Number(st['2PC'])||0,
+                '3PÚ': Number(st['3PÚ'])||0, '3PC': Number(st['3PC'])||0,
+                'FTÚ': Number(st['FTÚ'])||0, 'FTC': Number(st['FTC'])||0,
+                FGÚ: fgm, FGC: fga, PTS: pts,
+                'F+': Number(st['F+'])||0, 'F-': Number(st['F-'])||0,
+                OFF: Number(st['OFF'])||0, DEF: Number(st['DEF'])||0,
+                STL: Number(st['STL'])||0, AST: Number(st['AST'])||0, BLK: Number(st['BLK'])||0, TO: Number(st['TO'])||0,
+                INDEX: Math.round(index * 100) / 100
+            };
+        }
+
+        function openManualOverride() {
+            const modal = document.getElementById('manualOverrideModal');
+            const container = document.getElementById('manualOverrideTableContainer');
+            const cols = ['2PÚ','2PC','3PÚ','3PC','FTÚ','FTC','MIN','OFF','DEF','STL','AST','BLK','TO','F+','F-'];
+            let html = '<table class="stats-table"><thead><tr><th>Hráč</th>';
+            cols.forEach(c => { html += '<th>' + c + '</th>'; });
+            html += '</tr></thead><tbody>';
+            players.forEach(p => {
+                const st = ensurePlayerStats(p.id);
+                html += '<tr><td class="player-name-cell">' + getPlayerDisplayName(p) + '</td>';
+                cols.forEach(c => {
+                    const val = st[c] != null ? st[c] : 0;
+                    const dispVal = c === 'MIN' ? formatMinutesFromDecimal(val) : val;
+                    html += '<td class="editable"><input type="' + (c === 'MIN' ? 'text' : 'number') + '" min="0" step="' + (c === 'MIN' ? '' : '1') + '" class="cell-edit" data-player-id="' + p.id + '" data-key="' + c + '" value="' + dispVal + '" placeholder="' + (c === 'MIN' ? '0:00' : '0') + '"></td>';
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            modal.classList.add('open');
+        }
+
+        function applyManualOverride() {
+            document.querySelectorAll('#manualOverrideTableContainer input.cell-edit').forEach(input => {
+                const playerId = parseInt(input.dataset.playerId, 10);
+                const key = input.dataset.key;
+                const val = key === 'MIN' ? parseMinutesFromInput(input.value) : (parseInt(input.value, 10) || 0);
+                ensurePlayerStats(playerId)[key] = val;
+            });
+            document.getElementById('manualOverrideModal').classList.remove('open');
+            saveLiveSessionState();
+            renderStatsTable();
+            renderPlayersList();
+        }
+
+        async function addOpponentScore(points) {
+            if (!eventId) {
+                showInfoModal('Vyberte zápas.');
+                return;
+            }
+            if (!gameHasStarted) {
+                showInfoModal('Najprv nastavte základné päťky a stlačte ŠTART.');
+                return;
+            }
+            if (!opponentTrackingEnabled) {
+                showInfoModal('Zapisovanie súpera je vypnuté pre tento zápas.');
+                return;
+            }
+            if (!requireFiveOnCourtForScoring()) return;
+            const jerseyInput = document.getElementById('oppJerseyInput');
+            const jersey = selectedOpponentNumber || getSelectedOpponentNumber();
+            if (!Number.isInteger(jersey) || jersey <= 0) {
+                showInfoModal('Zadajte platné číslo dresu súpera.');
+                if (jerseyInput) jerseyInput.focus();
+                return;
+            }
+            if (!opponentOnCourtNumbers.has(jersey)) {
+                showInfoModal('Štatistiku súpera môžete zapísať len hráčovi, ktorý je na ihrisku (IN).');
+                return;
+            }
+            try {
+                const created = await createEventLiveAction(eventId, {
+                    period: currentPeriod,
+                    clockSeconds: gameClockSeconds,
+                    teamSide: 'OPPONENT',
+                    actionType: 'SCORE',
+                    opponentJerseyNumber: jersey,
+                    points: points,
+                    onCourtPlayerIds: Array.from(onCourtIds)
+                });
+                const id = created && created.id ? created.id : null;
+                pushAction(null, 'Súper #' + jersey + ' - +' + points, null, id);
+                await refreshLiveSummaryFromServer();
+                renderPlayersList();
+                renderStatsTable();
+                renderCourtNumberBoxes();
+                if (jerseyInput) jerseyInput.select();
+            } catch (e) {
+                showInfoModal('Chyba pri ukladaní bodov súpera: ' + (e.message || 'Skúste znova'));
+            }
+        }
+
+        function addOpponentFoul() {
+            if (!eventId) {
+                showInfoModal('Vyberte zápas.');
+                return;
+            }
+            if (!gameHasStarted) {
+                showInfoModal('Najprv nastavte základné päťky a stlačte ŠTART.');
+                return;
+            }
+            if (!opponentTrackingEnabled) {
+                showInfoModal('Zapisovanie súpera je vypnuté pre tento zápas.');
+                return;
+            }
+            const jersey = selectedOpponentNumber || getSelectedOpponentNumber();
+            if (!Number.isInteger(jersey) || jersey <= 0) {
+                showInfoModal('Najprv vyberte súpera na ihrisku.');
+                return;
+            }
+            if (!opponentOnCourtNumbers.has(jersey)) {
+                showInfoModal('Faul môžete zapísať len súperovi, ktorý je na ihrisku (IN).');
+                return;
+            }
+            createEventLiveAction(eventId, {
+                period: currentPeriod,
+                clockSeconds: gameClockSeconds,
+                teamSide: 'OPPONENT',
+                actionType: 'FOUL',
+                opponentJerseyNumber: jersey,
+                points: 0,
+                onCourtPlayerIds: Array.from(onCourtIds)
+            }).then(async function(created) {
+                const id = created && created.id ? created.id : null;
+                pushAction(null, 'Súper #' + jersey + ' - FAUL', null, id);
+                await refreshLiveSummaryFromServer();
+                renderCourtNumberBoxes();
+            }).catch(function(e) {
+                showInfoModal('Chyba pri ukladaní faulu súpera: ' + (e.message || 'Skúste znova'));
+            });
+        }
+
+        function showSaveResultPopup(success, message) {
+            var popup = document.getElementById('saveResultOverlay');
+            var content = document.getElementById('saveResultPopupContent');
+            var titleEl = document.getElementById('saveResultTitle');
+            var textEl = document.getElementById('saveResultText');
+            if (!popup || !content || !titleEl || !textEl) return;
+            content.classList.remove('success', 'error');
+            content.classList.add(success ? 'success' : 'error');
+            titleEl.textContent = success ? 'Úspech' : 'Ukladanie zlyhalo';
+            textEl.textContent = message;
+            popup.classList.add('open');
+        }
+        function showInfoModal(message, title) {
+            var overlay = document.getElementById('infoOverlay');
+            var titleEl = document.getElementById('infoModalTitle');
+            var textEl = document.getElementById('infoModalText');
+            if (!overlay || !titleEl || !textEl) return;
+            titleEl.textContent = title || 'Informácia';
+            textEl.textContent = message || '';
+            overlay.classList.add('open');
+        }
+        function closeInfoModal(event) {
+            if (event && event.target !== document.getElementById('infoOverlay')) return;
+            var overlay = document.getElementById('infoOverlay');
+            if (overlay) overlay.classList.remove('open');
+        }
+        function openSaveConfirmModal() {
+            var overlay = document.getElementById('saveConfirmOverlay');
+            if (overlay) overlay.classList.add('open');
+        }
+        function closeSaveConfirmModal(event) {
+            if (event && event.target !== document.getElementById('saveConfirmOverlay')) return;
+            var overlay = document.getElementById('saveConfirmOverlay');
+            if (overlay) overlay.classList.remove('open');
+        }
+        function openRewriteStatsConfirmModal(existingRows) {
+            pendingExistingStatsRows = Array.isArray(existingRows) ? existingRows.slice() : [];
+            var overlay = document.getElementById('rewriteStatsConfirmOverlay');
+            if (overlay) overlay.classList.add('open');
+        }
+        function closeRewriteStatsConfirmModal(event) {
+            if (event && event.target !== document.getElementById('rewriteStatsConfirmOverlay')) return;
+            var overlay = document.getElementById('rewriteStatsConfirmOverlay');
+            if (overlay) overlay.classList.remove('open');
+            pendingExistingStatsRows = null;
+        }
+        function closeSaveResultPopup(event) {
+            if (event && event.target !== document.getElementById('saveResultOverlay')) return;
+            document.getElementById('saveResultOverlay').classList.remove('open');
+        }
+        window.closeSaveResultPopup = closeSaveResultPopup;
+        window.closeInfoModal = closeInfoModal;
+        window.closeSaveConfirmModal = closeSaveConfirmModal;
+        window.closeRewriteStatsConfirmModal = closeRewriteStatsConfirmModal;
+
+        async function getExistingStatisticsRowsForCurrentEvent() {
+            if (!eventId) {
+                throw new Error('Vyberte zápas.');
+            }
+            const rows = await getStatistics({ eventId: eventId, statType: 'GAME' }).catch(() => []);
+            return Array.isArray(rows) ? rows : [];
+        }
+
+        async function syncStatisticsForCurrentEvent(existingRows, options) {
+            if (!eventId) {
+                throw new Error('Vyberte zápas.');
+            }
+            const opts = options && typeof options === 'object' ? options : {};
+            const preferReplace = opts.preferReplace === true;
+            const opponent = currentEventOpponent || '';
+            const existingByEvent = Array.isArray(existingRows) ? existingRows : await getExistingStatisticsRowsForCurrentEvent();
+            const byPlayer = {};
+            existingByEvent.forEach(function(s) {
+                const pidKey = String(s.playerId);
+                if (!byPlayer[pidKey]) byPlayer[pidKey] = [];
+                byPlayer[pidKey].push(s);
+            });
+            let usedDeleteFallback = false;
+
+            for (const p of players) {
+                const values = buildValuesForApi(p.id);
+                const payload = {
+                    eventId: parseInt(eventId, 10),
+                    playerId: p.id,
+                    statType: 'GAME',
+                    values,
+                    opponent: opponent || null
+                };
+                const rowsForPlayer = byPlayer[String(p.id)] || [];
+
+                if (preferReplace) {
+                    let replaceSucceeded = true;
+                    if (rowsForPlayer.length > 0) {
+                        for (const row of rowsForPlayer) {
+                            if (!row || row.id == null) continue;
+                            try {
+                                await deleteStatistics(row.id);
+                            } catch (err) {
+                                replaceSucceeded = false;
+                                usedDeleteFallback = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (replaceSucceeded) {
+                        await createStatistics(payload);
+                        continue;
+                    }
+
+                    const primary = rowsForPlayer.find(function(r) { return r && r.id != null; });
+                    if (primary) {
+                        await updateStatistics(primary.id, payload);
+                    } else {
+                        await createStatistics(payload);
+                    }
+                    continue;
+                }
+
+                const primary = rowsForPlayer.find(function(r) { return r && r.id != null; });
+                if (primary) {
+                    await updateStatistics(primary.id, payload);
+                } else {
+                    await createStatistics(payload);
+                }
+            }
+
+            return { usedDeleteFallback: usedDeleteFallback };
+        }
+
+        async function performSaveAllStatistics(existingRows, options) {
+            if (saveInProgress) return;
+            saveInProgress = true;
+            try {
+                const result = await syncStatisticsForCurrentEvent(existingRows, options);
+                saveLiveSessionState();
+                if (result && result.usedDeleteFallback) {
+                    showInfoModal('Štatistiky boli uložené, ale mazanie pôvodných riadkov nebolo povolené. Existujúce riadky boli prepísané.');
+                }
+                showSaveResultPopup(true, 'Štatistiky boli uložené.');
+            } catch (err) {
+                console.error('Save statistics failed', err);
+                showSaveResultPopup(false, 'Chyba pri ukladaní štatistík: ' + (err.message || err));
+            } finally {
+                saveInProgress = false;
+            }
+        }
+
+        async function saveWithRewriteCheck() {
+            const existingRows = await getExistingStatisticsRowsForCurrentEvent();
+            if (existingRows.length > 0) {
+                openRewriteStatsConfirmModal(existingRows);
+                return;
+            }
+            await performSaveAllStatistics(existingRows, { preferReplace: true });
+        }
+
+        async function saveAllStatistics() {
+            if (!eventId) {
+                showSaveResultPopup(false, 'Vyberte zápas.');
+                return;
+            }
+            if (!isGameFinishedForVpDisplay()) {
+                openSaveConfirmModal();
+                return;
+            }
+            await saveWithRewriteCheck();
+        }
+
+        function openClockEdit() {
+            document.getElementById('clockEditInput').value = formatMin(gameClockSeconds);
+            document.getElementById('clockEditWrap').style.display = 'flex';
+            document.getElementById('clockEditInput').focus();
+        }
+        function closeClockEdit() {
+            document.getElementById('clockEditWrap').style.display = 'none';
+        }
+        function applyClockEdit() {
+            const input = document.getElementById('clockEditInput');
+            const targetClockSeconds = Math.max(0, Math.min(getPeriodLengthSeconds(), parseTimeToSeconds(input.value)));
+            gameClockSeconds = targetClockSeconds;
+            periodClockSeconds[currentPeriod] = gameClockSeconds;
+            updateGameClockDisplay();
+            updateLiveScoreboard(liveSummary);
+            saveLiveSessionState();
+            closeClockEdit();
+        }
+
+        function init() {
+            gameClockSeconds = getPeriodLengthSeconds();
+            updateGameClockDisplay();
+            updateStarterSetupButtonVisibility();
+            document.getElementById('btnClockStart').addEventListener('click', function() {
+                if (!eventId) {
+                    showInfoModal('Vyberte zápas.');
+                    return;
+                }
+                if (!gameHasStarted) {
+                    openStartingLineupModal({ requireCompletion: true, startOnConfirm: true });
+                    return;
+                }
+                startGameClock();
+                saveLiveSessionState();
+            });
+            document.getElementById('btnSetStarters').addEventListener('click', function() {
+                if (!eventId) {
+                    showInfoModal('Vyberte zápas.');
+                    return;
+                }
+                if (gameHasStarted) {
+                    showInfoModal('Základnú päťku je možné nastaviť len pred štartom.');
+                    return;
+                }
+                openStartingLineupModal({ requireCompletion: false, startOnConfirm: false });
+            });
+            document.getElementById('btnClockStop').addEventListener('click', stopGameClock);
+            document.getElementById('btnClockToggleCompact').addEventListener('click', function() {
+                if (gameClockRunning) {
+                    stopGameClock();
+                    return;
+                }
+                document.getElementById('btnClockStart').click();
+            });
+            document.getElementById('btnEditClock').addEventListener('click', openClockEdit);
+            document.getElementById('clockEditOk').addEventListener('click', applyClockEdit);
+            document.getElementById('clockEditCancel').addEventListener('click', closeClockEdit);
+            document.getElementById('clockEditInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') applyClockEdit();
+                if (e.key === 'Escape') closeClockEdit();
+            });
+            document.getElementById('periodSelect').addEventListener('change', function() {
+                periodClockSeconds[currentPeriod] = gameClockSeconds;
+                currentPeriod = parseInt(this.value, 10) || 1;
+                var saved = periodClockSeconds[currentPeriod];
+                gameClockSeconds = (saved != null && saved >= 0) ? Math.max(0, Math.floor(Number(saved))) : getPeriodLengthSeconds();
+                updateGameClockDisplay();
+                updateLiveScoreboard(liveSummary);
+                saveLiveSessionState();
+            });
+            document.getElementById('periodLengthSelect').addEventListener('change', function() {
+                periodLengthMinutes = Math.max(1, Math.min(15, parseInt(this.value, 10) || 10));
+                var saved = periodClockSeconds[currentPeriod];
+                if (saved == null || saved < 0) {
+                    gameClockSeconds = getPeriodLengthSeconds();
+                    updateGameClockDisplay();
+                    updateLiveScoreboard(liveSummary);
+                }
+                saveLiveSessionState();
+            });
+
+            document.getElementById('btnUndo').addEventListener('click', undoLastAction);
+            document.getElementById('btnSave').addEventListener('click', saveAllStatistics);
+            document.getElementById('saveConfirmCancel').addEventListener('click', closeSaveConfirmModal);
+            document.getElementById('saveConfirmProceed').addEventListener('click', async function() {
+                closeSaveConfirmModal();
+                await saveWithRewriteCheck();
+            });
+            document.getElementById('rewriteStatsCancel').addEventListener('click', function() {
+                pendingExistingStatsRows = null;
+                closeRewriteStatsConfirmModal();
+            });
+            document.getElementById('rewriteStatsProceed').addEventListener('click', async function() {
+                const rows = Array.isArray(pendingExistingStatsRows) ? pendingExistingStatsRows : [];
+                pendingExistingStatsRows = null;
+                closeRewriteStatsConfirmModal();
+                await performSaveAllStatistics(rows, { preferReplace: true });
+            });
+            document.getElementById('btnManual').addEventListener('click', openManualOverride);
+            document.getElementById('manualCancel').addEventListener('click', () => document.getElementById('manualOverrideModal').classList.remove('open'));
+            document.getElementById('manualApply').addEventListener('click', applyManualOverride);
+
+            document.querySelectorAll('.action-btn[data-action]').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    if (!gameHasStarted) {
+                        showInfoModal('Najprv nastavte základné päťky a stlačte ŠTART.');
+                        return;
+                    }
+                    if (selectedPlayerId == null) {
+                        showInfoModal('Najprv vyberte hráča.');
+                        return;
+                    }
+                    if (!onCourtIds.has(selectedPlayerId)) {
+                        showInfoModal('Štatistiku môžete zapísať len hráčovi, ktorý je na ihrisku.');
+                        return;
+                    }
+                    const action = this.dataset.action;
+                    await applyAction(selectedPlayerId, action);
+                });
+            });
+
+            document.querySelectorAll('.opp-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const action = this.dataset.oppAction;
+                    if (action === 'score1') addOpponentScore(1);
+                    else if (action === 'score2') addOpponentScore(2);
+                    else if (action === 'score3') addOpponentScore(3);
+                    else if (action === 'foul') addOpponentFoul();
+                });
+            });
+
+        }
+
+        function updateLiveWlFromEvent(event) {
+            const winBtn = document.querySelector('#liveWlStrip .live-wl-btn.win');
+            const lossBtn = document.querySelector('#liveWlStrip .live-wl-btn.loss');
+            const noneBtn = document.querySelector('#liveWlStrip .live-wl-btn.none');
+            [winBtn, lossBtn, noneBtn].forEach(b => { if (b) b.classList.remove('active'); });
+            if (event.matchWon === true && winBtn) winBtn.classList.add('active');
+            else if (event.matchWon === false && lossBtn) lossBtn.classList.add('active');
+            else if (noneBtn) noneBtn.classList.add('active');
+            const ourIn = document.getElementById('liveOurScore');
+            const oppIn = document.getElementById('liveOpponentScore');
+            if (ourIn) ourIn.value = event.ourScore != null ? String(event.ourScore) : '';
+            if (oppIn) oppIn.value = event.opponentScore != null ? String(event.opponentScore) : '';
+            updateLiveScoreboard({
+                ourScore: event.ourScore != null ? event.ourScore : (liveSummary.ourScore || 0),
+                opponentScore: event.opponentScore != null ? event.opponentScore : (liveSummary.opponentScore || 0),
+                matchWon: event.matchWon
+            });
+        }
+
+        function formatLiveMatchLabelFromListItem(m) {
+            if (!m) return '—';
+            const opp = (m.opponent || '').trim() || 'Súper';
+            const raw = m.date;
+            const dateStr = raw ? new Date(raw).toLocaleDateString('sk-SK') : '';
+            return dateStr ? (opp + ' · ' + dateStr) : opp;
+        }
+
+        function applyMatchInfoFromApiEvent(event) {
+            const el = document.getElementById('liveMatchInfoText');
+            if (!el || !event) return;
+            const opp = (event.opponent != null && String(event.opponent).trim() !== '') ? String(event.opponent).trim() : 'Súper';
+            const raw = event.date != null ? event.date : (event.startDateTime != null ? event.startDateTime : event.startTime);
+            const dateStr = raw ? new Date(raw).toLocaleDateString('sk-SK') : '';
+            el.textContent = dateStr ? (opp + ' · ' + dateStr) : opp;
+            if (event.opponent != null) currentEventOpponent = String(event.opponent);
+        }
+
+        async function loadLiveEventData() {
+            const eventIdInput = document.getElementById('eventId');
+            const raw = eventIdInput && eventIdInput.value ? String(eventIdInput.value).trim() : '';
+            eventId = raw || null;
+            restoredFromLocalDraft = false;
+
+            players = [];
+            playerStats = {};
+            nominatedJerseyByPlayerId = {};
+            nominatedStartingByPlayerId = {};
+            opponentRosterNumbers = [];
+            opponentOnCourtNumbers = new Set();
+            onCourtOrder = [];
+            opponentOnCourtOrder = [];
+            selectedOpponentNumber = null;
+            gameHasStarted = false;
+            selectedPlayerId = null;
+            onCourtIds = new Set();
+            undoStack = [];
+            actionHistory = [];
+            document.getElementById('btnUndo').disabled = true;
+            document.getElementById('actionLog').innerHTML = '';
+
+            if (!eventId) {
+                allPlayers = [];
+                liveActions = [];
+                liveSummary = { ourScore: 0, opponentScore: 0, matchWon: null, playerPlusMinus: {}, opponentByJersey: [], opponentFoulsByJersey: [], onCourtPlayerIds: [] };
+                onCourtOrder = [];
+                opponentOnCourtOrder = [];
+                document.getElementById('liveMatchInfoText').textContent = '—';
+                currentEventOpponent = '';
+                document.getElementById('liveWlStrip').style.display = 'none';
+                syncNominationButtonsVisibility();
+                const btnOpp = document.getElementById('btnOpponents');
+                if (btnOpp) btnOpp.style.display = 'none';
+                closeOpponentTrackingPrompt();
+                renderOpponentBreakdown();
+                renderOpponentRosterList();
+                renderCourtNumberBoxes();
+                updateLiveScoreboard(liveSummary);
+                renderPlayersList();
+                renderStatsTable();
+                updateStarterSetupButtonVisibility();
+                return;
+            }
+            document.getElementById('liveWlStrip').style.display = 'flex';
+            const event = await getEventById(eventId).catch(() => null);
+            if (event) applyMatchInfoFromApiEvent(event);
+            updateLiveWlFromEvent(event || {});
+            let list = [];
+            try {
+                const allUsers = await (typeof getAllUsers === 'function' ? getAllUsers() : getUsers({ role: 'PLAYER' }));
+                list = Array.isArray(allUsers) ? allUsers : (allUsers.content || allUsers.data || []);
+            } catch (e) {
+                console.error('Error loading players:', e);
+            }
+            allPlayers = (list || []).filter(function(u) { return u && (u.role === 'PLAYER' || u.role === 'player'); });
+
+            let loadedFromServerNominations = false;
+            try {
+                if (typeof getEventNominations === 'function') {
+                    const nominationData = await getEventNominations(eventId);
+                    const selectedServerIds = applyNominationPayloadToState(nominationData);
+                    loadedFromServerNominations = Array.isArray(selectedServerIds) && selectedServerIds.length > 0;
+                }
+            } catch (e) {
+                console.warn('Could not load server nominations for live stats:', e);
+            }
+
+            if (!loadedFromServerNominations) {
+                const localNominationIds = getNomination(eventId);
+                if (localNominationIds && localNominationIds.length > 0) {
+                    const fallbackPayload = {
+                        playerIds: localNominationIds,
+                        nominations: localNominationIds.map((rawId, idx) => {
+                            const pid = Number(rawId);
+                            return {
+                                playerId: pid,
+                                jerseyNumber: idx + 1,
+                                startingFive: false
+                            };
+                        })
+                    };
+                    applyNominationPayloadToState(fallbackPayload);
+                } else {
+                    players = [];
+                    nominatedJerseyByPlayerId = {};
+                    nominatedStartingByPlayerId = {};
+                    openNominationModal();
+                }
+            }
+            syncNominationButtonsVisibility();
+            const btnOpp = document.getElementById('btnOpponents');
+            if (btnOpp) btnOpp.style.display = 'inline-block';
+
+            await loadOpponentsForEvent();
+            openOpponentTrackingPromptIfNeeded();
+            applyOpponentTrackingState();
+
+            loadLiveSessionState();
+            if (!gameHasStarted && onCourtIds.size === 0) {
+                applyStartingLineupFromNominations();
+            }
+            await refreshLiveActionsFromServer();
+            await refreshLiveSummaryFromServer();
+            if ((liveActions || []).length > 0 && !restoredFromLocalDraft) {
+                rebuildPlayerStatsFromLiveActions();
+            } else if (!restoredFromLocalDraft) {
+                const existingStats = await getStatistics({ eventId: eventId, statType: 'GAME' }).catch(() => []);
+                (existingStats || []).forEach(s => {
+                    if (s.values && typeof s.values === 'object') {
+                        playerStats[s.playerId] = getDefaultStats();
+                        STAT_KEYS.forEach(k => { if (s.values[k] != null) playerStats[s.playerId][k] = s.values[k]; });
+                        if (s.values.MIN != null) playerStats[s.playerId].MIN = s.values.MIN;
+                    }
+                });
+            }
+            rebuildHistoryFromLiveActions();
+            renderPlayersList();
+            renderStatsTable();
+            renderOpponentBreakdown();
+            renderOpponentRosterList();
+            renderCourtNumberBoxes();
+            updateStarterSetupButtonVisibility();
+        }
+
+        async function loadMatchesAndPlayers() {
+            const eventIdInput = document.getElementById('eventId');
+            const allEvents = await getEvents({ type: 'MATCH', enrich: false }).catch(() => []);
+            const allMatches = (allEvents || []).filter(function(e) { return e && e.type === 'MATCH'; });
+            let matches = await filterLiveVisibleMatches(allEvents || []);
+
+            const urlEventId = new URLSearchParams(window.location.search).get('eventId');
+            if (urlEventId) {
+                const pickedFromCalendar = allMatches.find(function(m) { return String(m && m.id) === String(urlEventId); });
+                if (!pickedFromCalendar) {
+                    window.location.replace('/pages/matches.html?noLiveStats=1');
+                    return;
+                }
+                const alreadyVisible = matches.some(function(m) { return String(m && m.id) === String(urlEventId); });
+                if (!alreadyVisible) {
+                    matches = [pickedFromCalendar].concat(matches);
+                }
+            }
+
+            let selectedId = urlEventId ? String(urlEventId) : '';
+            if (!selectedId && matches.length === 1) {
+                selectedId = String(matches[0].id);
+            }
+            if (!selectedId) {
+                window.location.replace('/pages/matches.html?liveStatsNeedEvent=1');
+                return;
+            }
+
+            eventIdInput.value = selectedId;
+            const picked = matches.find(function(m) { return String(m.id) === String(selectedId); });
+            if (picked) {
+                document.getElementById('liveMatchInfoText').textContent = formatLiveMatchLabelFromListItem(picked);
+                currentEventOpponent = picked.opponent || '';
+            }
+
+            document.getElementById('liveWlStrip').addEventListener('click', function(e) {
+                const btn = e.target.closest('.live-wl-btn');
+                if (btn) {
+                    document.querySelectorAll('#liveWlStrip .live-wl-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                }
+            });
+            document.getElementById('liveWlSave').addEventListener('click', async function() {
+                if (!eventId) return;
+                const winBtn = document.querySelector('#liveWlStrip .live-wl-btn.win.active');
+                const lossBtn = document.querySelector('#liveWlStrip .live-wl-btn.loss.active');
+                const drawBtn = document.querySelector('#liveWlStrip .live-wl-btn.draw.active');
+                let matchWon = null;
+                if (winBtn) matchWon = true;
+                else if (lossBtn) matchWon = false;
+                else if (drawBtn === "") matchWon = null;
+                const ourVal = (document.getElementById('liveOurScore') || {}).value.trim();
+                const oppVal = (document.getElementById('liveOpponentScore') || {}).value.trim();
+                const payload = { matchWon: matchWon };
+                if (ourVal !== '') { const n = parseInt(ourVal, 10); if (!isNaN(n) && n >= 0) payload.ourScore = n; }
+                if (oppVal !== '') { const n = parseInt(oppVal, 10); if (!isNaN(n) && n >= 0) payload.opponentScore = n; }
+                try {
+                    await updateEvent(eventId, payload);
+                    const event = await getEventById(eventId).catch(() => ({}));
+                    updateLiveWlFromEvent(event);
+                } catch (err) {
+                    showInfoModal('Chyba pri ukladaní výsledku: ' + (err.message || 'Skúste znova'));
+                }
+            });
+
+            await loadLiveEventData();
+        }
+
+        function toggleNavMenu() {
+            document.getElementById('hamburgerBtn').classList.toggle('open');
+            document.getElementById('navOverlay').classList.toggle('open');
+            document.getElementById('navSlideMenu').classList.toggle('open');
+            document.body.style.overflow = document.getElementById('navSlideMenu').classList.contains('open') ? 'hidden' : '';
+        }
+        function closeNavMenu() {
+            document.getElementById('hamburgerBtn').classList.remove('open');
+            document.getElementById('navOverlay').classList.remove('open');
+            document.getElementById('navSlideMenu').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function handleSignOutFromMenu() {
+            closeNavMenu();
+            handleSignOut();
+        }
+        function toggleUserDropdown(event) {
+            event.stopPropagation();
+            document.getElementById('userInfo').classList.toggle('open');
+        }
+        function handleSignOut() {
+            if (typeof logout === 'function') {
+                logout();
+            } else {
+                localStorage.removeItem('basketball_auth_token');
+                localStorage.removeItem('basketball_user');
+                sessionStorage.removeItem('basketball_auth_token');
+                sessionStorage.removeItem('basketball_user');
+                window.location.href = '/pages/login.html';
+            }
+        }
+        window.toggleNavMenu = toggleNavMenu;
+        window.closeNavMenu = closeNavMenu;
+        window.handleSignOutFromMenu = handleSignOutFromMenu;
+        window.toggleUserDropdown = toggleUserDropdown;
+        window.handleSignOut = handleSignOut;
+        document.addEventListener('click', function(event) {
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo && !userInfo.contains(event.target)) {
+                userInfo.classList.remove('open');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (typeof isAuthenticated !== 'undefined' && !isAuthenticated()) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+            const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+            if (!user) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+            const role = String(user.role || '').toUpperCase();
+            if (role !== 'ADMIN' && role !== 'TRAINER') {
+                window.location.href = '/';
+                return;
+            }
+
+            const displayName = (formatUserDisplayName(user) || '').replace(/\s*\([^)]*\)\s*$/, '').trim() || 'Používateľ';
+            const displayRole = user.role === 'TRAINER' ? 'Tréner' : (user.role === 'ADMIN' ? 'Admin' : user.role || '');
+            const userInitial = (displayName.charAt(0) || 'U').toUpperCase();
+            document.getElementById('userName').textContent = displayName;
+            document.getElementById('userRole').textContent = displayRole;
+            const dropdownName = document.getElementById('userDropdownName');
+            const dropdownRole = document.getElementById('userDropdownRole');
+            if (dropdownName) dropdownName.textContent = displayName;
+            if (dropdownRole) dropdownRole.textContent = displayRole;
+            document.getElementById('userInfo').setAttribute('data-initial', userInitial);
+            const navMenuProfileName = document.getElementById('navMenuProfileName');
+            const navMenuProfileRole = document.getElementById('navMenuProfileRole');
+            const navMenuProfileAvatar = document.getElementById('navMenuProfileAvatar');
+            if (navMenuProfileName) navMenuProfileName.textContent = displayName;
+            if (navMenuProfileRole) navMenuProfileRole.textContent = displayRole;
+            if (navMenuProfileAvatar) navMenuProfileAvatar.textContent = userInitial;
+
+            init();
+            await loadMatchesAndPlayers();
+
+            document.getElementById('btnNomination').addEventListener('click', openNominationModal);
+            document.getElementById('btnNominationTop').addEventListener('click', openNominationModal);
+            document.getElementById('btnOpponents').addEventListener('click', openOpponentsModal);
+            document.getElementById('btnSubOur').addEventListener('click', function() { openSubstitutionModal('OUR'); });
+            document.getElementById('btnSubOpp').addEventListener('click', function() { openSubstitutionModal('OPPONENT'); });
+            document.getElementById('nominationCheckboxList').addEventListener('change', updateNominationCount);
+            document.getElementById('nominationConfirm').addEventListener('click', function() {
+                const listEl = document.getElementById('nominationCheckboxList');
+                const selectedIds = [];
+                listEl.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+                    selectedIds.push(parseInt(cb.dataset.playerId, 10));
+                });
+                applyNomination(selectedIds);
+            });
+            document.getElementById('nominationSelectAll').addEventListener('click', function() {
+                document.querySelectorAll('#nominationCheckboxList input[type="checkbox"]').forEach(cb => { cb.checked = true; });
+            });
+            document.getElementById('nominationSelectNone').addEventListener('click', function() {
+                document.querySelectorAll('#nominationCheckboxList input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+            });
+            document.getElementById('nominationOverlay').addEventListener('click', function(e) {
+                if (e.target === this) closeNominationModal();
+            });
+            const oppInp = document.getElementById('oppJerseyInput');
+            if (oppInp) {
+                oppInp.addEventListener('change', function() {
+                    const n = getSelectedOpponentNumber();
+                    selectedOpponentNumber = n;
+                    renderCourtNumberBoxes();
+                });
+            }
+            document.getElementById('opponentsSave').addEventListener('click', saveOpponentsFromModal);
+            document.getElementById('opponentsClear').addEventListener('click', function() {
+                document.querySelectorAll('#opponentsInputsGrid input').forEach(inp => { inp.value = ''; });
+            });
+            document.getElementById('opponentsOverlay').addEventListener('click', function(e) {
+                if (e.target === this) closeOpponentsModal();
+            });
+            document.getElementById('oppTrackingYes').addEventListener('click', function() {
+                setOpponentTrackingChoice(true);
+            });
+            document.getElementById('oppTrackingNo').addEventListener('click', function() {
+                setOpponentTrackingChoice(false);
+            });
+            document.getElementById('opponentTrackingPromptOverlay').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    setOpponentTrackingChoice(false);
+                }
+            });
+            document.getElementById('startingLineupOverlay').addEventListener('click', function(e) {
+                if (e.target === this) closeStartingLineupModalSafely(lineupModalTempOur, lineupModalTempOpp);
+            });
+            document.getElementById('substitutionCancel').addEventListener('click', function() {
+                document.getElementById('substitutionOverlay').classList.remove('open');
+            });
+            document.getElementById('substitutionConfirm').addEventListener('click', confirmSubstitution);
+            document.getElementById('substitutionOverlay').addEventListener('click', function(e) {
+                if (e.target === this) this.classList.remove('open');
+            });
+            window.addEventListener('resize', syncNominationButtonsVisibility);
+            window.addEventListener('resize', syncCompactClockLayout);
+            syncCompactClockLayout();
+        });
+})();
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

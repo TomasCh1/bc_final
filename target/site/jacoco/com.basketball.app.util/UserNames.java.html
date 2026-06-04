@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserNames.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.util</a> &gt; <span class="el_source">UserNames.java</span></div><h1>UserNames.java</h1><pre class="source lang-java linenums">package com.basketball.app.util;
+
+import com.basketball.app.model.User;
+
+
+public final class UserNames {
+
+    private UserNames() {
+    }
+
+    public static String normalize(String value) {
+<span class="pc bpc" id="L12" title="1 of 2 branches missed.">        return value == null ? &quot;&quot; : value.trim();</span>
+    }
+
+    /** Display order: given name then surname */
+    public static String getDisplayName(User user) {
+<span class="pc bpc" id="L17" title="1 of 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L18">            return &quot;&quot;;</span>
+        }
+<span class="fc" id="L20">        return getDisplayName(user.getName(), user.getSurname());</span>
+    }
+
+    public static String getDisplayName(String name, String surname) {
+<span class="fc" id="L24">        String given = normalize(name);</span>
+<span class="fc" id="L25">        String sur = normalize(surname);</span>
+<span class="pc bpc" id="L26" title="1 of 4 branches missed.">        if (!given.isEmpty() &amp;&amp; !sur.isEmpty()) {</span>
+<span class="fc" id="L27">            return given + &quot; &quot; + sur;</span>
+        }
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">        if (!given.isEmpty()) {</span>
+<span class="fc" id="L30">            return given;</span>
+        }
+<span class="nc" id="L32">        return sur;</span>
+    }
+
+    /** Export order: surname then given name */
+    public static String toSurnameAndGivenName(User user) {
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L38">            return &quot;&quot;;</span>
+        }
+<span class="fc" id="L40">        return toSurnameAndGivenName(user.getName(), user.getSurname());</span>
+    }
+
+    public static String toSurnameAndGivenName(String name, String surname) {
+<span class="fc" id="L44">        String given = normalize(name);</span>
+<span class="fc" id="L45">        String sur = normalize(surname);</span>
+<span class="pc bpc" id="L46" title="1 of 4 branches missed.">        if (!sur.isEmpty() &amp;&amp; !given.isEmpty()) {</span>
+<span class="fc" id="L47">            return sur + &quot; &quot; + given;</span>
+        }
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        if (!sur.isEmpty()) {</span>
+<span class="nc" id="L50">            return sur;</span>
+        }
+<span class="fc" id="L52">        return given;</span>
+    }
+
+    public static String[] splitFullName(String fullName) {
+<span class="fc" id="L56">        String trimmed = normalize(fullName);</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (trimmed.isEmpty()) {</span>
+<span class="nc" id="L58">            return new String[]{&quot;&quot;, &quot;&quot;};</span>
+        }
+<span class="fc" id="L60">        String[] parts = trimmed.split(&quot;\\s+&quot;);</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (parts.length == 1) {</span>
+<span class="fc" id="L62">            return new String[]{parts[0], &quot;&quot;};</span>
+        }
+<span class="fc" id="L64">        String surname = parts[parts.length - 1];</span>
+<span class="fc" id="L65">        StringBuilder given = new StringBuilder();</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        for (int i = 0; i &lt; parts.length - 1; i++) {</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L68">                given.append(' ');</span>
+            }
+<span class="fc" id="L70">            given.append(parts[i]);</span>
+        }
+<span class="fc" id="L72">        return new String[]{given.toString(), surname};</span>
+    }
+
+    public static void applyFullName(User user, String fullName) {
+<span class="fc" id="L76">        String[] split = splitFullName(fullName);</span>
+<span class="fc" id="L77">        user.setName(split[0]);</span>
+<span class="fc" id="L78">        user.setSurname(split[1]);</span>
+<span class="fc" id="L79">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

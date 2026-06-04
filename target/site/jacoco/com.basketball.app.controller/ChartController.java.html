@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChartController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.controller</a> &gt; <span class="el_source">ChartController.java</span></div><h1>ChartController.java</h1><pre class="source lang-java linenums">package com.basketball.app.controller;
+
+import com.basketball.app.model.Statistics;
+import com.basketball.app.service.ChartService;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/api/charts&quot;)
+public class ChartController {
+
+    private final ChartService chartService;
+
+<span class="fc" id="L20">    public ChartController(ChartService chartService) {</span>
+<span class="fc" id="L21">        this.chartService = chartService;</span>
+<span class="fc" id="L22">    }</span>
+
+    /**
+     * Get time-series data for performance metrics over time
+     *
+     * @param playerId Optional player ID to filter by specific player
+     * @param categoryId Optional category ID to filter by category
+     * @param metric Metric name (e.g., &quot;INDEX&quot;, &quot;PTS&quot;, &quot;AST&quot;, &quot;OFF&quot;, &quot;DEF&quot;, &quot;STL&quot;, &quot;BLK&quot;, &quot;TO&quot;)
+     * @param startDate Optional start date for filtering
+     * @param endDate Optional end date for filtering
+     * @param statType Optional stat type filter (only GAME/match is stored in statistics)
+     * @return Time-series data points
+     */
+    @GetMapping(&quot;/time-series&quot;)
+    public ResponseEntity&lt;?&gt; getTimeSeriesData(
+            @RequestParam(required = false) Long playerId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false, defaultValue = &quot;INDEX&quot;) String metric,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Statistics.StatType statType) {
+        try {
+<span class="fc" id="L44">            Map&lt;String, Object&gt; data = chartService.getTimeSeriesData(playerId, metric, startDate, endDate, statType, categoryId);</span>
+<span class="fc" id="L45">            return ResponseEntity.ok(data);</span>
+<span class="fc" id="L46">        } catch (Exception e) {</span>
+<span class="fc" id="L47">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L48">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get category distribution data
+     * 
+     * @param metric Metric name to analyze
+     * @param startDate Optional start date for filtering
+     * @param endDate Optional end date for filtering
+     * @param statType Optional stat type filter (only GAME/match is stored in statistics)
+     * @return Category distribution data
+     */
+    @GetMapping(&quot;/category-distribution&quot;)
+    public ResponseEntity&lt;?&gt; getCategoryDistribution(
+            @RequestParam(required = false, defaultValue = &quot;INDEX&quot;) String metric,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Statistics.StatType statType) {
+        try {
+<span class="fc" id="L68">            Map&lt;String, Object&gt; data = chartService.getCategoryDistribution(metric, startDate, endDate, statType);</span>
+<span class="fc" id="L69">            return ResponseEntity.ok(data);</span>
+<span class="fc" id="L70">        } catch (Exception e) {</span>
+<span class="fc" id="L71">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L72">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get comparative analysis data
+     *
+     * @param metric Metric name to compare
+     * @param comparisonType Type of comparison: &quot;players&quot; or &quot;gameVsTraining&quot;
+     * @param playerIds Optional list of player IDs for player comparison
+     * @param categoryId Optional category ID to filter by category
+     * @param startDate Optional start date for filtering
+     * @param endDate Optional end date for filtering
+     * @return Comparative analysis data
+     */
+    @GetMapping(&quot;/comparative&quot;)
+    public ResponseEntity&lt;?&gt; getComparativeAnalysis(
+            @RequestParam(required = false, defaultValue = &quot;INDEX&quot;) String metric,
+            @RequestParam(required = false, defaultValue = &quot;players&quot;) String comparisonType,
+            @RequestParam(required = false) List&lt;Long&gt; playerIds,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        try {
+<span class="nc" id="L96">            Map&lt;String, Object&gt; data = chartService.getComparativeAnalysis(</span>
+                    metric, comparisonType, playerIds, startDate, endDate, categoryId);
+<span class="nc" id="L98">            return ResponseEntity.ok(data);</span>
+<span class="fc" id="L99">        } catch (Exception e) {</span>
+<span class="fc" id="L100">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L101">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+
+    /**
+     * Get aggregated statistics summary
+     * 
+     * @param playerId Optional player ID to filter by specific player
+     * @param startDate Optional start date for filtering
+     * @param endDate Optional end date for filtering
+     * @param statType Optional stat type filter (only GAME/match is stored in statistics)
+     * @return Aggregated statistics summary
+     */
+    @GetMapping(&quot;/aggregated&quot;)
+    public ResponseEntity&lt;?&gt; getAggregatedStatistics(
+            @RequestParam(required = false) Long playerId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Statistics.StatType statType) {
+        try {
+<span class="fc" id="L122">            Map&lt;String, Object&gt; data = chartService.getAggregatedStatistics(playerId, startDate, endDate, statType);</span>
+<span class="fc" id="L123">            return ResponseEntity.ok(data);</span>
+<span class="nc" id="L124">        } catch (Exception e) {</span>
+<span class="nc" id="L125">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L126">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

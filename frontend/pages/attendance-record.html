@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Záznam účasti - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/coach-nav.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #FFFFFF; color: #2C2C2C; }
+        .dashboard-content { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .event-info {
+            background: #FFFFFF;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #E0E0E0;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .event-info h3 { margin-bottom: 0.75rem; font-size: 1.25rem; color: #111827; }
+        .event-info p { margin-bottom: 0.35rem; font-size: 0.95rem; color: #374151; }
+        .attendance-grid {
+            background: #FFFFFF;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #E0E0E0;
+            margin-bottom: 1.5rem;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .player-row {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #E5E7EB;
+            align-items: center;
+        }
+        .player-row:last-child { border-bottom: none; }
+        .player-row.header {
+            font-weight: 600;
+            background: #F3F4F6;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            align-items: center;
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+        }
+        .player-row.header > div {
+            color: #374151;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .player-name { font-weight: 500; color: #111827; }
+        .status-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .status-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #F9FAFB;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+        /* Unselected: muted; selected (.active): full color + ring so current status is clear */
+        .status-btn.present { background: #E8F5E9; color: #1B5E20; border-color: #A5D6A7; }
+        .status-btn.present.active { background: #28a745; color: white; border-color: #28a745; box-shadow: 0 0 0 2px #28a745; }
+        .status-btn.absent { background: #FFEBEE; color: #B71C1C; border-color: #EF9A9A; }
+        .status-btn.absent.active { background: #dc3545; color: white; border-color: #dc3545; box-shadow: 0 0 0 2px #dc3545; }
+        .status-btn.late { background: #FFF8E1; color: #E65100; border-color: #FFE082; }
+        .status-btn.late.active { background: #ffc107; color: #000; border-color: #ffc107; box-shadow: 0 0 0 2px #ffc107; }
+        .status-btn.excused { background: #E0F7FA; color: #006064; border-color: #80DEEA; }
+        .status-btn.excused.active { background: #17a2b8; color: white; border-color: #17a2b8; box-shadow: 0 0 0 2px #17a2b8; }
+        .notes-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #2C2C2C;
+            font-size: 0.875rem;
+        }
+        .action-buttons { margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: #6B2C91;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover { background: #5A2380; }
+        .btn-secondary { background: #F3F4F6; color: #374151; border: 1px solid #E5E7EB; }
+        .btn-secondary:hover { background: #E5E7EB; }
+        .loading { text-align: center; padding: 2rem; color: #6B7280; }
+        #messageArea .message { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        #messageArea .message.success { background: #D1FAE5; color: #065F46; }
+        #messageArea .message.error { background: #FEE2E2; color: #B91C1C; }
+        @media (max-width: 900px) {
+            .player-row { grid-template-columns: 1fr 1fr; }
+            .player-row.header { grid-template-columns: 1fr 1fr; }
+            .player-row.header > div:nth-child(3) { display: none; }
+            .player-row .status-buttons { grid-column: 1 / -1; }
+            .player-row .notes-cell { grid-column: 1 / -1; }
+        }
+        @media (max-width: 480px) {
+            .player-row { grid-template-columns: 1fr; }
+            .player-row.header { grid-template-columns: 1fr; }
+            .player-row.header > div:nth-child(2),
+            .player-row.header > div:nth-child(3) { display: none; }
+            .player-row .status-buttons { grid-column: 1; }
+            .player-row .notes-cell { grid-column: 1; }
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav">
+                <a href="/pages/trainer-dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                <a href="/pages/coach-matches.html" class="nav-pill">Zápasy</a>
+                <a href="/pages/trainer-trainings.html" class="nav-pill">Tréningy</a>
+                <a href="/pages/trainer-attendance-charts.html" class="nav-pill active">Grafy účasti</a>
+                <a href="/pages/trainer-training-stats.html" class="nav-pill">Záznam štatistík</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" data-initial="T" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">Tréner</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <div class="nav-menu-profile">
+            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">T</div>
+            <div class="nav-menu-profile-info">
+                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                <div class="nav-menu-profile-role" id="navMenuProfileRole">Tréner</div>
+            </div>
+        </div>
+        <div class="nav-menu-divider"></div>
+        <a href="/pages/trainer-dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/coach-matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>
+        <a href="/pages/trainer-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+        <a href="/pages/trainer-attendance-charts.html" class="nav-pill active" onclick="closeNavMenu()">Grafy účasti</a>
+        <a href="/pages/trainer-training-stats.html" class="nav-pill" onclick="closeNavMenu()">Záznam štatistík</a>
+        <div class="nav-menu-divider"></div>
+        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>
+    </nav>
+
+    <div class="dashboard-content">
+        <div id="messageArea"></div>
+        <div id="loadingIndicator" class="loading">Načítava sa...</div>
+        <div id="contentContainer" style="display: none;">
+            <div class="event-info" id="eventInfo"></div>
+            <div class="attendance-grid">
+                <div class="player-row header">
+                    <div>Hráč</div>
+                    <div>Stav</div>
+                    <div>Poznámky</div>
+                </div>
+                <div id="playersContainer"></div>
+            </div>
+            <div class="action-buttons">
+                <button type="button" class="btn" onclick="saveAttendance()">Uložiť účast</button>
+                <a href="/pages/trainer-attendance-charts.html" class="btn btn-secondary">Späť</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/events.js"></script>
+    <script src="/js/attendance.js"></script>
+    <script src="/js/users.js"></script>
+    <script>
+        let eventId = null;
+        let event = null;
+        let players = [];
+        const attendanceData = {}; // playerId -> { status, notes }
+        const existingAttendanceData = {}; // playerId -> { status, notes } from database
+
+        document.addEventListener('DOMContentLoaded', async function initPage() {
+            if (typeof isAuthenticated === 'undefined') {
+                setTimeout(initPage, 100);
+                return;
+            }
+
+            if (!isAuthenticated()) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            const user = getCurrentUser();
+            if (!user || (user.role !== 'ADMIN' && user.role !== 'TRAINER')) {
+                showMessage('Nemáte oprávnenie zaznamenať účast.', 'error');
+                setTimeout(() => window.location.href = '/pages/trainer-attendance-charts.html', 2000);
+                return;
+            }
+            initTrainerNav(user);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            eventId = urlParams.get('eventId');
+
+            if (!eventId) {
+                showMessage('V URL chýba ID udalosti.', 'error');
+                setTimeout(() => window.location.href = '/pages/trainer-attendance-charts.html', 2000);
+                return;
+            }
+
+            await loadData();
+        });
+
+        async function loadData() {
+            try {
+                document.getElementById('loadingIndicator').style.display = 'block';
+                document.getElementById('contentContainer').style.display = 'none';
+
+                event = await getEventById(eventId);
+                
+                if (event.type === 'TRAINING' && event.cancelled) {
+                    displayEventInfo(event);
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                    document.getElementById('contentContainer').style.display = 'block';
+                    const attendanceGrid = document.querySelector('.attendance-grid');
+                    const actionButtons = document.querySelector('.action-buttons');
+                    if (attendanceGrid) attendanceGrid.style.display = 'none';
+                    if (actionButtons) actionButtons.style.display = 'none';
+                    showMessage('Tento tréning bol zrušený. Nie je možné zaznamenať účast.', 'error');
+                    return;
+                }
+                
+                displayEventInfo(event);
+
+                let categoryId = event.categoryId;
+                if (categoryId) {
+                    const allUsers = await getAllUsers();
+                    players = allUsers.filter(user => 
+                        user.role === 'PLAYER' && 
+                        (user.categoryId === categoryId || 
+                         (user.categoryIds && user.categoryIds.includes(categoryId)) ||
+                         (user.categories && user.categories.some(c => c.id === categoryId)))
+                    );
+                } else {
+                    const allUsers = await getAllUsers();
+                    players = allUsers.filter(user => user.role === 'PLAYER');
+                }
+
+                let existingAttendance = [];
+                try {
+                    let getAttendanceFn = null;
+                    let attempts = 0;
+                    while (!getAttendanceFn && attempts < 10) {
+                        getAttendanceFn = (typeof window !== 'undefined' && window.getAttendanceByEvent) 
+                            ? window.getAttendanceByEvent 
+                            : (typeof getAttendanceByEvent !== 'undefined' ? getAttendanceByEvent : null);
+                        if (!getAttendanceFn) {
+                            await new Promise(resolve => setTimeout(resolve, 50));
+                            attempts++;
+                        }
+                    }
+                    
+                    if (getAttendanceFn && typeof getAttendanceFn === 'function') {
+                        existingAttendance = await getAttendanceFn(eventId);
+                    } else {
+                        console.warn('getAttendanceByEvent function not available after waiting, skipping existing attendance load');
+                    }
+                } catch (error) {
+                }
+
+                existingAttendance.forEach(att => {
+                    const existingNotes = att.notes || '';
+                    
+                    const existingStatus = att.status;
+                    
+                    existingAttendanceData[att.playerId] = {
+                        status: existingStatus,
+                        notes: existingNotes
+                    };
+                    
+                    attendanceData[att.playerId] = {
+                        status: existingStatus,  // Show recorded status
+                        notes: existingNotes     // Show notes if they exist, otherwise empty string
+                    };
+                });
+
+                players.forEach(player => {
+                    if (!attendanceData[player.id]) {
+                        attendanceData[player.id] = {
+                            status: 'ABSENT',
+                            notes: ''  // Empty notes for players without existing attendance
+                        };
+                    }
+                });
+
+                displayPlayers();
+
+                document.getElementById('loadingIndicator').style.display = 'none';
+                document.getElementById('contentContainer').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('loadingIndicator').style.display = 'none';
+                showMessage('Chyba pri načítaní údajov: ' + error.message, 'error');
+                document.getElementById('contentContainer').style.display = 'block';
+            }
+        }
+
+        function displayEventInfo(event) {
+            const eventInfo = document.getElementById('eventInfo');
+            const typeLabel = event.type === 'TRAINING' ? 'Tréning' : event.type === 'MATCH' ? 'Zápas' : event.type;
+            const cancelledLabel = event.type === 'TRAINING' && event.cancelled ? ' <span style="color: #B91C1C; font-weight: 600;">(Zrušené)</span>' : '';
+            eventInfo.innerHTML = `
+                <h3>${escapeHtml(event.name)}${cancelledLabel}</h3>
+                <p><strong>Typ:</strong> ${typeLabel}</p>
+                <p><strong>Dátum:</strong> ${formatDate(event.date)}</p>
+                ${event.time ? `<p><strong>Čas:</strong> ${formatTime(event.time)}</p>` : ''}
+                ${event.location ? `<p><strong>Miesto:</strong> ${escapeHtml(event.location)}</p>` : ''}
+                ${event.categoryName ? `<p><strong>Kategória:</strong> ${escapeHtml(event.categoryName)}</p>` : ''}
+            `;
+        }
+
+        function displayPlayers() {
+            const container = document.getElementById('playersContainer');
+            
+            if (players.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #6B7280;">Pre túto udalosť nie sú evidovaní žiadni hráči.</div>';
+                return;
+            }
+
+            container.innerHTML = players.map(player => {
+                const currentData = attendanceData[player.id] || { status: 'ABSENT', notes: '' };
+                if (!attendanceData[player.id]) attendanceData[player.id] = currentData;
+                const currentStatus = attendanceData[player.id].status;
+                return `
+                    <div class="player-row" data-player-id="${player.id}">
+                        <div class="player-name">${escapeHtml(userListLabel(player))}</div>
+                        <div class="status-buttons">
+                            <button class="status-btn present ${currentStatus === 'PRESENT' ? 'active' : ''}" 
+                                    onclick="setStatus(${player.id}, 'PRESENT')">Prítomný</button>
+                            <button class="status-btn absent ${currentStatus === 'ABSENT' ? 'active' : ''}" 
+                                    onclick="setStatus(${player.id}, 'ABSENT')">Neprítomný</button>
+                            <button class="status-btn late ${currentStatus === 'LATE' ? 'active' : ''}" 
+                                    onclick="setStatus(${player.id}, 'LATE')">Meškajúci</button>
+                            <button class="status-btn excused ${currentStatus === 'EXCUSED' ? 'active' : ''}" 
+                                    onclick="setStatus(${player.id}, 'EXCUSED')">Ospravedlnený</button>
+                        </div>
+                        <div class="notes-cell">
+                            <input type="text" class="notes-input" 
+                                   placeholder="Poznámky (voliteľné)" 
+                                   value="${escapeHtml(currentData.notes)}"
+                                   onchange="setNotes(${player.id}, this.value)">
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setStatus(playerId, status) {
+            if (!attendanceData[playerId]) {
+                attendanceData[playerId] = { status: 'ABSENT', notes: '' };
+            }
+            
+            attendanceData[playerId].status = status;
+
+            const row = document.querySelector(`[data-player-id="${playerId}"]`);
+            if (row) {
+                row.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+                const activeBtn = row.querySelector(`.status-btn.${status.toLowerCase()}`);
+                if (activeBtn) activeBtn.classList.add('active');
+            }
+        }
+
+        function setNotes(playerId, notes) {
+            if (!attendanceData[playerId]) {
+                attendanceData[playerId] = { status: 'ABSENT', notes };
+            } else {
+                attendanceData[playerId].notes = notes || '';
+            }
+            
+        }
+
+        async function saveAttendance() {
+            if (event && event.type === 'TRAINING' && event.cancelled) {
+                showMessage('Tento tréning bol zrušený. Nie je možné zaznamenať účast.', 'error');
+                return;
+            }
+            
+            try {
+                let bulkAttendanceFn = null;
+                
+                if (typeof window !== 'undefined' && window.recordBulkAttendance) {
+                    bulkAttendanceFn = window.recordBulkAttendance;
+                } else if (typeof recordBulkAttendance !== 'undefined') {
+                    bulkAttendanceFn = recordBulkAttendance;
+                }
+                
+                if (!bulkAttendanceFn) {
+                    await saveAttendanceDirectly();
+                    return;
+                }
+
+                const bulkData = {
+                    eventId: parseInt(eventId),
+                    attendance: {}
+                };
+
+                Object.keys(attendanceData).forEach(playerId => {
+                    const data = attendanceData[playerId];
+                    bulkData.attendance[playerId] = {
+                        status: data.status,
+                        notes: data.notes || null
+                    };
+                });
+
+                await bulkAttendanceFn(bulkData);
+                showMessage('Účast bola úspešne uložená.', 'success');
+                setTimeout(() => {
+                    window.location.href = '/pages/trainer-attendance-charts.html';
+                }, 1500);
+            } catch (error) {
+                console.error('Error saving attendance:', error);
+                showMessage('Chyba pri ukladaní účasti: ' + error.message, 'error');
+            }
+        }
+
+        function initTrainerNav(user) {
+            const name = formatUserDisplayName(user) || 'Tréner';
+            const role = user.role === 'TRAINER' ? 'Tréner' : user.role;
+            document.getElementById('userName').textContent = name;
+            document.getElementById('userRole').textContent = role;
+            const initial = (name.charAt(0) || 'T').toUpperCase();
+            document.getElementById('userInfo').setAttribute('data-initial', initial);
+            const dn = document.getElementById('userDropdownName');
+            const dr = document.getElementById('userDropdownRole');
+            const av = document.getElementById('navMenuProfileAvatar');
+            if (dn) dn.textContent = name;
+            if (dr) dr.textContent = role;
+            if (av) av.textContent = initial;
+            document.getElementById('navMenuProfileName').textContent = name;
+            document.getElementById('navMenuProfileRole').textContent = role;
+        }
+        function toggleNavMenu() {
+            document.getElementById('hamburgerBtn').classList.toggle('open');
+            document.getElementById('navOverlay').classList.toggle('open');
+            document.getElementById('navSlideMenu').classList.toggle('open');
+            document.body.style.overflow = document.getElementById('navSlideMenu').classList.contains('open') ? 'hidden' : '';
+        }
+        function closeNavMenu() {
+            document.getElementById('hamburgerBtn').classList.remove('open');
+            document.getElementById('navOverlay').classList.remove('open');
+            document.getElementById('navSlideMenu').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function toggleUserDropdown(e) { e.stopPropagation(); document.getElementById('userInfo').classList.toggle('open'); }
+        document.addEventListener('click', function(e) { if (!e.target.closest('.user-info')) document.getElementById('userInfo').classList.remove('open'); });
+        async function handleSignOut() {
+            if (typeof logout === 'function') await logout();
+            window.location.href = '/pages/login.html';
+        }
+        function handleSignOutFromMenu() { closeNavMenu(); handleSignOut(); }
+
+        async function saveAttendanceDirectly() {
+            try {
+                let token = null;
+                if (typeof getStoredToken === 'function') {
+                    token = getStoredToken();
+                } else if (typeof getAuthToken === 'function') {
+                    token = getAuthToken();
+                } else {
+                    token = localStorage.getItem('basketball_auth_token') || sessionStorage.getItem('basketball_auth_token');
+                }
+                
+                if (!token) {
+                    throw new Error('No authentication token found. Please log in again.');
+                }
+                
+                const bulkData = {
+                    eventId: parseInt(eventId),
+                    attendance: {}
+                };
+
+                Object.keys(attendanceData).forEach(playerId => {
+                    const data = attendanceData[playerId];
+                    bulkData.attendance[playerId] = {
+                        status: data.status,
+                        notes: data.notes || null
+                    };
+                });
+
+                const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ATTENDANCE.BULK}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(bulkData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({ error: 'Failed to record bulk attendance' }));
+                    throw new Error(error.error || 'Failed to record bulk attendance');
+                }
+
+                showMessage('Účast bola úspešne uložená.', 'success');
+                setTimeout(() => {
+                    window.location.href = '/pages/trainer-attendance-charts.html';
+                }, 1500);
+            } catch (error) {
+                console.error('Error saving attendance:', error);
+                showMessage('Chyba pri ukladaní účasti: ' + error.message, 'error');
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('sk-SK', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function formatTime(timeString) {
+            if (!timeString) return '';
+            return timeString.substring(0, 5);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showMessage(message, type = 'info') {
+            const messageArea = document.getElementById('messageArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${type}`;
+            messageDiv.textContent = message;
+            messageArea.innerHTML = '';
+            messageArea.appendChild(messageDiv);
+            setTimeout(() => messageDiv.remove(), 5000);
+        }
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>
+

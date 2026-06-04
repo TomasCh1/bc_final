@@ -1,0 +1,2338 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Hlavná obrazovka - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/cancelled-training.css">
+    <link rel="stylesheet" href="/css/statistics-table.css">
+    <link rel="stylesheet" href="/css/match-statistics-section.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: #2C2C2C;
+        }
+
+        /* Header */
+        .dashboard-header {
+            background: #FFFFFF;
+            border-bottom: 1px solid #E0E0E0;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-small {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-small img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .team-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #6B2C91;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: 2rem;
+        }
+
+        .nav-pill {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #2C2C2C;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-pill.active {
+            background: #E8D5FF;
+            color: #6B2C91;
+            font-weight: 600;
+        }
+
+        .nav-pill:hover {
+            background: #F5F0FF;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-info {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            cursor: pointer;
+        }
+
+        .user-info-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #6B2C91;
+            font-size: 0.95rem;
+        }
+
+        .user-role {
+            font-size: 0.85rem;
+            color: #6B2C91;
+        }
+
+        .user-dropdown-arrow {
+            font-size: 0.75rem;
+            color: #2C2C2C;
+            transition: transform 0.3s ease;
+        }
+
+        .user-info.open .user-dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 150px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-info.open .user-dropdown {
+            display: block;
+        }
+
+        .user-dropdown-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            color: #2C2C2C;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+
+        .user-dropdown-item:hover {
+            background-color: #F8F9FA;
+        }
+
+        .user-dropdown-item:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .user-dropdown-item:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
+        /* Main Content */
+        .dashboard-content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Top Statistics Cards */
+        .top-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: 2px 3px 8px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .stat-card-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .stat-value-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            justify-content: space-between;
+        }
+
+        .stat-icon {
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stat-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2C2C2C;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666666;
+            font-weight: 500;
+        }
+
+        .stat-subtitle {
+            font-size: 0.85rem;
+            color: #999999;
+        }
+
+        .stat-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            width: 45%;
+            text-align: center;
+        }
+
+        .stat-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .stat-badge.excellent {
+            background: #D4EDDA;
+            color: #28A745;
+        }
+
+        .stat-badge.average {
+            background: #FFF3CD;
+            color: #F59E0B;
+        }
+
+        .stat-badge.poor {
+            background: #F8D7DA;
+            color: #DC2626;
+        }
+
+        /* Season Averages Section */
+        .season-averages {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 2px 3px 8px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2C2C2C;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1rem;
+        }
+
+        /* Handle last row with only 3 items - align them to the left */
+        .stats-grid .stat-item:nth-last-child(-n+3) {
+            grid-column: span 1;
+        }
+
+        /* Ensure proper alignment for the last row */
+        @media (min-width: 1200px) {
+            .stats-grid .stat-item:nth-child(22) {
+                grid-column: 1;
+            }
+            .stats-grid .stat-item:nth-child(23) {
+                grid-column: 2;
+            }
+            .stats-grid .stat-item:nth-child(24) {
+                grid-column: 3;
+            }
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: #F8F8F8;
+            border: 1px solid #D0D0D0;
+            border-radius: 12px;
+            padding: 1.25rem 1rem;
+            box-shadow: 
+                0 3px 6px rgba(0, 0, 0, 0.12),
+                0 2px 4px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            min-height: 90px;
+            justify-content: center;
+            position: relative;
+            align-items: center;
+        }
+
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 6px 12px rgba(0, 0, 0, 0.15),
+                0 3px 6px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .stat-item-label {
+            font-size: 0.75rem;
+            color: #666666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+        }
+
+        .stat-item-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+
+        /* Weekly Schedule */
+        .weekly-schedule {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 2px 3px 8px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            background: #FFFFFF;
+            padding: 0.75rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        .schedule-day {
+            min-height: 200px;
+            background: #F3F4F6;
+            border-radius: 8px;
+            padding: 0.5rem;
+            border: 1px solid #E5E7EB;
+        }
+
+        .schedule-day.today {
+            background: #F0F9FF;
+            border: 1px solid #BAE6FD;
+        }
+
+        .day-header {
+            text-align: center;
+            font-weight: 700;
+            color: #374151;
+            font-size: 1.3rem;
+            padding: 0.5rem 0.4rem;
+            background: #F3F4F6;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            width: fit-content;
+            min-width: fit-content;
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            white-space: nowrap;
+        }
+
+        .day-header.today {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        .schedule-day .day-header {
+            margin-bottom: 0.75rem;
+        }
+
+        .day-events {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        /* Event Card Styles */
+        .event-card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            padding: 0.75rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 0.75rem;
+            border: 1px solid #E5E7EB;
+        }
+
+        .event-card.training {
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+        }
+
+        .event-card.match {
+            background: linear-gradient(180deg, #FFE5F0 0%, #E8D5FF 100%);
+            border: 1px solid #D8B4FE;
+        }
+
+        .event-time {
+            display: inline-block;
+            color: #6B21A8;
+            font-weight: 700;
+            font-size: 1.15rem;
+            background: #EDE9FE;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-team-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .event-coach {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #4B5563;
+            margin-bottom: 0.45rem;
+            line-height: 1.25;
+        }
+
+        .event-opponent {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #DC2626;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .event-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #6B7280;
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .no-training-text {
+            color: #9CA3AF;
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 0.5rem 0;
+        }
+
+        .event-detail-icon {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .event-detail-icon img,
+        .event-detail-icon svg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .event-detail-icon svg path {
+            fill: #6B7280;
+        }
+
+        /* Player match stats card styles are injected by player-match-stats-card-template.js */
+
+        @media (max-width: 1200px) {
+            .top-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-stats {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            .team-averages,
+            .weekly-schedule,
+            .match-statistics {
+                padding: 1rem;
+            }
+
+            .stat-item-value {
+                font-size: 1.5rem;
+            }
+
+            .schedule-grid {
+                grid-template-columns: repeat(7, minmax(110px, 1fr));
+                padding: 0.5rem;
+            }
+
+            .day-header {
+                font-size: 1.05rem;
+            }
+
+            .header-nav {
+                display: none;
+            }
+
+            /* Player match stats card responsive styles come from shared template */
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .schedule-grid {
+                grid-template-columns: repeat(7, minmax(100px, 1fr));
+            }
+
+            /* Player match stats card responsive styles come from shared template */
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav">
+                <a href="/pages/dashboard.html" class="nav-pill active">Hlavná obrazovka</a>
+                <a href="/pages/matches.html" class="nav-pill">Zápasy</a>
+                <a href="/pages/trainings.html" class="nav-pill">Tréningy</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" data-initial="U" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">Hráč</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile nav overlay & slide menu -->
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <div class="nav-menu-profile">
+            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">H</div>
+            <div class="nav-menu-profile-info">
+                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                <div class="nav-menu-profile-role" id="navMenuProfileRole">Hráč</div>
+            </div>
+        </div>
+        <div class="nav-menu-divider"></div>
+        <a href="/pages/dashboard.html" class="nav-pill active" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>
+        <a href="/pages/trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="dashboard-content">
+        <!-- Top Statistics Cards -->
+        <div class="top-stats">
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Odohrané Zápasy</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="matchesPlayed">-</div>
+                        <div class="stat-icon calendar">
+                            <img src="/IMG/calendar-svgrepo-com (1).svg" alt="Calendar">
+                        </div>
+                    </div>
+                    <div class="stat-subtitle">Túto sezónu</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Priemer Bodov</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="avgPoints">-</div>
+                        <div class="stat-icon points">
+                            <img src="/IMG/basketball-illustration-5-svgrepo-com.svg" alt="Basketball">
+                        </div>
+                    </div>
+                    <div class="stat-subtitle">Na zápas</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Index Efektivity</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="efficiencyIndex">-</div>
+                        <div class="stat-icon index">
+                            <img src="/IMG/statistics-svgrepo-com (1).svg" alt="Statistics">
+                        </div>
+                    </div>
+                    <div class="stat-badge" id="indexBadge" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Posledný zápas: Body</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="lastMatchPoints">-</div>
+                        <div class="stat-icon trend">
+                            <img src="/IMG/up-trend-round-svgrepo-com (1).svg" alt="Trend">
+                        </div>
+                    </div>
+                    <div class="stat-subtitle" id="lastMatchOpponent">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Season Averages -->
+        <div class="season-averages">
+            <div class="section-header">
+                <img src="/IMG/trophy-svgrepo-com (2).svg" alt="Trophy ikona" class="section-icon">
+                <h2 class="section-title">Priemer za celú sezónu</h2>
+            </div>
+            <div class="stats-grid" id="seasonAverages">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Weekly Schedule -->
+        <div class="weekly-schedule">
+            <div class="section-header">
+                <div class="section-icon">
+                    <img src="/IMG/schedule-calendar-svgrepo-com.svg" alt="Schedule" class="section-icon">
+                </div>
+                <div class="section-title">Rozvrh týždňa</div>
+            </div>
+            <div class="schedule-grid" id="weeklySchedule">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Match Statistics -->
+        <div id="playerMatchStatsCardMount"></div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/statistics.js"></script>
+    <script src="/js/events.js"></script>
+    <script src="/js/categories.js"></script>
+    <script src="/js/player-match-stats-card-template.js"></script>
+    <script>
+        let currentUser = null;
+        let playerStats = [];
+        let playerMatches = [];
+        let weeklyEvents = [];
+        let playerCategoryIds = []; // Player's category IDs for filtering schedule
+        let gameStatsPageSize = 10;
+        let gameStatsCurrentPage = 1;
+        let gameStatsFilter = 'withStats';
+        let gameStatsCategoryId = null;
+        let gameStatsTotalGames = 0;
+        let chartInstances = {
+            indexChart: null,
+            statChart: null,
+            percentageChart: null
+        };
+        let currentChartStats = [];
+        let allCategories = [];
+
+        function getRowCategoryId(row) {
+            const ev = row && row.event ? row.event : {};
+            const st = row && row.stat ? row.stat : {};
+            if (ev.categoryId != null) return String(ev.categoryId);
+            if (st.eventCategoryId != null) return String(st.eventCategoryId);
+            return null;
+        }
+
+        function categoryNameFromAllCategories(categoryId) {
+            if (categoryId == null) return null;
+            const cat = (allCategories || []).find(function(c) { return String(c.id) === String(categoryId); });
+            if (cat && cat.name) return cat.name;
+            if (typeof currentUser !== 'undefined' && currentUser && Array.isArray(currentUser.categories)) {
+                const pc = currentUser.categories.find(function(c) { return String(c.id) === String(categoryId); });
+                if (pc && pc.name) return pc.name;
+            }
+            return null;
+        }
+
+        function categoryDisplayNameForRow(row) {
+            const ev = row && row.event ? row.event : {};
+            if (ev.categoryName) return ev.categoryName;
+            const cid = getRowCategoryId(row);
+            if (cid == null) return '-';
+            return categoryNameFromAllCategories(cid) || '-';
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (typeof isAuthenticated === 'undefined') {
+                setTimeout(arguments.callee, 100);
+                return;
+            }
+
+            if (!isAuthenticated()) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            currentUser = getCurrentUser();
+            if (!currentUser || currentUser.role !== 'PLAYER') {
+                window.location.href = '/';
+                return;
+            }
+
+            if (typeof renderPlayerMatchStatsCard === 'function') {
+                renderPlayerMatchStatsCard('playerMatchStatsCardMount', { title: 'Štatistiky za zápasy' });
+            }
+
+            const userInfo = document.getElementById('userInfo');
+            const userNameEl = document.getElementById('userName');
+            const userRoleEl = document.getElementById('userRole');
+            
+            if (userInfo && !userNameEl) {
+                userInfo.innerHTML = `
+                    <div class="user-info-header">
+                        <div>
+                            <div class="user-name" id="userName">Načítava sa...</div>
+                            <div class="user-role" id="userRole">Hráč</div>
+                        </div>
+                        <span class="user-dropdown-arrow">▼</span>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="user-dropdown-profile">
+                            <div class="user-dropdown-name" id="userDropdownName"></div>
+                            <div class="user-dropdown-role" id="userDropdownRole"></div>
+                        </div>
+                        <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                    </div>
+                `;
+            }
+            
+            const updatedUserNameEl = document.getElementById('userName');
+            const updatedUserRoleEl = document.getElementById('userRole');
+            let displayName = formatUserDisplayName(currentUser) || 'Hráč';
+            displayName = displayName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+            displayName = displayName.replace(/\s*\(PLAYER\)\s*/i, '').trim();
+            const displayRole = currentUser.role === 'PLAYER' ? 'Hráč' : currentUser.role;
+            
+            if (updatedUserNameEl) updatedUserNameEl.textContent = displayName;
+            if (updatedUserRoleEl) updatedUserRoleEl.textContent = displayRole;
+            
+            const dropdownName = document.getElementById('userDropdownName');
+            const dropdownRole = document.getElementById('userDropdownRole');
+            if (dropdownName) dropdownName.textContent = displayName;
+            if (dropdownRole) dropdownRole.textContent = displayRole;
+            const userInitial = (displayName.charAt(0) || 'H').toUpperCase();
+            if (userInfo) userInfo.setAttribute('data-initial', userInitial);
+            const navMenuProfileName = document.getElementById('navMenuProfileName');
+            const navMenuProfileRole = document.getElementById('navMenuProfileRole');
+            const navMenuProfileAvatar = document.getElementById('navMenuProfileAvatar');
+            if (navMenuProfileName) navMenuProfileName.textContent = displayName;
+            if (navMenuProfileRole) navMenuProfileRole.textContent = displayRole;
+            if (navMenuProfileAvatar) navMenuProfileAvatar.textContent = userInitial;
+
+            if (currentUser.categoryIds && Array.isArray(currentUser.categoryIds) && currentUser.categoryIds.length > 0) {
+                playerCategoryIds = currentUser.categoryIds.map(id => Number(id));
+            } else if (currentUser.categoryId) {
+                playerCategoryIds = [Number(currentUser.categoryId)];
+            } else if (currentUser.categories && Array.isArray(currentUser.categories)) {
+                playerCategoryIds = currentUser.categories.map(cat => Number(cat.id)).filter(id => !isNaN(id));
+            }
+            if (playerCategoryIds.length === 0 && typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.USERS) {
+                try {
+                    const profileRes = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.USERS.ME}`, {
+                        headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Authorization': 'Bearer ' + (typeof getStoredToken === 'function' ? getStoredToken() : '') }
+                    });
+                    if (profileRes.ok) {
+                        const profile = await profileRes.json();
+                        if (profile.categoryIds && Array.isArray(profile.categoryIds) && profile.categoryIds.length > 0) {
+                            playerCategoryIds = profile.categoryIds.map(id => Number(id));
+                        } else if (profile.categoryId != null) {
+                            playerCategoryIds = [Number(profile.categoryId)];
+                        } else if (profile.categories && Array.isArray(profile.categories)) {
+                            playerCategoryIds = profile.categories.map(cat => Number(cat.id)).filter(id => !isNaN(id));
+                        }
+                        Object.assign(currentUser, { categoryIds: profile.categoryIds, categoryId: profile.categoryId, categories: profile.categories });
+                        try { localStorage.setItem('basketball_user', JSON.stringify(currentUser)); } catch (e) {}
+                    }
+                } catch (e) {
+                    console.warn('Could not load user profile for categories:', e);
+                }
+            }
+
+            try {
+                if (typeof getCategories === 'function') {
+                    allCategories = await getCategories() || [];
+                }
+            } catch (e) {
+                console.warn('Could not load categories for match stats:', e);
+                allCategories = [];
+            }
+
+            await loadDashboardData();
+
+            if (dateFilterState.singleDate) {
+                document.getElementById('singleDateInput').value = dateFilterState.singleDate;
+                applyDateFilter();
+            } else if (dateFilterState.startDate && dateFilterState.endDate) {
+                document.getElementById('startDateInput').value = dateFilterState.startDate;
+                document.getElementById('endDateInput').value = dateFilterState.endDate;
+                setDateMode('range');
+                applyDateFilter();
+            }
+        });
+
+        async function loadDashboardData() {
+            try {
+                const [stats, matches] = await Promise.all([
+                    getStatistics({ playerId: currentUser.id }),
+                    loadPlayerMatches()
+                ]);
+
+                playerStats = stats || [];
+                playerMatches = matches || [];
+
+                calculateTopStats();
+
+                calculateSeasonAverages();
+
+                await loadWeeklySchedule();
+
+                await loadMatchStatisticsTable();
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                document.getElementById('statisticsContent').innerHTML = 
+                    '<div class="loading" style="color: #dc3545;">Chyba pri načítaní dát</div>';
+            }
+        }
+
+        async function loadPlayerMatches() {
+            try {
+                const events = await getEvents({ type: 'MATCH', enrich: false });
+                let matches = Array.isArray(events) ? events : [];
+                if (playerCategoryIds.length > 0) {
+                    matches = matches.filter(function(event) {
+                        return event && event.categoryId != null && playerCategoryIds.includes(Number(event.categoryId));
+                    });
+                } else {
+                    matches = [];
+                }
+                return matches;
+            } catch (error) {
+                console.error('Error loading player matches:', error);
+                return [];
+            }
+        }
+
+        function calculateTopStats() {
+            const gameStats = playerStats;
+            const matchesPlayed = gameStats.length;
+            const matchesPlayedEl = document.getElementById('matchesPlayed');
+            if (matchesPlayedEl) {
+                matchesPlayedEl.textContent = matchesPlayed || 0;
+            }
+
+            let totalPoints = 0;
+            let pointsCount = 0;
+            gameStats.forEach(stat => {
+                if (stat.values && stat.values.PTS !== undefined) {
+                    totalPoints += parseFloat(stat.values.PTS) || 0;
+                    pointsCount++;
+                }
+            });
+            const avgPoints = pointsCount > 0 ? (totalPoints / pointsCount).toFixed(1) : '0.0';
+            const avgPointsEl = document.getElementById('avgPoints');
+            if (avgPointsEl) {
+                avgPointsEl.textContent = avgPoints;
+            }
+
+            let totalIndex = 0;
+            let indexCount = 0;
+            gameStats.forEach(stat => {
+                if (stat.values && stat.values.INDEX !== undefined) {
+                    totalIndex += parseFloat(stat.values.INDEX) || 0;
+                    indexCount++;
+                }
+            });
+            const avgIndex = indexCount > 0 ? (totalIndex / indexCount).toFixed(1) : '0.0';
+            const efficiencyIndexEl = document.getElementById('efficiencyIndex');
+            if (efficiencyIndexEl) {
+                efficiencyIndexEl.textContent = avgIndex;
+            }
+            
+            const indexBadgeEl = document.getElementById('indexBadge');
+            if (indexBadgeEl) {
+                const indexValue = parseFloat(avgIndex);
+                
+                indexBadgeEl.classList.remove('excellent', 'average', 'poor');
+                
+                if (indexValue >= 24) {
+                    indexBadgeEl.classList.add('excellent');
+                    indexBadgeEl.textContent = 'Výborne';
+                    indexBadgeEl.style.display = 'inline-block';
+                } else if (indexValue >= 10) {
+                    indexBadgeEl.classList.add('average');
+                    indexBadgeEl.textContent = 'Priemerne';
+                    indexBadgeEl.style.display = 'inline-block';
+                } else if (indexValue > 0) {
+                    indexBadgeEl.classList.add('poor');
+                    indexBadgeEl.textContent = 'Pracuj na sebe';
+                    indexBadgeEl.style.display = 'inline-block';
+                } else {
+                    indexBadgeEl.style.display = 'none';
+                }
+            }
+
+            const lastMatchPointsEl = document.getElementById('lastMatchPoints');
+            const lastMatchOpponentEl = document.getElementById('lastMatchOpponent');
+            if (gameStats.length > 0) {
+                const lastStat = gameStats[0]; // Assuming sorted by date desc
+                const lastPoints = lastStat.values?.PTS || 0;
+                if (lastMatchPointsEl) {
+                    lastMatchPointsEl.textContent = lastPoints;
+                }
+                if (lastMatchOpponentEl) {
+                    lastMatchOpponentEl.textContent = lastStat.opponent ? `Proti ${lastStat.opponent}` : '-';
+                }
+            } else {
+                if (lastMatchPointsEl) {
+                    lastMatchPointsEl.textContent = '0';
+                }
+                if (lastMatchOpponentEl) {
+                    lastMatchOpponentEl.textContent = '-';
+                }
+            }
+        }
+
+        function calculateSeasonAverages() {
+            const allStats = playerStats;
+            const gameStats = playerStats;
+            const trainingStats = [];
+            
+            const statsGrid = document.getElementById('seasonAverages');
+            if (!statsGrid) return;
+            
+            const averages = {
+                'MIN': calculateAverage(gameStats, 'MIN'),
+                'PTS': calculateAverage(gameStats, 'PTS'),
+                'AST': calculateAverage(gameStats, 'AST'),
+                'REB': calculateRebounds(gameStats),
+                'OFF': calculateAverage(gameStats, 'OFF'),
+                'DEF': calculateAverage(gameStats, 'DEF'),
+                'INDEX': calculateAverage(gameStats, 'INDEX'),
+                '2PÚ': calculateAverage(gameStats, '2PÚ'),
+                '2PC': calculateAverage(gameStats, '2PC'),
+                '2P%': calculatePercentage(gameStats, '2PÚ', '2PC'),
+                '3PÚ': calculateAverage(gameStats, '3PÚ'),
+                '3PC': calculateAverage(gameStats, '3PC'),
+                '3P%': calculatePercentage(gameStats, '3PÚ', '3PC'),
+                'FTÚ': calculateAverage(gameStats, 'FTÚ'),
+                'FTC': calculateAverage(gameStats, 'FTC'),
+                'FT%': calculatePercentage(gameStats, 'FTÚ', 'FTC'),
+                'FGÚ': calculateAverage(gameStats, 'FGÚ'),
+                'FGC': calculateAverage(gameStats, 'FGC'),
+                'FG%': calculatePercentage(gameStats, 'FGÚ', 'FGC'),
+                'BLK': calculateAverage(gameStats, 'BLK'),
+                'STL': calculateAverage(gameStats, 'STL'),
+                'TO': calculateAverage(gameStats, 'TO'),
+                'F+': calculateAverage(gameStats, 'F+'),
+                'F-': calculateAverage(gameStats, 'F-')
+            };
+            
+            if (gameStats.length === 0) {
+                Object.keys(averages).forEach(key => {
+                    if (key.includes('%')) {
+                        averages[key] = 0;
+                    } else {
+                        averages[key] = 0;
+                    }
+                });
+            }
+            
+            displayAverages(averages);
+        }
+
+        function displayAverages(averages) {
+            const statsGrid = document.getElementById('seasonAverages');
+            if (!statsGrid) return;
+            
+            const statLabels = {
+                'MIN': 'MIN', 'PTS': 'PTS', 'AST': 'AST', 'REB': 'REB',
+                'OFF': 'OFF', 'DEF': 'DEF', 'INDEX': 'INDEX',
+                '2PÚ': '2PÚ', '2PC': '2PC', '2P%': '2PÚ%',
+                '3PÚ': '3PÚ', '3PC': '3PC', '3P%': '3PÚ%',
+                'FTÚ': 'FTÚ', 'FTC': 'FTC', 'FT%': 'FTÚ%',
+                'FGÚ': 'FGÚ', 'FGC': 'FGC', 'FG%': 'FGÚ%',
+                'BLK': 'BLK', 'STL': 'STL', 'TO': 'TO',
+                'F+': 'F+', 'F-': 'F-'
+            };
+
+            statsGrid.innerHTML = Object.entries(averages).map(([key, value]) => {
+                const label = statLabels[key] || key;
+                let displayValue = value;
+                
+                if (key === 'MIN' && typeof value === 'number') {
+                    const minutes = Math.floor(value);
+                    const seconds = Math.round((value - minutes) * 60);
+                    displayValue = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                } else if (key.includes('%')) {
+                    displayValue = value !== null && value !== undefined ? value.toFixed(1) + '%' : '0.0%';
+                } else if (typeof value === 'number') {
+                    displayValue = value.toFixed(1);
+                } else {
+                    displayValue = value !== null && value !== undefined ? value : '0';
+                }
+
+                return `
+                    <div class="stat-item">
+                        <div class="stat-item-label">${label}</div>
+                        <div class="stat-item-value">${displayValue}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function calculateAverage(stats, key) {
+            let total = 0;
+            let count = 0;
+            stats.forEach(stat => {
+                if (stat.values && stat.values[key] !== undefined) {
+                    total += parseFloat(stat.values[key]) || 0;
+                    count++;
+                }
+            });
+            return count > 0 ? total / count : 0;
+        }
+
+        function calculateRebounds(stats) {
+            let total = 0;
+            let count = 0;
+            stats.forEach(stat => {
+                if (stat.values) {
+                    const off = parseFloat(stat.values['OFF']) || 0;
+                    const def = parseFloat(stat.values['DEF']) || 0;
+                    if (!isNaN(off) && !isNaN(def)) {
+                        total += (off + def);
+                        count++;
+                    }
+                }
+            });
+            return count > 0 ? total / count : 0;
+        }
+
+        function calculatePercentage(stats, madeKey, attemptsKey) {
+            let totalMade = 0;
+            let totalAttempts = 0;
+            stats.forEach(stat => {
+                if (stat.values) {
+                    const made = parseFloat(stat.values[madeKey]) || 0;
+                    const attempts = parseFloat(stat.values[attemptsKey]) || 0;
+                    if (!isNaN(made) && !isNaN(attempts)) {
+                        totalMade += made;
+                        totalAttempts += attempts;
+                    }
+                }
+            });
+            if (totalAttempts > 0) {
+                return (totalMade / totalAttempts) * 100;
+            }
+            return 0; // Return 0 instead of null when no attempts
+        }
+
+        async function loadWeeklySchedule() {
+            try {
+                const today = new Date();
+                const dayOfWeek = today.getDay();
+                const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Adjust to Monday
+                const monday = new Date(today);
+                monday.setDate(today.getDate() + diff);
+                monday.setHours(0, 0, 0, 0);
+                
+                const weekStart = new Date(monday);
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+                weekEnd.setHours(23, 59, 59, 999);
+
+                const startDateStr = weekStart.toISOString().split('T')[0];
+                const endDateStr = weekEnd.toISOString().split('T')[0];
+
+                let events = [];
+                try {
+                    events = await getEvents({
+                        startDate: startDateStr,
+                        endDate: endDateStr
+                    });
+                } catch (error) {
+                    console.error('Error fetching events:', error);
+                    events = [];
+                }
+
+                if (playerCategoryIds.length > 0) {
+                    events = (events || []).filter(ev => ev.categoryId != null && playerCategoryIds.includes(Number(ev.categoryId)));
+                } else {
+                    events = [];
+                }
+
+                weeklyEvents = events || [];
+
+                const dayNamesFull = ['Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota', 'Nedeľa'];
+                const todayForComparison = new Date(today);
+                todayForComparison.setHours(0, 0, 0, 0);
+                let scheduleHTML = '';
+
+                for (let i = 0; i < 7; i++) {
+                    const dayDate = new Date(weekStart);
+                    dayDate.setDate(weekStart.getDate() + i);
+                    const isToday = dayDate.toDateString() === todayForComparison.toDateString();
+                    const dayEvents = weeklyEvents.filter(function(event) {
+                        const eventDate = new Date(event.date);
+                        return eventDate.getDate() === dayDate.getDate()
+                            && eventDate.getMonth() === dayDate.getMonth()
+                            && eventDate.getFullYear() === dayDate.getFullYear();
+                    }).sort(function(a, b) {
+                        return new Date(a.date) - new Date(b.date);
+                    });
+
+                    scheduleHTML += `
+                        <div class="schedule-day ${isToday ? 'today' : ''}">
+                            <div class="day-header ${isToday ? 'today' : ''}">${dayNamesFull[i]}</div>
+                            <div class="day-events">
+                                ${dayEvents.length > 0 ? dayEvents.map(function(event) {
+                        let time = '';
+                        if (event.time) {
+                            const startTime = event.time.substring(0, 5);
+                            if (event.endTime) {
+                                const endTime = event.endTime.substring(0, 5);
+                                time = `${startTime}-${endTime}`;
+                            } else if (event.duration) {
+                                const [hours, minutes] = startTime.split(':').map(Number);
+                                const durationParts = event.duration.split(':');
+                                const durationMinutes = durationParts.length === 2 
+                                    ? parseInt(durationParts[0]) * 60 + parseInt(durationParts[1])
+                                    : parseInt(event.duration);
+                                
+                                const startDate = new Date();
+                                startDate.setHours(hours, minutes, 0, 0);
+                                const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
+                                const endHours = String(endDate.getHours()).padStart(2, '0');
+                                const endMins = String(endDate.getMinutes()).padStart(2, '0');
+                                time = `${startTime}-${endHours}:${endMins}`;
+                            } else {
+                                time = startTime;
+                            }
+                        }
+
+                        if (event.type === 'MATCH') {
+                            const categoryName = event.category ? event.category.name : (event.categoryName || 'Tím');
+                            const matchInfo = [];
+                            const homeIconImg = '<img src="/IMG/home-1-svgrepo-com%20(2).svg" alt="" class="home-away-icon" aria-hidden="true">';
+                            const awayIconImg = '<img src="/IMG/plane-svgrepo-com%20(1).svg" alt="" class="home-away-icon" aria-hidden="true">';
+                            if (event.isHomeMatch === true) {
+                                matchInfo.push(homeIconImg + ' Domáci');
+                            } else if (event.isHomeMatch === false) {
+                                matchInfo.push(awayIconImg + ' Hostia');
+                            }
+                            const ours = event.ourScore != null ? event.ourScore : event.teamScore;
+                            const oppSc = event.opponentScore != null ? event.opponentScore : null;
+                            const scoreSuffix = (ours != null && oppSc != null) ? ` - ${ours}:${oppSc}` : '';
+                            if (event.matchWon === true) {
+                                matchInfo.push('Výhra' + scoreSuffix);
+                            } else if (event.matchWon === false) {
+                                matchInfo.push('Prehra' + scoreSuffix);
+                            }
+
+                            const locationDisplay = event.location ? `
+                                <div class="event-detail">
+                                    <span class="event-detail-icon">
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" clip-rule="evenodd" d="M3.37892 10.2236L8 16L12.6211 10.2236C13.5137 9.10788 14 7.72154 14 6.29266V6C14 2.68629 11.3137 0 8 0C4.68629 0 2 2.68629 2 6V6.29266C2 7.72154 2.4863 9.10788 3.37892 10.2236ZM8 8C9.10457 8 10 7.10457 10 6C10 4.89543 9.10457 4 8 4C6.89543 4 6 4.89543 6 6C6 7.10457 6.89543 8 8 8Z" fill="#6B7280"/>
+                                        </svg>
+                                    </span>
+                                    <span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank" style="color: inherit; text-decoration: underline;">${escapeHtml(formatLocation(event.location))}</a></span>
+                                </div>` : '';
+
+                            return `
+                                <div class="event-card match">
+                                    ${time ? `<div class="event-time">${time}</div>` : ''}
+                                    <div class="event-team-name">${categoryName}</div>
+                                    ${event.opponent ? `<div class="event-opponent">vs ${event.opponent}</div>` : ''}
+                                    ${matchInfo.length > 0 ? `<div class="event-detail" style="font-weight: 600; margin-top: 0.25rem;">${matchInfo.join(' • ')}</div>` : ''}
+                                    ${locationDisplay}
+                                </div>
+                            `;
+                        } else {
+                            const categoryName = event.category ? event.category.name : (event.categoryName || 'Tréning');
+                            const coachName = (function(value) {
+                                if (!value) return '';
+                                if (typeof value === 'string') return value;
+                                if (typeof value === 'object' && value.name) return value.name;
+                                return '';
+                            })(event.coachName || event.coach || event.trainerName);
+                            const locationDisplay = event.location ? `
+                                <div class="event-detail">
+                                    <span class="event-detail-icon">
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" clip-rule="evenodd" d="M3.37892 10.2236L8 16L12.6211 10.2236C13.5137 9.10788 14 7.72154 14 6.29266V6C14 2.68629 11.3137 0 8 0C4.68629 0 2 2.68629 2 6V6.29266C2 7.72154 2.4863 9.10788 3.37892 10.2236ZM8 8C9.10457 8 10 7.10457 10 6C10 4.89543 9.10457 4 8 4C6.89543 4 6 4.89543 6 6C6 7.10457 6.89543 8 8 8Z" fill="#6B7280"/>
+                                        </svg>
+                                    </span>
+                                    <span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank" style="color: inherit; text-decoration: underline;">${escapeHtml(formatLocation(event.location))}</a></span>
+                                </div>` : '';
+                            const cancelled = !!event.cancelled;
+                            return `
+                                <div class="event-card training${cancelled ? ' cancelled' : ''}">
+                                    ${time ? `<div class="event-time">${time}</div>` : ''}
+                                    <div class="event-team-name">${cancelled ? `<span class="event-team-name-text">${categoryName}</span> <span class="cancelled-label">Zrušené</span>` : categoryName}</div>
+                                    ${coachName ? `<div class="event-coach">Tréner: ${escapeHtml(coachName)}</div>` : ''}
+                                    ${locationDisplay}
+                                </div>
+                            `;
+                        }
+                    }).join('') : '<div class="no-training-text">Žiadne udalosti</div>'}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('weeklySchedule').innerHTML = scheduleHTML;
+            } catch (error) {
+                console.error('Error loading weekly schedule:', error);
+                const scheduleGrid = document.getElementById('weeklySchedule');
+                if (scheduleGrid) {
+                    scheduleGrid.innerHTML = 
+                        '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 2rem;">Chyba pri načítaní rozvrhu</div>';
+                }
+            }
+        }
+
+        function formatLocation(location) {
+            if (!location) return '';
+            const parts = location.split(',');
+            return parts[0].trim();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function toggleNavMenu() {
+            document.getElementById('hamburgerBtn').classList.toggle('open');
+            document.getElementById('navOverlay').classList.toggle('open');
+            document.getElementById('navSlideMenu').classList.toggle('open');
+            document.body.style.overflow = document.getElementById('navSlideMenu').classList.contains('open') ? 'hidden' : '';
+        }
+        function closeNavMenu() {
+            document.getElementById('hamburgerBtn').classList.remove('open');
+            document.getElementById('navOverlay').classList.remove('open');
+            document.getElementById('navSlideMenu').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function toggleUserDropdown(event) {
+            event.stopPropagation();
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo) {
+                userInfo.classList.toggle('open');
+            }
+        }
+
+        function handleSignOut() {
+            if (typeof logout === 'function') {
+                logout();
+            } else {
+                localStorage.removeItem('basketball_auth_token');
+                localStorage.removeItem('basketball_user');
+                sessionStorage.removeItem('basketball_auth_token');
+                sessionStorage.removeItem('basketball_user');
+                window.location.href = '/pages/login.html';
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const userInfo = document.getElementById('userInfo');
+            const userDropdown = document.getElementById('userDropdown');
+            if (userInfo && userDropdown && !userInfo.contains(event.target)) {
+                userInfo.classList.remove('open');
+            }
+            
+            const dateFilterWrapper = document.getElementById('dateFilterWrapper');
+            if (dateFilterWrapper && !dateFilterWrapper.contains(event.target)) {
+                dateFilterWrapper.classList.remove('open');
+            }
+            const gameStatsCategoryFilter = document.getElementById('gameStatsCategoryFilter');
+            if (gameStatsCategoryFilter && !gameStatsCategoryFilter.contains(event.target)) {
+                gameStatsCategoryFilter.classList.remove('open');
+            }
+        });
+
+        async function loadMatchStatisticsTable(startDate = null, endDate = null) {
+            const matchById = new Map((playerMatches || [])
+                .filter(function(match) { return match && match.id != null; })
+                .map(function(match) { return [String(match.id), match]; }));
+            const eventByIdCache = {};
+            const sortedPlayerStats = [...(playerStats || [])].sort(function(a, b) {
+                const aDate = new Date(a.eventDate || a.event?.date || a.timestamp || 0).getTime();
+                const bDate = new Date(b.eventDate || b.event?.date || b.timestamp || 0).getTime();
+                return bDate - aDate;
+            });
+            const statsByEventId = new Map();
+            sortedPlayerStats.forEach(function(stat) {
+                const key = stat && stat.eventId != null ? String(stat.eventId) : '';
+                if (key && !statsByEventId.has(key)) statsByEventId.set(key, stat);
+            });
+
+            for (const [eventId, stat] of statsByEventId.entries()) {
+                if (matchById.has(eventId)) continue;
+                if (stat && stat.event) {
+                    eventByIdCache[eventId] = stat.event;
+                    continue;
+                }
+                try {
+                    eventByIdCache[eventId] = await getEventById(eventId);
+                } catch (error) {
+                    eventByIdCache[eventId] = null;
+                }
+            }
+
+            const rows = [];
+            matchById.forEach(function(match, eventId) {
+                const stat = statsByEventId.get(eventId) || null;
+                rows.push({ eventId: eventId, event: match, stat: stat, hasStats: !!stat });
+            });
+            statsByEventId.forEach(function(stat, eventId) {
+                if (matchById.has(eventId)) return;
+                rows.push({
+                    eventId: eventId,
+                    event: eventByIdCache[eventId] || stat.event || null,
+                    stat: stat,
+                    hasStats: true
+                });
+            });
+
+            const toDayDate = function(value) {
+                const d = new Date(value);
+                if (Number.isNaN(d.getTime())) return null;
+                d.setHours(0, 0, 0, 0);
+                return d;
+            };
+            const getRowDate = function(row) {
+                if (row && row.event && row.event.date) return toDayDate(row.event.date);
+                if (row && row.stat && row.stat.eventDate) return toDayDate(row.stat.eventDate);
+                if (row && row.stat && row.stat.timestamp) return toDayDate(row.stat.timestamp);
+                return null;
+            };
+
+            let filteredRows = rows.filter(function(row) {
+                if (!startDate) return true;
+                const rowDate = getRowDate(row);
+                if (!rowDate) return false;
+                const start = toDayDate(startDate + 'T00:00:00');
+                const end = endDate ? toDayDate(endDate + 'T00:00:00') : toDayDate(startDate + 'T00:00:00');
+                return !!start && !!end && rowDate >= start && rowDate <= end;
+            });
+
+            if (gameStatsFilter === 'withStats') {
+                filteredRows = filteredRows.filter(function(row) { return row.hasStats; });
+            } else if (gameStatsFilter === 'withoutStats') {
+                filteredRows = filteredRows.filter(function(row) { return !row.hasStats; });
+            }
+
+            if (gameStatsCategoryId != null && gameStatsCategoryId !== '') {
+                filteredRows = filteredRows.filter(function(row) {
+                    const cid = getRowCategoryId(row);
+                    return cid != null && cid === String(gameStatsCategoryId);
+                });
+            }
+
+            filteredRows.sort(function(a, b) {
+                const aDate = getRowDate(a);
+                const bDate = getRowDate(b);
+                return (bDate ? bDate.getTime() : 0) - (aDate ? aDate.getTime() : 0);
+            });
+
+            gameStatsTotalGames = filteredRows.length;
+            if (!gameStatsTotalGames) {
+                document.getElementById('statisticsContent').innerHTML = '<div class="loading">Žiadne zápasy pre zvolený filter</div>';
+                return;
+            }
+
+            const totalPages = Math.max(1, Math.ceil(gameStatsTotalGames / gameStatsPageSize));
+            if (gameStatsCurrentPage > totalPages) gameStatsCurrentPage = totalPages;
+            const startIdx = (gameStatsCurrentPage - 1) * gameStatsPageSize;
+            const pageRows = filteredRows.slice(startIdx, startIdx + gameStatsPageSize);
+
+            populateGameStatsCategoryDropdown(rows);
+
+            const tableHTML = `
+                <div style="overflow-x: auto;">
+                    <table class="statistics-table">
+                        <thead>
+                            <tr>
+                                <th>Dátum</th>
+                                <th>Kategória</th>
+                                <th>Proti</th>
+                                <th>V/P</th>
+                                <th>Skóre</th>
+                                <th>MIN</th>
+                                <th>PTS</th>
+                                <th>AST</th>
+                                <th>OFF</th>
+                                <th>DEF</th>
+                                <th>INDEX</th>
+                                <th>2PÚ</th>
+                                <th>2PC</th>
+                                <th>3PÚ</th>
+                                <th>3PC</th>
+                                <th>FTÚ</th>
+                                <th>FTC</th>
+                                <th>FGÚ</th>
+                                <th>FGC</th>
+                                <th>BLK</th>
+                                <th>STL</th>
+                                <th>TO</th>
+                                <th>F+</th>
+                                <th>F-</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pageRows.map(function(row) {
+                                const stat = row.stat || {};
+                                const event = row.event || stat.event || {};
+                                const values = stat.values || {};
+                                const rowDate = getRowDate(row);
+                                const dateText = rowDate ? rowDate.toLocaleDateString('sk-SK') : '-';
+                                const opponent = stat.opponent || event.opponent || '-';
+                                const matchWon = event.matchWon;
+                                const vp = matchWon === true ? 'V' : (matchWon === false ? 'P' : '-');
+                                const vpClass = vp === 'V' ? 'win-indicator' : (vp === 'P' ? 'loss-indicator' : 'pending-indicator');
+                                const ours = event.ourScore != null ? event.ourScore : event.teamScore;
+                                const oppSc = event.opponentScore != null ? event.opponentScore : null;
+                                const scoreText = (ours != null && oppSc != null) ? `${ours} : ${oppSc}` : '-';
+                                const hasStats = row.hasStats;
+                                const valueOrDash = function(key, formatFn) {
+                                    if (!hasStats || values[key] === undefined || values[key] === null || values[key] === '') return '-';
+                                    const raw = values[key];
+                                    return formatFn ? formatFn(raw) : raw;
+                                };
+
+                                return `
+                                    <tr>
+                                        <td>${dateText}</td>
+                                        <td>${escapeHtml(categoryDisplayNameForRow(row))}</td>
+                                        <td>${escapeHtml(opponent)}</td>
+                                        <td class="${vpClass}">${vp}</td>
+                                        <td>${scoreText}</td>
+                                        <td>${hasStats ? formatMinutes(values.MIN) : '-'}</td>
+                                        <td>${valueOrDash('PTS')}</td>
+                                        <td>${valueOrDash('AST')}</td>
+                                        <td>${valueOrDash('OFF')}</td>
+                                        <td>${valueOrDash('DEF')}</td>
+                                        <td>${valueOrDash('INDEX', function(v) { return parseFloat(v).toFixed(1); })}</td>
+                                        <td>${valueOrDash('2PÚ')}</td>
+                                        <td>${valueOrDash('2PC')}</td>
+                                        <td>${valueOrDash('3PÚ')}</td>
+                                        <td>${valueOrDash('3PC')}</td>
+                                        <td>${valueOrDash('FTÚ')}</td>
+                                        <td>${valueOrDash('FTC')}</td>
+                                        <td>${valueOrDash('FGÚ')}</td>
+                                        <td>${valueOrDash('FGC')}</td>
+                                        <td>${valueOrDash('BLK')}</td>
+                                        <td>${valueOrDash('STL')}</td>
+                                        <td>${valueOrDash('TO')}</td>
+                                        <td>${valueOrDash('F+')}</td>
+                                        <td>${valueOrDash('F-')}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="game-stats-footer">
+                    <div class="game-stats-pagination-dots">
+                        ${Array.from({ length: totalPages }, function(_, idx) {
+                            const page = idx + 1;
+                            return `<button type="button" class="game-stats-dot ${page === gameStatsCurrentPage ? 'active' : ''}" title="Strana ${page}" onclick="goToGameStatsPage(${page})" aria-label="Strana ${page}"></button>`;
+                        }).join('')}
+                    </div>
+                    <span class="game-stats-count" style="font-size: 0.85rem; color: #6B7280;">Zobrazených ${Math.min(pageRows.length, gameStatsPageSize)} z ${gameStatsTotalGames} zápasov${totalPages > 1 ? ' · strana ' + gameStatsCurrentPage + ' z ' + totalPages : ''}</span>
+                </div>
+            `;
+
+            document.getElementById('statisticsContent').innerHTML = tableHTML;
+            const pageSizeSel = document.getElementById('gameStatsPageSizeSelect');
+            if (pageSizeSel) pageSizeSel.value = String(gameStatsPageSize);
+            const filterSel = document.getElementById('gameStatsFilterSelect');
+            if (filterSel) filterSel.value = gameStatsFilter;
+            document.getElementById('statisticsContent').style.display = 'block';
+        }
+
+        function toggleGameStatsCategoryDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('gameStatsCategoryFilter');
+            if (dropdown) dropdown.classList.toggle('open');
+        }
+
+        function selectGameStatsCategory(event, categoryId) {
+            event.stopPropagation();
+            gameStatsCategoryId = categoryId === '' || categoryId == null ? null : String(categoryId);
+            const label = document.getElementById('gameStatsCategoryText');
+            let displayName = 'Všetky';
+            if (gameStatsCategoryId != null) {
+                displayName = categoryNameFromAllCategories(gameStatsCategoryId) || ('Kategória ' + gameStatsCategoryId);
+            }
+            if (label) label.textContent = 'Kategória: ' + displayName;
+            document.querySelectorAll('#gameStatsCategoryDropdown .game-stats-category-option').forEach(function(opt) {
+                opt.classList.remove('active');
+                if ((opt.getAttribute('data-category-id') || '') === String(categoryId == null ? '' : categoryId)) {
+                    opt.classList.add('active');
+                }
+            });
+            const dropdown = document.getElementById('gameStatsCategoryFilter');
+            if (dropdown) dropdown.classList.remove('open');
+            gameStatsCurrentPage = 1;
+            reloadMatchStatisticsWithCurrentDate();
+        }
+
+        function populateGameStatsCategoryDropdown(rows) {
+            const dropdown = document.getElementById('gameStatsCategoryDropdown');
+            if (!dropdown) return;
+            const unique = new Map();
+            rows.forEach(function(row) {
+                const cid = getRowCategoryId(row);
+                if (cid == null) return;
+                const name = categoryNameFromAllCategories(cid) || ('Kategória ' + cid);
+                if (!unique.has(cid)) unique.set(cid, name);
+            });
+            const sorted = Array.from(unique.entries()).sort(function(a, b) {
+                return a[1].localeCompare(b[1], 'sk');
+            });
+            dropdown.innerHTML = `<div class="game-stats-category-option ${gameStatsCategoryId == null ? 'active' : ''}" data-category-id="" onclick="selectGameStatsCategory(event, '')">Všetky</div>`
+                + sorted.map(function(entry) {
+                    const id = entry[0];
+                    const name = entry[1];
+                    const activeClass = String(gameStatsCategoryId) === String(id) ? 'active' : '';
+                    return `<div class="game-stats-category-option ${activeClass}" data-category-id="${id}" onclick="selectGameStatsCategory(event, '${id}')">${escapeHtml(name)}</div>`;
+                }).join('');
+        }
+
+        async function loadCharts() {
+            try {
+                let gameStats = playerStats;
+                
+                if (dateFilterState.singleDate) {
+                    gameStats = await filterStatsByDate(gameStats, dateFilterState.singleDate, null);
+                } else if (dateFilterState.startDate && dateFilterState.endDate) {
+                    gameStats = await filterStatsByDate(gameStats, dateFilterState.startDate, dateFilterState.endDate);
+                }
+                
+                if (gameStats.length === 0) {
+                    document.getElementById('chartsContent').innerHTML = 
+                        '<div class="loading">Žiadne štatistiky zápasov pre zobrazenie grafov</div>';
+                    return;
+                }
+                
+                const statsWithEvents = await Promise.all(gameStats.map(async (stat) => {
+                    if (stat.event || stat.eventDate) {
+                        return stat;
+                    }
+                    if (stat.eventId) {
+                        try {
+                            const event = await getEventById(stat.eventId);
+                            return { ...stat, event };
+                        } catch (error) {
+                            console.error(`Error loading event ${stat.eventId}:`, error);
+                            return stat;
+                        }
+                    }
+                    return stat;
+                }));
+
+                statsWithEvents.sort((a, b) => {
+                let dateA = null;
+                if (a.eventDate) {
+                    dateA = new Date(a.eventDate);
+                } else if (a.event?.date) {
+                    dateA = new Date(a.event.date);
+                } else if (a.timestamp) {
+                    dateA = new Date(a.timestamp);
+                } else {
+                    dateA = new Date(0);
+                }
+                
+                let dateB = null;
+                if (b.eventDate) {
+                    dateB = new Date(b.eventDate);
+                } else if (b.event?.date) {
+                    dateB = new Date(b.event.date);
+                } else if (b.timestamp) {
+                    dateB = new Date(b.timestamp);
+                } else {
+                    dateB = new Date(0);
+                }
+                
+                    return dateA - dateB;
+                });
+
+                currentChartStats = statsWithEvents;
+                
+                renderIndexChart(statsWithEvents);
+                renderStatChart(statsWithEvents);
+                renderPercentageChart(statsWithEvents);
+            } catch (error) {
+                console.error('Error loading charts:', error);
+                document.getElementById('chartsContent').innerHTML = 
+                    '<div class="loading" style="color: #dc3545;">Chyba pri načítaní grafov</div>';
+            }
+        }
+
+        async function filterStatsByDate(stats, startDate, endDate) {
+            if (!startDate) return stats;
+            
+            const startDateObj = new Date(startDate + 'T00:00:00');
+            startDateObj.setHours(0, 0, 0, 0);
+            
+            let endDateObj = null;
+            if (endDate) {
+                endDateObj = new Date(endDate + 'T23:59:59');
+                endDateObj.setHours(23, 59, 59, 999);
+            } else {
+                endDateObj = new Date(startDate + 'T23:59:59');
+                endDateObj.setHours(23, 59, 59, 999);
+            }
+            
+            return stats.filter(stat => {
+                let statDate = null;
+                if (stat.eventDate) {
+                    statDate = new Date(stat.eventDate);
+                } else if (stat.event && stat.event.date) {
+                    const eventDate = stat.event.date;
+                    if (typeof eventDate === 'string') {
+                        statDate = new Date(eventDate);
+                    } else if (eventDate instanceof Date) {
+                        statDate = new Date(eventDate);
+                    } else {
+                        statDate = new Date(eventDate);
+                    }
+                } else if (stat.timestamp) {
+                    statDate = new Date(stat.timestamp);
+                }
+                
+                if (statDate && !isNaN(statDate.getTime())) {
+                    statDate.setHours(0, 0, 0, 0);
+                    return statDate >= startDateObj && statDate <= endDateObj;
+                }
+                return false;
+            });
+        }
+
+        function renderIndexChart(stats) {
+            if (!stats || stats.length === 0) {
+                return;
+            }
+            
+            const canvasId = 'indexChart';
+            let canvas = document.getElementById(canvasId);
+            
+            if (!canvas) {
+                const chartContainer = document.getElementById('chartsContent');
+                chartContainer.innerHTML = `
+                    <div class="chart-container">
+                        <h3>Index Efektivity</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="${canvasId}"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Štatistiky</h3>
+                        <div class="chart-controls">
+                            <label for="statSelect">Vyberte štatistiku:</label>
+                            <select id="statSelect" onchange="updateStatChart()">
+                                <option value="PTS">Body (PTS)</option>
+                                <option value="AST">Asistencie (AST)</option>
+                                <option value="REB">Reboundy (REB)</option>
+                                <option value="STL">Stealy (STL)</option>
+                                <option value="BLK">Bloky (BLK)</option>
+                                <option value="TO">Straty (TO)</option>
+                            </select>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="statChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Presnosť Strelby</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="percentageChart"></canvas>
+                        </div>
+                    </div>
+                `;
+                canvas = document.getElementById(canvasId);
+            }
+
+            const labels = stats.map(stat => {
+                let date = '';
+                if (stat.eventDate) {
+                    date = new Date(stat.eventDate).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.event?.date) {
+                    date = new Date(stat.event.date).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.timestamp) {
+                    date = new Date(stat.timestamp).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                }
+                return date || '-';
+            });
+
+            const indexData = stats.map(stat => {
+                const values = stat.values || {};
+                return values.INDEX !== undefined ? parseFloat(values.INDEX) : 0;
+            });
+
+            if (chartInstances.indexChart) {
+                chartInstances.indexChart.destroy();
+            }
+
+            chartInstances.indexChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Index Efektivity',
+                        data: indexData,
+                        borderColor: '#6B21A8',
+                        backgroundColor: 'rgba(107, 33, 168, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Index'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Zápas'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderStatChart(stats) {
+            if (!stats || stats.length === 0) {
+                return;
+            }
+            
+            const canvasId = 'statChart';
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+
+            const statSelect = document.getElementById('statSelect');
+            const selectedStat = statSelect ? statSelect.value : 'PTS';
+
+            const labels = stats.map(stat => {
+                let date = '';
+                if (stat.eventDate) {
+                    date = new Date(stat.eventDate).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.event?.date) {
+                    date = new Date(stat.event.date).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.timestamp) {
+                    date = new Date(stat.timestamp).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                }
+                return date || '-';
+            });
+
+            const statData = stats.map(stat => {
+                const values = stat.values || {};
+                if (selectedStat === 'REB') {
+                    const off = parseFloat(values.OFF) || 0;
+                    const def = parseFloat(values.DEF) || 0;
+                    return off + def;
+                }
+                return values[selectedStat] !== undefined ? parseFloat(values[selectedStat]) : 0;
+            });
+
+            if (chartInstances.statChart) {
+                chartInstances.statChart.destroy();
+            }
+
+            const statLabels = {
+                'PTS': 'Body',
+                'AST': 'Asistencie',
+                'REB': 'Reboundy',
+                'STL': 'Stealy',
+                'BLK': 'Bloky',
+                'TO': 'Straty'
+            };
+
+            chartInstances.statChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: statLabels[selectedStat] || selectedStat,
+                        data: statData,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: statLabels[selectedStat] || selectedStat
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Zápas'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateStatChart() {
+            if (currentChartStats.length > 0) {
+                renderStatChart(currentChartStats);
+            } else {
+                loadCharts();
+            }
+        }
+
+        function renderPercentageChart(stats) {
+            if (!stats || stats.length === 0) {
+                return;
+            }
+            
+            const canvasId = 'percentageChart';
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+
+            const labels = stats.map(stat => {
+                let date = '';
+                if (stat.eventDate) {
+                    date = new Date(stat.eventDate).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.event?.date) {
+                    date = new Date(stat.event.date).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.timestamp) {
+                    date = new Date(stat.timestamp).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                }
+                return date || '-';
+            });
+
+            const calculatePercentage = (made, attempts) => {
+                if (!attempts || attempts === 0) return null;
+                return (made / attempts) * 100;
+            };
+
+            const ftData = stats.map(stat => {
+                const values = stat.values || {};
+                const made = parseFloat(values.FTÚ) || 0;
+                const attempts = parseFloat(values.FTC) || 0;
+                return calculatePercentage(made, attempts);
+            });
+
+            const threePtData = stats.map(stat => {
+                const values = stat.values || {};
+                const made = parseFloat(values['3PÚ']) || 0;
+                const attempts = parseFloat(values['3PC']) || 0;
+                return calculatePercentage(made, attempts);
+            });
+
+            const twoPtData = stats.map(stat => {
+                const values = stat.values || {};
+                const made = parseFloat(values['2PÚ']) || 0;
+                const attempts = parseFloat(values['2PC']) || 0;
+                return calculatePercentage(made, attempts);
+            });
+
+            const fgData = stats.map(stat => {
+                const values = stat.values || {};
+                const made = parseFloat(values['FGÚ']) || 0;
+                const attempts = parseFloat(values.FGC) || 0;
+                return calculatePercentage(made, attempts);
+            });
+
+            if (chartInstances.percentageChart) {
+                chartInstances.percentageChart.destroy();
+            }
+
+            chartInstances.percentageChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'FT%',
+                            data: ftData,
+                            borderColor: '#10B981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: '3PT%',
+                            data: threePtData,
+                            borderColor: '#F59E0B',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: '2PT%',
+                            data: twoPtData,
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'FG%',
+                            data: fgData,
+                            borderColor: '#EF4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    spanGaps: true,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.parsed == null || !Number.isFinite(context.parsed.y)) {
+                                        return context.dataset.label + ': -';
+                                    }
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Presnosť (%)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Zápas'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function formatMinutes(min) {
+            if (!min) return '-';
+            const minutes = Math.floor(min);
+            const seconds = Math.round((min - minutes) * 60);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function reloadMatchStatisticsWithCurrentDate() {
+            if (dateFilterState.singleDate) {
+                return loadMatchStatisticsTable(dateFilterState.singleDate, null);
+            }
+            if (dateFilterState.startDate && dateFilterState.endDate) {
+                return loadMatchStatisticsTable(dateFilterState.startDate, dateFilterState.endDate);
+            }
+            return loadMatchStatisticsTable(null, null);
+        }
+
+        function setGameStatsPageSize(size) {
+            if (!Number.isInteger(size) || size <= 0) return;
+            gameStatsPageSize = size;
+            gameStatsCurrentPage = 1;
+            reloadMatchStatisticsWithCurrentDate();
+        }
+
+        function setGameStatsFilter(value) {
+            if (value !== 'all' && value !== 'withStats' && value !== 'withoutStats') return;
+            gameStatsFilter = value;
+            gameStatsCurrentPage = 1;
+            reloadMatchStatisticsWithCurrentDate();
+        }
+
+        function goToGameStatsPage(page) {
+            if (!Number.isInteger(page) || page < 1) return;
+            const totalPages = Math.max(1, Math.ceil(gameStatsTotalGames / gameStatsPageSize));
+            if (page > totalPages) return;
+            gameStatsCurrentPage = page;
+            reloadMatchStatisticsWithCurrentDate();
+        }
+
+        function showTableView() {
+            document.getElementById('tableViewBtn').classList.add('active');
+            document.getElementById('graphViewBtn').classList.remove('active');
+            document.getElementById('statisticsContent').style.display = 'block';
+            document.getElementById('chartsContent').classList.remove('active');
+            document.getElementById('chartsContent').style.display = 'none';
+            const pageSizeWrap = document.getElementById('gameStatsPageSizeWrap');
+            const filterWrap = document.getElementById('gameStatsFilterWrap');
+            if (pageSizeWrap) pageSizeWrap.style.display = '';
+            if (filterWrap) filterWrap.style.display = '';
+            reloadMatchStatisticsWithCurrentDate();
+        }
+
+        function showGraphView() {
+            document.getElementById('tableViewBtn').classList.remove('active');
+            document.getElementById('graphViewBtn').classList.add('active');
+            document.getElementById('statisticsContent').style.display = 'none';
+            document.getElementById('chartsContent').classList.add('active');
+            document.getElementById('chartsContent').style.display = 'block';
+            const pageSizeWrap = document.getElementById('gameStatsPageSizeWrap');
+            const filterWrap = document.getElementById('gameStatsFilterWrap');
+            if (pageSizeWrap) pageSizeWrap.style.display = 'none';
+            if (filterWrap) filterWrap.style.display = 'none';
+            loadCharts();
+        }
+
+        let currentDateMode = 'single';
+        let dateFilterState = {
+            mode: 'single',
+            singleDate: null,
+            startDate: null,
+            endDate: null
+        };
+
+        function handleDateFilterClick(event) {
+            if (event.target.closest('.date-filter-clear') || event.target.closest('.date-filter-dropdown')) {
+                return;
+            }
+            const dateFilterWrapper = document.getElementById('dateFilterWrapper');
+            dateFilterWrapper.classList.toggle('open');
+        }
+
+        function setDateMode(mode) {
+            currentDateMode = mode;
+            dateFilterState.mode = mode;
+            
+            const singleModeBtn = document.getElementById('singleDateMode');
+            const rangeModeBtn = document.getElementById('rangeDateMode');
+            const singleDateGroup = document.getElementById('singleDateGroup');
+            const rangeDateGroup = document.getElementById('rangeDateGroup');
+            
+            if (mode === 'single') {
+                singleModeBtn.classList.add('active');
+                rangeModeBtn.classList.remove('active');
+                singleDateGroup.style.display = 'flex';
+                rangeDateGroup.style.display = 'none';
+            } else {
+                singleModeBtn.classList.remove('active');
+                rangeModeBtn.classList.add('active');
+                singleDateGroup.style.display = 'none';
+                rangeDateGroup.style.display = 'flex';
+            }
+        }
+
+        function applyDateFilter() {
+            const dateFilterText = document.getElementById('dateFilterText');
+            const dateFilterWrapper = document.getElementById('dateFilterWrapper');
+            
+            if (currentDateMode === 'single') {
+                const singleDate = document.getElementById('singleDateInput').value;
+                if (singleDate) {
+                    dateFilterState.singleDate = singleDate;
+                    dateFilterState.startDate = null;
+                    dateFilterState.endDate = null;
+                    
+                    const date = new Date(singleDate + 'T00:00:00');
+                    const formattedDate = date.toLocaleDateString('sk-SK', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                    dateFilterText.textContent = formattedDate;
+                    dateFilterWrapper.classList.add('has-date');
+                    dateFilterWrapper.classList.remove('open');
+                    gameStatsCurrentPage = 1;
+                    loadMatchStatisticsTable(singleDate, null);
+                    
+                    if (document.getElementById('chartsContent').classList.contains('active')) {
+                        loadCharts();
+                    }
+                }
+            } else {
+                const startDate = document.getElementById('startDateInput').value;
+                const endDate = document.getElementById('endDateInput').value;
+                
+                if (startDate && endDate) {
+                    if (new Date(startDate) > new Date(endDate)) {
+                        showAppAlert('Dátum "Od" musí byť pred dátumom "Do"');
+                        return;
+                    }
+                    
+                    dateFilterState.singleDate = null;
+                    dateFilterState.startDate = startDate;
+                    dateFilterState.endDate = endDate;
+                    
+                    const start = new Date(startDate + 'T00:00:00');
+                    const end = new Date(endDate + 'T00:00:00');
+                    const formattedStart = start.toLocaleDateString('sk-SK', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                    const formattedEnd = end.toLocaleDateString('sk-SK', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                    dateFilterText.textContent = `${formattedStart} - ${formattedEnd}`;
+                    dateFilterWrapper.classList.add('has-date');
+                    dateFilterWrapper.classList.remove('open');
+                    gameStatsCurrentPage = 1;
+                    loadMatchStatisticsTable(startDate, endDate);
+                    
+                    if (document.getElementById('chartsContent').classList.contains('active')) {
+                        loadCharts();
+                    }
+                } else {
+                    showAppAlert('Prosím vyberte oba dátumy');
+                }
+            }
+        }
+
+        function cancelDateFilter() {
+            const dateFilterWrapper = document.getElementById('dateFilterWrapper');
+            dateFilterWrapper.classList.remove('open');
+        }
+
+        function clearDateFilter(event) {
+            event.stopPropagation();
+            const dateFilterText = document.getElementById('dateFilterText');
+            const dateFilterWrapper = document.getElementById('dateFilterWrapper');
+            const singleDateInput = document.getElementById('singleDateInput');
+            const startDateInput = document.getElementById('startDateInput');
+            const endDateInput = document.getElementById('endDateInput');
+            
+            if (singleDateInput) singleDateInput.value = '';
+            if (startDateInput) startDateInput.value = '';
+            if (endDateInput) endDateInput.value = '';
+            
+            dateFilterState = {
+                mode: 'single',
+                singleDate: null,
+                startDate: null,
+                endDate: null
+            };
+            
+            dateFilterText.textContent = 'Vlastný dátum';
+            dateFilterWrapper.classList.remove('has-date');
+            
+            gameStatsCurrentPage = 1;
+            loadMatchStatisticsTable(null, null);
+            
+            if (document.getElementById('chartsContent').classList.contains('active')) {
+                loadCharts();
+            }
+        }
+
+        function filterByDate() {
+            applyDateFilter();
+        }
+
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

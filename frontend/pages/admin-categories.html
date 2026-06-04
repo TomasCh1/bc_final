@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Kategórie - Admin - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/coach-nav.css">
+    <link rel="stylesheet" href="/css/admin-layout.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: #111827;
+        }
+        .dashboard-content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .top-stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .stat-card-content { display: flex; flex-direction: column; flex: 1; }
+        .stat-label { font-size: 0.9rem; color: #6B7280; font-weight: 500; }
+        .stat-value-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .stat-value { font-size: 2rem; font-weight: 700; color: #111827; }
+        .stat-subtitle { font-size: 0.85rem; color: #9CA3AF; }
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .stat-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+        .section-card {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.75rem;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .section-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .section-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #111827;
+        }
+        .section-subtitle {
+            font-size: 0.9rem;
+            color: #6B7280;
+            margin-top: 0.2rem;
+        }
+        .btn-primary,
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .btn-primary { background: #6B2C91; color: #FFFFFF; }
+        .btn-secondary { background: #E5E7EB; color: #111827; }
+        .btn-primary:hover { background: #5A2380; }
+        .btn-secondary:hover { background: #D1D5DB; }
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .category-card {
+            border-radius: 10px;
+            border: 1px solid #E5E7EB;
+            padding: 1.25rem;
+            background: #F9FAFB;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .category-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+        }
+        .category-meta {
+            font-size: 0.85rem;
+            color: #6B7280;
+        }
+        .category-actions {
+            margin-top: 0.75rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            padding: 0.4rem 0.9rem;
+            border-radius: 999px;
+            border: none;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .action-btn.edit { background: #E5E7EB; color: #111827; }
+        .action-btn.delete { background: #DC2626; color: #FFFFFF; }
+        .action-btn.edit:hover { background: #D1D5DB; }
+        .action-btn.delete:hover { background: #B91C1C; }
+        .badge-soft {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            background: #EEF2FF;
+            color: #4338CA;
+        }
+        .loading {
+            text-align: center;
+            padding: 1.5rem;
+            color: #6B7280;
+            font-size: 0.9rem;
+        }
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .message-error {
+            background: #FEF2F2;
+            color: #B91C1C;
+            border: 1px solid #FECACA;
+        }
+        .message-success {
+            background: #ECFDF3;
+            color: #166534;
+            border: 1px solid #BBF7D0;
+        }
+        .chart-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            border: 1px solid #E5E7EB;
+            padding: 1.25rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.75rem;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 260px;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-box {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.75rem;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05), 0 20px 40px rgba(0,0,0,0.15);
+        }
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+        .modal-text {
+            font-size: 0.95rem;
+            color: #6B7280;
+            margin-bottom: 1.5rem;
+            line-height: 1.45;
+        }
+        .modal-text strong { color: #111827; }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        .modal-actions .btn-secondary { background: #E5E7EB; color: #111827; }
+        .modal-actions .btn-secondary:hover { background: #D1D5DB; }
+        .modal-actions .btn-danger { background: #DC2626; color: #FFFFFF; border: none; border-radius: 8px; padding: 0.5rem 1rem;}
+        .modal-actions .btn-danger:hover { background: #B91C1C; }
+        .modal-actions .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+        @media (max-width: 1024px) {
+            .top-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 640px) {
+            .top-stats { grid-template-columns: 1fr; }
+            .dashboard-content { padding: 1.25rem; }
+        }
+    </style>
+</head>
+<body class="admin">
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav">
+                <a href="/pages/admin-dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                <a href="/pages/admin-matches.html" class="nav-pill">Zápasy</a>
+                <a href="/pages/admin-trainings.html" class="nav-pill">Tréningy</a>
+                <a href="/pages/admin-users.html" class="nav-pill">User Management</a>
+                <a href="/pages/admin-categories.html" class="nav-pill active">Kategórie</a>
+                <a href="/pages/trainer-attendance-charts.html" class="nav-pill">Grafy účasti</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" data-initial="A" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">Admin</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <div class="nav-menu-profile">
+            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">A</div>
+            <div class="nav-menu-profile-info">
+                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                <div class="nav-menu-profile-role" id="navMenuProfileRole">Admin</div>
+            </div>
+        </div>
+        <div class="nav-menu-divider"></div>
+        <a href="/pages/admin-dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/admin-matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>
+        <a href="/pages/admin-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+        <a href="/pages/admin-users.html" class="nav-pill" onclick="closeNavMenu()">User Management</a>
+        <a href="/pages/admin-categories.html" class="nav-pill active" onclick="closeNavMenu()">Kategórie</a>
+        <a href="/pages/trainer-attendance-charts.html" class="nav-pill" onclick="closeNavMenu()">Grafy účasti</a>
+        <div class="nav-menu-divider"></div>
+        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>
+    </nav>
+
+    <div class="dashboard-content">
+        <div id="messageArea"></div>
+
+        <div class="top-stats">
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Počet kategórií</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value" id="statTotalCategories">-</div>
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                                <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                                <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                                <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-subtitle">Všetky aktívne kategórie</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Najviac hráčov</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value smaller" id="statMostPlayersName">-</div>
+                    </div>
+                    <div class="stat-subtitle" id="statMostPlayersCount">-</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Najvyššia výhernosť</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value smaller" id="statBestWinName">-</div>
+                    </div>
+                    <div class="stat-subtitle" id="statBestWinValue">-</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-content">
+                    <div class="stat-label">Sezóny</div>
+                    <div class="stat-value-wrapper">
+                        <div class="stat-value smaller" id="statSeasonsCount">-</div>
+                    </div>
+                    <div class="stat-subtitle" id="statSeasonsList">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-header-left">
+                    <div class="section-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M20 8v6"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="section-title">Kategórie</div>
+                        <div class="section-subtitle">Prehľad kategórií, trénerov a sezón s možnosťou úprav.</div>
+                    </div>
+                </div>
+                <div>
+                    <a href="/pages/categories-create.html" class="btn-primary">+ Pridať kategóriu</a>
+                </div>
+            </div>
+
+            <div id="categoriesLoading" class="loading">Načítavam kategórie...</div>
+            <div id="categoriesGrid" class="categories-grid" style="display:none;"></div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-header-left">
+                    <div class="section-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19h16"></path>
+                            <path d="M4 15l4-6 4 4 4-8 4 6"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="section-title">Výhernosť podľa kategórie</div>
+                        <div class="section-subtitle">Graf výhry % pre jednotlivé kategórie (ak sú dostupné údaje).</div>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Výhra % podľa kategórie</div>
+                <div class="chart-wrapper">
+                    <canvas id="categoriesWinChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="deleteModal" onclick="if (event.target === this) closeDeleteModal();">
+        <div class="modal-box" onclick="event.stopPropagation();">
+            <div class="modal-title">Zmazať kategóriu?</div>
+            <div class="modal-text" id="deleteModalText">Naozaj chcete zmazať kategóriu <strong id="deleteModalCategoryName"></strong>? Táto akcia sa nedá vrátiť späť.</div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Zrušiť</button>
+                <button type="button" class="btn-danger" id="deleteModalConfirmBtn" onclick="confirmDeleteCategory()">Áno, zmazať</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/categories.js"></script>
+    <script src="/js/users.js"></script>
+    <script src="/js/events.js"></script>
+    <script>
+        let categoriesData = [];
+        let winChart = null;
+        const categoryPlayerCounts = new Map();
+        const categoryWinPercents = new Map();
+
+        function showMessage(message, type) {
+            const area = document.getElementById('messageArea');
+            if (!area) return;
+            const div = document.createElement('div');
+            div.className = 'message ' + (type === 'error' ? 'message-error' : 'message-success');
+            div.textContent = message;
+            area.innerHTML = '';
+            area.appendChild(div);
+            setTimeout(() => {
+                if (area.contains(div)) {
+                    area.removeChild(div);
+                }
+            }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            const current = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+            if (!current || current.role !== 'ADMIN') {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            const displayName = (current.name || 'Admin').replace(/\s*\([^)]*\)\s*$/, '').trim();
+            const displayRole = 'Admin';
+            const userInitial = (displayName.charAt(0) || 'A').toUpperCase();
+
+            document.getElementById('userName').textContent = displayName;
+            document.getElementById('userRole').textContent = displayRole;
+            const dropdownName = document.getElementById('userDropdownName');
+            const dropdownRole = document.getElementById('userDropdownRole');
+            if (dropdownName) dropdownName.textContent = displayName;
+            if (dropdownRole) dropdownRole.textContent = displayRole;
+            document.getElementById('userInfo').setAttribute('data-initial', userInitial);
+
+            const navMenuProfileName = document.getElementById('navMenuProfileName');
+            const navMenuProfileRole = document.getElementById('navMenuProfileRole');
+            const navMenuProfileAvatar = document.getElementById('navMenuProfileAvatar');
+            if (navMenuProfileName) navMenuProfileName.textContent = displayName;
+            if (navMenuProfileRole) navMenuProfileRole.textContent = displayRole;
+            if (navMenuProfileAvatar) navMenuProfileAvatar.textContent = userInitial;
+
+            await loadCategoriesAdmin();
+        });
+
+        async function loadCategoriesAdmin() {
+            const loadingEl = document.getElementById('categoriesLoading');
+            const grid = document.getElementById('categoriesGrid');
+            loadingEl.style.display = 'block';
+            grid.style.display = 'none';
+
+            try {
+                categoriesData = await getCategories();
+
+                let playerCounts = {};
+                let categoryBalances = [];
+                try {
+                    playerCounts = await getCategoryPlayerCounts();
+                } catch (e) {
+                    console.warn('Nepodarilo sa načítať počty hráčov pre kategórie:', e);
+                }
+                try {
+                    const { startDate, endDate } = getCategoriesSeasonDateRange();
+                    const summary = await getSeasonSummary({ startDate, endDate });
+                    categoryBalances = summary.categoryBalances || [];
+                } catch (e) {
+                    console.warn('Nepodarilo sa načítať štatistiky zápasov pre kategórie:', e);
+                }
+
+                computeCategoryPlayerCounts(playerCounts);
+                computeCategoryWinPercentsFromSummary(categoryBalances);
+
+                renderCategoriesGrid(categoriesData);
+                updateTopCards(categoriesData);
+                renderWinChart(categoriesData);
+            } catch (e) {
+                console.error('Error loading categories:', e);
+                showMessage('Chyba pri načítaní kategórií: ' + (e.message || e), 'error');
+            } finally {
+                loadingEl.style.display = 'none';
+                grid.style.display = 'grid';
+            }
+        }
+
+        function computeCategoryPlayerCounts(playerCounts) {
+            categoryPlayerCounts.clear();
+            if (!playerCounts || typeof playerCounts !== 'object') return;
+            Object.keys(playerCounts).forEach(idStr => {
+                const key = Number(idStr);
+                if (!isFinite(key)) return;
+                const count = playerCounts[idStr];
+                if (typeof count === 'number' && count >= 0) {
+                    categoryPlayerCounts.set(key, count);
+                }
+            });
+        }
+
+        function getCategoriesSeasonDateRange() {
+            const end = new Date();
+            end.setFullYear(end.getFullYear() + 1);
+            end.setMonth(11, 31);
+            const start = new Date();
+            start.setFullYear(start.getFullYear() - 15);
+            start.setMonth(0, 1);
+            return {
+                startDate: start.toISOString().split('T')[0],
+                endDate: end.toISOString().split('T')[0]
+            };
+        }
+
+        function computeCategoryWinPercentsFromSummary(categoryBalances) {
+            categoryWinPercents.clear();
+            (categoryBalances || []).forEach(item => {
+                const categoryId = item.categoryId;
+                if (categoryId == null || categoryId < 0) return;
+                const key = Number(categoryId);
+                if (!isFinite(key)) return;
+                const games = item.games || 0;
+                const wins = item.wins != null ? item.wins : 0;
+                if (games > 0) {
+                    categoryWinPercents.set(key, (wins / games) * 100);
+                }
+            });
+        }
+
+        function getPlayersCount(cat) {
+            const key = Number(cat.id);
+            if (!isFinite(key)) return null;
+            const n = categoryPlayerCounts.get(key);
+            if (typeof n !== 'number' || n < 0) return null;
+            return n;
+        }
+
+        function getWinPercentage(cat) {
+            const key = Number(cat.id);
+            if (!isFinite(key)) return null;
+            const n = categoryWinPercents.get(key);
+            if (typeof n !== 'number' || !isFinite(n)) return null;
+            return n;
+        }
+
+        function updateTopCards(categories) {
+            const total = categories.length;
+            document.getElementById('statTotalCategories').textContent = total;
+
+            if (total === 0) {
+                document.getElementById('statMostPlayersName').textContent = '-';
+                document.getElementById('statMostPlayersCount').textContent = 'Žiadne dáta';
+                document.getElementById('statBestWinName').textContent = '-';
+                document.getElementById('statBestWinValue').textContent = 'Žiadne dáta';
+                document.getElementById('statSeasonsCount').textContent = '0';
+                document.getElementById('statSeasonsList').textContent = '-';
+                return;
+            }
+
+            let mostPlayersCat = null;
+            let maxPlayers = -1;
+            categories.forEach(c => {
+                const count = getPlayersCount(c);
+                if (count != null && count > maxPlayers) {
+                    maxPlayers = count;
+                    mostPlayersCat = c;
+                }
+            });
+            if (mostPlayersCat && maxPlayers > 0) {
+                const label = mostPlayersCat.name + (mostPlayersCat.season ? ' (' + mostPlayersCat.season + ')' : '');
+                document.getElementById('statMostPlayersName').textContent = label;
+                document.getElementById('statMostPlayersCount').textContent = maxPlayers >= 0 ? maxPlayers + ' hráčov' : 'Žiadne dáta';
+            } else {
+                document.getElementById('statMostPlayersName').textContent = '-';
+                document.getElementById('statMostPlayersCount').textContent = 'Žiadne dáta';
+            }
+
+            let bestWinCat = null;
+            let bestWin = -1;
+            categories.forEach(c => {
+                const w = getWinPercentage(c);
+                if (w != null && w > bestWin) {
+                    bestWin = w;
+                    bestWinCat = c;
+                }
+            });
+            if (bestWinCat && bestWin > 0) {
+                const label = bestWinCat.name + (bestWinCat.season ? ' (' + bestWinCat.season + ')' : '');
+                document.getElementById('statBestWinName').textContent = label;
+                document.getElementById('statBestWinValue').textContent = bestWin.toFixed(1) + ' % výhier';
+            } else {
+                document.getElementById('statBestWinName').textContent = '-';
+                document.getElementById('statBestWinValue').textContent = 'Žiadne dáta';
+            }
+
+            const seasons = Array.from(new Set(categories.map(c => c.season).filter(Boolean)));
+            document.getElementById('statSeasonsCount').textContent = seasons.length.toString();
+            document.getElementById('statSeasonsList').textContent = seasons.length ? seasons.join(', ') : 'Bez sezóny';
+        }
+
+        function renderCategoriesGrid(categories) {
+            const grid = document.getElementById('categoriesGrid');
+            grid.innerHTML = '';
+
+            if (!categories || categories.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:1.5rem;">Žiadne kategórie.</div>';
+                return;
+            }
+
+            categories.forEach(cat => {
+                const card = document.createElement('div');
+                card.className = 'category-card';
+
+                let coachesDisplay = 'Nepriradený';
+                if (cat.coaches && cat.coaches.length > 0) {
+                    coachesDisplay = cat.coaches.map(c => c.name).join(', ');
+                } else if (cat.coachNames && cat.coachNames.length > 0) {
+                    coachesDisplay = cat.coachNames.join(', ');
+                } else if (cat.coachName) {
+                    coachesDisplay = cat.coachName;
+                } else if (cat.coachId) {
+                    coachesDisplay = 'Coach ID: ' + cat.coachId;
+                }
+
+                const playersCount = getPlayersCount(cat);
+                const winPct = getWinPercentage(cat);
+
+                card.innerHTML = `
+                    <div class="category-name">${cat.name}${cat.season ? ' (' + cat.season + ')' : ''}</div>
+                    <div class="category-meta">Tréneri: ${coachesDisplay}</div>
+                    <div class="category-meta">Hráči: <span class="badge-soft">${playersCount != null && playersCount > 0 ? playersCount : '0'}</span></div>
+                    <div class="category-meta">Výhernosť: ${winPct != null && winPct > 0 ? winPct.toFixed(1) + ' %' : 'N/A'}</div>
+                    <div class="category-actions">
+                        <button class="action-btn edit" onclick="editCategory(${cat.id})">Upraviť</button>
+                        <button class="action-btn delete" data-category-id="${cat.id}" data-category-name="${(cat.name || cat.season || ('Kategória ' + cat.id)).replace(/"/g, '&quot;')}" onclick="openDeleteModal(this)">Zmazať</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderWinChart(categories) {
+            const ctx = document.getElementById('categoriesWinChart');
+            if (!ctx) return;
+
+            const labels = [];
+            const values = [];
+
+            categories.forEach(cat => {
+                const w = getWinPercentage(cat);
+                if (w != null) {
+                    labels.push(cat.name + (cat.season ? ' (' + cat.season + ')' : ''));
+                    values.push(Number(w.toFixed(1)));
+                }
+            });
+
+            if (!labels.length) {
+                if (winChart) {
+                    winChart.destroy();
+                    winChart = null;
+                }
+                return;
+            }
+
+            if (winChart) winChart.destroy();
+
+            winChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Výhra %',
+                        data: values,
+                        backgroundColor: 'rgba(107, 33, 168, 0.4)',
+                        borderColor: '#6B21A8',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ctx.parsed.y.toFixed(1) + ' %'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { callback: v => v + '%' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function editCategory(id) {
+            window.location.href = '/pages/categories-edit.html?id=' + id;
+        }
+
+        let pendingDeleteId = null;
+        let pendingDeleteName = null;
+
+        function openDeleteModal(btn) {
+            pendingDeleteId = btn.getAttribute('data-category-id');
+            pendingDeleteName = btn.getAttribute('data-category-name') || '';
+            document.getElementById('deleteModalCategoryName').textContent = pendingDeleteName;
+            document.getElementById('deleteModal').classList.add('open');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('open');
+            pendingDeleteId = null;
+            pendingDeleteName = null;
+        }
+
+        async function confirmDeleteCategory() {
+            if (pendingDeleteId == null) return;
+            const confirmBtn = document.getElementById('deleteModalConfirmBtn');
+            confirmBtn.disabled = true;
+            try {
+                await deleteCategory(pendingDeleteId);
+                const nameToShow = pendingDeleteName || ('ID ' + pendingDeleteId);
+                closeDeleteModal();
+                showMessage('Kategória "' + nameToShow + '" bola zmazaná.', 'success');
+                await loadCategoriesAdmin();
+            } catch (e) {
+                console.error('Error deleting category:', e);
+                const msg = (e.message || String(e));
+                const isReferenced = /foreign key|user_categories|referenced|constraint/i.test(msg);
+                if (isReferenced) {
+                    showMessage('Kategóriu nie je možné zmazať, pretože sú k nej priradení používatelia. V časti User Management odstráňte používateľov z tejto kategórie alebo ich priraďte do inej kategórie.', 'error');
+                    closeDeleteModal();
+                } else {
+                    showMessage('Chyba pri mazaní kategórie: ' + msg, 'error');
+                }
+            } finally {
+                confirmBtn.disabled = false;
+            }
+        }
+
+        function toggleNavMenu() {
+            const btn = document.getElementById('hamburgerBtn');
+            const overlay = document.getElementById('navOverlay');
+            const menu = document.getElementById('navSlideMenu');
+            if (!btn || !overlay || !menu) return;
+            btn.classList.toggle('open');
+            overlay.classList.toggle('open');
+            menu.classList.toggle('open');
+            document.body.style.overflow = menu.classList.contains('open') ? 'hidden' : '';
+        }
+
+        function closeNavMenu() {
+            const btn = document.getElementById('hamburgerBtn');
+            const overlay = document.getElementById('navOverlay');
+            const menu = document.getElementById('navSlideMenu');
+            if (btn) btn.classList.remove('open');
+            if (overlay) overlay.classList.remove('open');
+            if (menu) menu.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function handleSignOutFromMenu() {
+            closeNavMenu();
+            handleSignOut();
+        }
+
+        function toggleUserDropdown(event) {
+            event.stopPropagation();
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo) {
+                userInfo.classList.toggle('open');
+            }
+        }
+
+        async function handleSignOut() {
+            if (typeof logout === 'function') {
+                await logout();
+            } else {
+                window.location.href = '/pages/login.html';
+            }
+        }
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>
+

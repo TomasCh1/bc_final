@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventLiveAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.model</a> &gt; <span class="el_source">EventLiveAction.java</span></div><h1>EventLiveAction.java</h1><pre class="source lang-java linenums">package com.basketball.app.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(
+    name = &quot;event_live_actions&quot;,
+    indexes = {
+        @Index(name = &quot;idx_event_live_actions_event_id&quot;, columnList = &quot;event_id&quot;),
+        @Index(name = &quot;idx_event_live_actions_event_created&quot;, columnList = &quot;event_id,created_at,id&quot;),
+        @Index(name = &quot;idx_event_live_actions_event_opp_jersey&quot;, columnList = &quot;event_id,opponent_jersey_number&quot;)
+    }
+)
+<span class="pc bnc" id="L28" title="All 102 branches missed.">@Data</span>
+<span class="fc" id="L29">@NoArgsConstructor</span>
+<span class="nc" id="L30">@AllArgsConstructor</span>
+public class EventLiveAction {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+<span class="fc" id="L35">    private Long id;</span>
+
+    @Column(name = &quot;event_id&quot;, nullable = false)
+<span class="nc" id="L38">    private Long eventId;</span>
+
+    @Column(name = &quot;period&quot;, nullable = false)
+<span class="nc" id="L41">    private Integer period;</span>
+
+    @Column(name = &quot;clock_seconds&quot;, nullable = false)
+<span class="nc" id="L44">    private Integer clockSeconds;</span>
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;team_side&quot;, nullable = false, length = 20)
+<span class="fc" id="L48">    private TeamSide teamSide;</span>
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;action_type&quot;, nullable = false, length = 20)
+<span class="fc" id="L52">    private ActionType actionType;</span>
+
+    @Column(name = &quot;our_player_id&quot;)
+<span class="nc" id="L55">    private Long ourPlayerId;</span>
+
+    @Column(name = &quot;opponent_jersey_number&quot;)
+<span class="fc" id="L58">    private Integer opponentJerseyNumber;</span>
+
+    @Column(name = &quot;points&quot;)
+<span class="fc" id="L61">    private Integer points;</span>
+
+    @Column(name = &quot;on_court_player_ids_json&quot;, columnDefinition = &quot;TEXT&quot;)
+<span class="fc" id="L64">    private String onCourtPlayerIdsJson;</span>
+
+    @Column(name = &quot;created_at&quot;)
+<span class="nc" id="L67">    private LocalDateTime createdAt;</span>
+
+    @Column(name = &quot;created_by&quot;)
+<span class="nc" id="L70">    private Long createdBy;</span>
+
+    @PrePersist
+    protected void onCreate() {
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (createdAt == null) {</span>
+<span class="fc" id="L75">            createdAt = LocalDateTime.now();</span>
+        }
+<span class="fc" id="L77">    }</span>
+
+<span class="fc" id="L79">    public enum TeamSide {</span>
+<span class="fc" id="L80">        OUR,</span>
+<span class="fc" id="L81">        OPPONENT</span>
+    }
+
+<span class="fc" id="L84">    public enum ActionType {</span>
+<span class="fc" id="L85">        SCORE,</span>
+<span class="fc" id="L86">        FOUL,</span>
+<span class="fc" id="L87">        SUB_IN,</span>
+<span class="fc" id="L88">        SUB_OUT</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

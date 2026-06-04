@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Záznam štatistík - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/coach-nav.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: #2C2C2C;
+        }
+
+        .dashboard-content {
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .stats-entry-card {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 2px 3px 8px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .section-icon img { width: 100%; height: 100%; object-fit: contain; }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2C2C2C;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-row-compact {
+            margin-bottom: 1rem;
+        }
+        .step-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+        .step-card {
+            background: #FAFAFC;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 0.85rem;
+        }
+        .match-picker-toggle {
+            display: inline-flex;
+            background: #EEF2FF;
+            border: 1px solid #C7D2FE;
+            border-radius: 999px;
+            padding: 0.15rem;
+            margin-bottom: 0.65rem;
+            gap: 0.2rem;
+        }
+        .match-picker-toggle button {
+            border: none;
+            background: transparent;
+            color: #4338CA;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .match-picker-toggle button.active {
+            background: #FFFFFF;
+            color: #312E81;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .match-picker-panel {
+            display: none;
+            margin-top: 0.25rem;
+        }
+        .match-picker-panel.visible {
+            display: block;
+        }
+        .match-search-input {
+            width: 100%;
+            padding: 0.65rem 0.75rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #2C2C2C;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+        .match-search-input:focus {
+            outline: none;
+            border-color: #C4B5FD;
+            box-shadow: 0 0 0 3px rgba(196, 181, 253, 0.15);
+        }
+        .match-list {
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background: #FFFFFF;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .match-item {
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid #F3F4F6;
+            cursor: pointer;
+        }
+        .match-item:last-child {
+            border-bottom: none;
+        }
+        .match-item:hover {
+            background: #F5F3FF;
+        }
+        .match-item.active {
+            background: #EDE9FE;
+            border-left: 3px solid #6B2C91;
+            padding-left: calc(0.75rem - 3px);
+        }
+        .match-item .m-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1F2937;
+        }
+        .match-item .m-meta {
+            margin-top: 0.15rem;
+            font-size: 0.78rem;
+            color: #6B7280;
+        }
+        .match-empty {
+            padding: 0.65rem 0.75rem;
+            color: #6B7280;
+            font-size: 0.85rem;
+        }
+        .match-date-input {
+            width: 100%;
+            padding: 0.65rem 0.75rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #2C2C2C;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+        .native-event-select {
+            display: none;
+        }
+        .step-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #6B2C91;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .small-help {
+            margin-top: 0.45rem;
+            font-size: 0.8rem;
+            color: #6B7280;
+        }
+        .player-search-results {
+            margin-top: 0.45rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background: #FFFFFF;
+            max-height: 180px;
+            overflow-y: auto;
+            display: none;
+        }
+        .player-search-results.visible {
+            display: block;
+        }
+        .player-search-item {
+            padding: 0.55rem 0.75rem;
+            border-bottom: 1px solid #F3F4F6;
+            cursor: pointer;
+            font-size: 0.92rem;
+            color: #1F2937;
+        }
+        .player-search-item:last-child {
+            border-bottom: none;
+        }
+        .player-search-item:hover {
+            background: #F5F3FF;
+        }
+        .player-search-empty {
+            padding: 0.6rem 0.75rem;
+            color: #6B7280;
+            font-size: 0.85rem;
+        }
+        .match-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+            margin: 0.25rem 0 1.25rem 0;
+        }
+        .locked-event-info {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .locked-event-info.visible {
+            display: grid;
+        }
+        .locked-info-card {
+            background: #F8F9FA;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+        .locked-info-card .k {
+            font-size: 0.72rem;
+            color: #6B7280;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .locked-info-card .v {
+            margin-top: 0.2rem;
+            font-size: 0.98rem;
+            font-weight: 600;
+            color: #1F2937;
+        }
+        .match-preview-item {
+            background: #F8F9FA;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 0.6rem 0.75rem;
+        }
+        .match-preview-item .k {
+            font-size: 0.72rem;
+            color: #6B7280;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .match-preview-item .v {
+            margin-top: 0.2rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1F2937;
+        }
+        .form-group {
+            margin-bottom: 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #2C2C2C;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #C4B5FD;
+            box-shadow: 0 0 0 3px rgba(196, 181, 253, 0.15);
+        }
+        .form-group input.error,
+        .form-group select.error {
+            border-color: #DC2626;
+            background-color: #FEF2F2;
+        }
+
+        .stats-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2C2C2C;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 1rem;
+        }
+        .stat-input-group label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #6B7280;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+        .stat-input-group input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: #FFFFFF;
+            width: 100%;
+        }
+        .stat-input-group input:focus {
+            outline: none;
+            border-color: #C4B5FD;
+        }
+        .stat-input-group input.error {
+            border-color: #DC2626;
+            background-color: #FEF2F2;
+        }
+        .stat-input-group input[readonly] {
+            background: #F3F4F6;
+            cursor: not-allowed;
+            color: #6B7280;
+        }
+
+        .index-display {
+            background: #F8F9FA;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        .index-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .index-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #6B2C91;
+            margin-top: 0.25rem;
+        }
+
+        .action-buttons {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .btn-primary {
+            padding: 0.75rem 1.5rem;
+            background: #6B2C91;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background: #5B1A7A;
+        }
+        .btn-primary:disabled {
+            background: #C4B5FD;
+            color: #F9FAFB;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            padding: 0.75rem 1.5rem;
+            background: #FFFFFF;
+            color: #374151;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #F9FAFB;
+            border-color: #D1D5DB;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6B7280;
+            font-size: 1rem;
+        }
+        #messageArea { margin-bottom: 1rem; }
+        .message { padding: 0.75rem 1rem; border-radius: 8px; }
+        .message-success { background: #D1FAE5; color: #065F46; }
+        .message-error { background: #FEE2E2; color: #991B1B; }
+        .message-info { background: #DBEAFE; color: #1E40AF; }
+        .save-result-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .save-result-overlay.open {
+            display: flex;
+        }
+        .save-result-popup {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 1.5rem;
+            min-width: 280px;
+            max-width: 90vw;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border: 1px solid #E0E0E0;
+            text-align: center;
+        }
+        .save-result-popup.success { border-top: 4px solid #10B981; }
+        .save-result-popup.error { border-top: 4px solid #EF4444; }
+        .save-result-popup .save-result-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .save-result-popup.success .save-result-title { color: #059669; }
+        .save-result-popup.error .save-result-title { color: #DC2626; }
+        .save-result-popup .save-result-text {
+            font-size: 0.95rem;
+            color: #374151;
+            margin-bottom: 1.25rem;
+        }
+        .save-result-popup .save-result-ok {
+            padding: 0.5rem 1.5rem;
+            background: #6B2C91;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .save-result-popup .save-result-ok:hover { background: #5B1A7A; }
+        .editing-existing-hint {
+            display: none;
+            background: #E7DFFF;
+            border: 1px solid #C4B5FD;
+            color: #5B21B6;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .editing-existing-hint.visible { display: block; }
+
+        @media (max-width: 768px) {
+            .dashboard-content { padding: 1rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .form-group input, .form-group select { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav">
+                <a href="/pages/dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                <a href="/pages/matches.html" class="nav-pill">Zápasy</a>
+                <a href="/pages/trainer-trainings.html" class="nav-pill">Tréningy</a>
+                <a href="/pages/statistics-entry.html" class="nav-pill active">Záznam štatistik</a>
+                <a href="/pages/live-stats.html" class="nav-pill">Živé štatistiky</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" data-initial="U" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">-</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="saveResultPopup" class="save-result-overlay" onclick="closeSaveResultPopup(event)">
+        <div class="save-result-popup" id="saveResultPopupContent" onclick="event.stopPropagation()">
+            <div class="save-result-title" id="saveResultTitle"></div>
+            <div class="save-result-text" id="saveResultText"></div>
+            <button type="button" class="save-result-ok" onclick="closeSaveResultPopup()">OK</button>
+        </div>
+    </div>
+
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <div class="nav-menu-profile">
+            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">T</div>
+            <div class="nav-menu-profile-info">
+                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                <div class="nav-menu-profile-role" id="navMenuProfileRole">—</div>
+            </div>
+        </div>
+        <div class="nav-menu-divider"></div>
+        <a href="/pages/dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>
+        <a href="/pages/trainer-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+        <a href="/pages/statistics-entry.html" class="nav-pill active" onclick="closeNavMenu()">Záznam štatistik</a>
+        <a href="/pages/live-stats.html" class="nav-pill" onclick="closeNavMenu()">Živé štatistiky</a>
+        <div class="nav-menu-divider"></div>
+        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>
+    </nav>
+
+    <div class="dashboard-content">
+        <div id="messageArea"></div>
+        <div id="loadingIndicator" class="loading">Načítava sa...</div>
+
+        <div id="contentContainer" style="display: none;">
+            <div class="stats-entry-card">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <img src="/IMG/statistics-svgrepo-com (1).svg" alt="Štatistiky">
+                    </div>
+                    <h1 class="section-title">Záznam štatistík</h1>
+                </div>
+
+                <form id="statisticsForm" onsubmit="return false;">
+                    <div class="step-row">
+                        <div class="step-card" id="stepCategoryCard">
+                            <div class="step-label">Krok 1: Kategória</div>
+                            <div class="form-group">
+                                <label for="categoryId">Kategória *</label>
+                                <select id="categoryId" name="categoryId">
+                                    <option value="">Všetky kategórie</option>
+                                </select>
+                                <div class="small-help">Najprv vyberte kategóriu pre rýchlejšie filtrovanie zápasov a hráčov.</div>
+                            </div>
+                        </div>
+                        <div class="step-card" id="stepMatchCard">
+                            <div class="step-label">Krok 2: Zápas</div>
+                            <div class="form-group">
+                                <label>Zápas *</label>
+                                <div class="match-picker-toggle" role="tablist" aria-label="Výber zápasu">
+                                    <button type="button" id="matchModeListBtn" class="active" onclick="setMatchPickerMode('list')">Zoznam</button>
+                                    <button type="button" id="matchModeCalendarBtn" onclick="setMatchPickerMode('calendar')">Kalendár</button>
+                                </div>
+                                <div id="matchPickerListPanel" class="match-picker-panel visible">
+                                    <input type="text" id="matchSearchInput" class="match-search-input" placeholder="Hľadať zápas podľa názvu, súpera alebo dátumu...">
+                                    <div id="matchListResults" class="match-list"></div>
+                                </div>
+                                <div id="matchPickerCalendarPanel" class="match-picker-panel">
+                                    <input type="date" id="matchDatePicker" class="match-date-input">
+                                    <div id="matchDateResults" class="match-list"></div>
+                                </div>
+                                <select id="eventId" name="eventId" required class="native-event-select">
+                                    <option value="">Vyberte zápas</option>
+                                </select>
+                                <div class="small-help">Zápasy sú zoradené podľa blízkosti k dnešnému dátumu.</div>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-label">Krok 3: Hráč</div>
+                            <div class="form-group form-row-compact">
+                                <label for="playerSearch">Hľadať hráča</label>
+                                <input type="text" id="playerSearch" placeholder="Začnite písať meno hráča...">
+                                <div id="playerSearchResults" class="player-search-results"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="playerId" style="margin-top: 0.25em;">Hráč *</label>
+                                <select id="playerId" name="playerId" required>
+                                    <option value="">Vyberte hráča</option>
+                                </select>
+                                <div class="small-help" id="playerHelpText">Počet hráčov: 0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="lockedEventInfo" class="locked-event-info">
+                        <div class="locked-info-card">
+                            <div class="k">Kategória</div>
+                            <div class="v" id="lockedCategoryText">-</div>
+                        </div>
+                        <div class="locked-info-card">
+                            <div class="k">Zápas</div>
+                            <div class="v" id="lockedMatchText">-</div>
+                        </div>
+                    </div>
+                    <div class="match-preview">
+                        <div class="match-preview-item">
+                            <div class="k">Súper</div>
+                            <div class="v" id="selectedOpponentText">-</div>
+                        </div>
+                        <div class="match-preview-item">
+                            <div class="k">Dátum zápasu</div>
+                            <div class="v" id="selectedMatchDateText">-</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="opponent" name="opponent">
+
+                    <div class="stats-section-title">Základné</div>
+                    <div class="stats-grid">
+                        <div class="stat-input-group">
+                            <label for="MIN">MIN (M:SS, napr. 1:25)</label>
+                            <input type="text" id="MIN" name="MIN" value="0:00" placeholder="0:00" oninput="calculateIndexValue()" onblur="formatMinDisplay(); calculateIndexValue();">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="PTS">PTS (body) - automaticky</label>
+                            <input type="number" id="PTS" name="PTS" min="0" value="0" readonly title="Body = FTÚ×1 + 2PÚ×2 + 3PÚ×3">
+                        </div>
+                    </div>
+
+                    <div class="stats-section-title">Dvojbody</div>
+                    <div class="stats-grid">
+                        <div class="stat-input-group">
+                            <label for="2PÚ">2PÚ (zásahy)</label>
+                            <input type="number" id="2PÚ" name="2PÚ" min="0" value="0" oninput="updateFieldGoals(); calculateIndexValue(); validateMadeAttempts('2PÚ', '2PC');">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="2PC">2PC (pokusy)</label>
+                            <input type="number" id="2PC" name="2PC" min="0" value="0" oninput="updateFieldGoals(); calculateIndexValue(); validateMadeAttempts('2PÚ', '2PC');">
+                        </div>
+                    </div>
+
+                    <div class="stats-section-title">Trojbody</div>
+                    <div class="stats-grid">
+                        <div class="stat-input-group">
+                            <label for="3PÚ">3PÚ (zásahy)</label>
+                            <input type="number" id="3PÚ" name="3PÚ" min="0" value="0" oninput="updateFieldGoals(); calculateIndexValue(); validateMadeAttempts('3PÚ', '3PC');">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="3PC">3PC (pokusy)</label>
+                            <input type="number" id="3PC" name="3PC" min="0" value="0" oninput="updateFieldGoals(); calculateIndexValue(); validateMadeAttempts('3PÚ', '3PC');">
+                        </div>
+                    </div>
+
+                    <div class="stats-section-title">Strela z poľa</div>
+                    <div class="stats-grid">
+                        <div class="stat-input-group">
+                            <label for="FGÚ">FGÚ (zásahy) - 2PÚ+3PÚ</label>
+                            <input type="number" id="FGÚ" name="FGÚ" min="0" value="0" readonly title="Vypočítané z 2PÚ + 3PÚ">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="FGC">FGC (pokusy) - 2PC+3PC</label>
+                            <input type="number" id="FGC" name="FGC" min="0" value="0" readonly title="Vypočítané z 2PC + 3PC">
+                        </div>
+                    </div>
+
+                    <div class="stats-section-title">Hodné hody</div>
+                    <div class="stats-grid">
+                        <div class="stat-input-group">
+                            <label for="FTÚ">FTÚ (zásahy)</label>
+                            <input type="number" id="FTÚ" name="FTÚ" min="0" value="0" oninput="calculateIndexValue(); validateMadeAttempts('FTÚ', 'FTC');">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="FTC">FTC (pokusy)</label>
+                            <input type="number" id="FTC" name="FTC" min="0" value="0" oninput="calculateIndexValue(); validateMadeAttempts('FTÚ', 'FTC');">
+                        </div>
+                    </div>
+
+                    <div class="stats-section-title">Fauly</div>
+                    <div class="stats-grid">
+                        <div class="stat-input-group">
+                            <label for="F+">F+ (obdržané)</label>
+                            <input type="number" id="F+" name="F+" min="0" value="0" oninput="calculateIndexValue()">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="F-">F- (spáchané)</label>
+                            <input type="number" id="F-" name="F-" min="0" value="0" oninput="calculateIndexValue()">
+                        </div>
+                    </div>
+
+                    <div class="stats-section-title">Ostatné</div>
+                    <div class="stats-grid">
+                        <div class="stat-input-group">
+                            <label for="OFF">OFF (ofenz. doskoky)</label>
+                            <input type="number" id="OFF" name="OFF" min="0" value="0" oninput="calculateIndexValue()">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="DEF">DEF (defenz. doskoky)</label>
+                            <input type="number" id="DEF" name="DEF" min="0" value="0" oninput="calculateIndexValue()">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="STL">STL (straty)</label>
+                            <input type="number" id="STL" name="STL" min="0" value="0" oninput="calculateIndexValue()">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="AST">AST (asistencie)</label>
+                            <input type="number" id="AST" name="AST" min="0" value="0" oninput="calculateIndexValue()">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="BLK">BLK (bloky)</label>
+                            <input type="number" id="BLK" name="BLK" min="0" value="0" oninput="calculateIndexValue()">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="TO">TO (straty)</label>
+                            <input type="number" id="TO" name="TO" min="0" value="0" oninput="calculateIndexValue()">
+                        </div>
+                    </div>
+
+                    <div class="index-display">
+                        <div class="index-label">INDEX</div>
+                        <div class="index-value" id="indexValue">0.00</div>
+                        <div class="index-label">Vypočítaný automaticky</div>
+                    </div>
+
+                    <div id="editingExistingHint" class="editing-existing-hint">
+                        Upravujete existujúci záznam - môžete zmeniť hodnoty a uložiť.
+                    </div>
+                    <div class="action-buttons">
+                        <button type="submit" id="saveStatisticsBtn" class="btn-primary" onclick="saveStatistics()" disabled>Uložiť štatistiky</button>
+                        <button type="button" class="btn-secondary" onclick="clearStatFieldsOnly()">Vymazať polia</button>
+                        <a href="/pages/coach-matches.html" class="btn-secondary">Zrušiť</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/categories.js"></script>
+    <script src="/js/statistics.js"></script>
+    <script src="/js/events.js"></script>
+    <script src="/js/users.js"></script>
+    <script>
+        let statId = null;
+        let eventsData = [];
+        let allPlayersData = [];
+        let visiblePlayersData = [];
+        let allCategoriesData = [];
+        let preselectedEventId = null;
+        let isEventLockedMode = false;
+        let filteredEventsData = [];
+        let matchPickerMode = 'list';
+        let nominatedPlayerIdsByEvent = {};
+        let nominationLoadToken = 0;
+
+        function toggleNavMenu() {
+            document.getElementById('hamburgerBtn').classList.toggle('open');
+            document.getElementById('navOverlay').classList.toggle('open');
+            document.getElementById('navSlideMenu').classList.toggle('open');
+            document.body.style.overflow = document.getElementById('navSlideMenu').classList.contains('open') ? 'hidden' : '';
+        }
+        function closeNavMenu() {
+            document.getElementById('hamburgerBtn').classList.remove('open');
+            document.getElementById('navOverlay').classList.remove('open');
+            document.getElementById('navSlideMenu').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function handleSignOutFromMenu() {
+            closeNavMenu();
+            handleSignOut();
+        }
+        function toggleUserDropdown(event) {
+            event.stopPropagation();
+            document.getElementById('userInfo').classList.toggle('open');
+        }
+        function handleSignOut() {
+            if (typeof logout === 'function') {
+                logout();
+            } else {
+                localStorage.removeItem('basketball_auth_token');
+                localStorage.removeItem('basketball_user');
+                sessionStorage.removeItem('basketball_auth_token');
+                sessionStorage.removeItem('basketball_user');
+                window.location.href = '/pages/login.html';
+            }
+        }
+        document.addEventListener('click', function(event) {
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo && !userInfo.contains(event.target)) {
+                userInfo.classList.remove('open');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', async function initPage() {
+            if (typeof isAuthenticated === 'undefined') {
+                setTimeout(initPage, 100);
+                return;
+            }
+            if (!isAuthenticated()) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+            const user = getCurrentUser();
+            if (!user || (user.role !== 'ADMIN' && user.role !== 'TRAINER')) {
+                showMessage('Nemáte oprávnenie na záznam štatistík', 'error');
+                setTimeout(function() { window.location.href = '/pages/trainer-training-stats.html'; }, 2000);
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            statId = urlParams.get('id');
+            preselectedEventId = urlParams.get('eventId');
+            isEventLockedMode = !!preselectedEventId;
+
+            const currentUser = getCurrentUser();
+            const displayName = (formatUserDisplayName(currentUser) || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+            const displayRole = currentUser.role === 'PLAYER' ? 'Hráč' : (currentUser.role === 'TRAINER' ? 'Tréner' : currentUser.role);
+            document.getElementById('userName').textContent = displayName || 'Používateľ';
+            document.getElementById('userRole').textContent = displayRole;
+            document.getElementById('userDropdownName').textContent = displayName || 'Používateľ';
+            document.getElementById('userDropdownRole').textContent = displayRole;
+            const userInfoEl = document.getElementById('userInfo');
+            const userInitial = (displayName ? displayName.charAt(0) : 'U').toUpperCase();
+            if (userInfoEl) userInfoEl.setAttribute('data-initial', userInitial);
+            const navMenuProfileName = document.getElementById('navMenuProfileName');
+            const navMenuProfileRole = document.getElementById('navMenuProfileRole');
+            const navMenuProfileAvatar = document.getElementById('navMenuProfileAvatar');
+            if (navMenuProfileName) navMenuProfileName.textContent = displayName || 'Používateľ';
+            if (navMenuProfileRole) navMenuProfileRole.textContent = displayRole;
+            if (navMenuProfileAvatar) navMenuProfileAvatar.textContent = userInitial;
+
+            await loadData();
+        });
+
+        async function loadMatchEventsForStatisticsEntry() {
+            if (preselectedEventId) {
+                try {
+                    const lockedEvent = await getEventById(preselectedEventId);
+                    if (lockedEvent && String(lockedEvent.id) === String(preselectedEventId)) {
+                        const type = String(lockedEvent.type || '').toUpperCase();
+                        if (type === 'MATCH') return [lockedEvent];
+                        console.warn('Locked event is not a MATCH, loading standard match list instead.');
+                    }
+                } catch (error) {
+                    console.warn('Could not load locked event by id, falling back to match list.', error);
+                }
+            }
+
+            const cacheKey = 'statisticsEntry:matches:v1';
+            const cacheTtlMs = 60000; 
+            try {
+                const rawCached = sessionStorage.getItem(cacheKey);
+                if (rawCached) {
+                    const parsed = JSON.parse(rawCached);
+                    if (parsed && Array.isArray(parsed.items) && typeof parsed.ts === 'number') {
+                        if ((Date.now() - parsed.ts) < cacheTtlMs) {
+                            return parsed.items;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('Failed to read matches cache.', error);
+            }
+
+            const matches = await getEvents({ type: 'MATCH', enrich: false });
+            const matchItems = Array.isArray(matches) ? matches.filter(function(ev) {
+                return String(ev.type || '').toUpperCase() === 'MATCH';
+            }) : [];
+
+            try {
+                sessionStorage.setItem(cacheKey, JSON.stringify({
+                    ts: Date.now(),
+                    items: matchItems
+                }));
+            } catch (error) {
+                console.warn('Failed to write matches cache.', error);
+            }
+            return matchItems;
+        }
+
+        async function loadData() {
+            try {
+                document.getElementById('loadingIndicator').style.display = 'block';
+                document.getElementById('contentContainer').style.display = 'none';
+
+                const [allEvents, allUsers] = await Promise.all([
+                    loadMatchEventsForStatisticsEntry(),
+                    getAllUsers()
+                ]);
+                eventsData = Array.isArray(allEvents) ? allEvents : [];
+                eventsData.sort(compareEventsByClosestToToday);
+
+                allPlayersData = (allUsers || []).filter(function(u) { return u.role === 'PLAYER'; });
+                allPlayersData.sort(function(a, b) {
+                    return String(a.name || '').localeCompare(String(b.name || ''), 'sk');
+                });
+
+                allCategoriesData = await loadCategoriesForFilters();
+                populateCategorySelect();
+
+                const categorySelect = document.getElementById('categoryId');
+                const eventSelect = document.getElementById('eventId');
+                const playerSelect = document.getElementById('playerId');
+                const playerSearch = document.getElementById('playerSearch');
+                const matchSearchInput = document.getElementById('matchSearchInput');
+                const matchDatePicker = document.getElementById('matchDatePicker');
+
+                categorySelect.addEventListener('change', function() {
+                    applyCategoryFilters();
+                    updateSaveButtonState();
+                    loadExistingStatsForSelection();
+                });
+
+                eventSelect.addEventListener('change', function() {
+                    updateSelectedMatchPreview();
+                    refreshPlayersForSelectedEvent();
+                    updateSaveButtonState();
+                    loadExistingStatsForSelection();
+                });
+
+                playerSelect.addEventListener('change', function() {
+                    updateSaveButtonState();
+                    loadExistingStatsForSelection();
+                });
+
+                playerSearch.addEventListener('input', function() {
+                    renderPlayerSelectOptions(this.value);
+                });
+                playerSearch.addEventListener('blur', function() {
+                    setTimeout(function() {
+                        const box = document.getElementById('playerSearchResults');
+                        if (box) {
+                            box.classList.remove('visible');
+                            box.innerHTML = '';
+                        }
+                    }, 150);
+                });
+                if (matchSearchInput) {
+                    matchSearchInput.addEventListener('input', function() {
+                        renderMatchList(this.value || '');
+                    });
+                }
+                if (matchDatePicker) {
+                    matchDatePicker.addEventListener('change', function() {
+                        renderMatchCalendarList(this.value || '');
+                    });
+                }
+
+                applyCategoryFilters();
+                applyLockedEventMode();
+
+                if (statId) {
+                    var stats = await getStatisticsById(statId);
+                    populateForm(stats);
+                } else {
+                    if (preselectedEventId) {
+                        eventSelect.value = preselectedEventId;
+                        updateSelectedMatchPreview();
+                        refreshPlayersForSelectedEvent();
+                        renderMatchPicker();
+                    } else if (eventSelect.options.length > 1) {
+                        eventSelect.selectedIndex = 1;
+                        updateSelectedMatchPreview();
+                        refreshPlayersForSelectedEvent();
+                        renderMatchPicker();
+                    }
+                    loadExistingStatsForSelection();
+                }
+
+                updateEditingHint();
+                updateSaveButtonState();
+                document.getElementById('loadingIndicator').style.display = 'none';
+                document.getElementById('contentContainer').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showMessage('Chyba pri načítaní: ' + error.message, 'error');
+            }
+        }
+
+        async function loadCategoriesForFilters() {
+            try {
+                if (typeof getCategories === 'function') {
+                    const categories = await getCategories({ summary: true });
+                    if (Array.isArray(categories) && categories.length > 0) return categories;
+                }
+            } catch (e) {
+                console.warn('Could not load categories from API, using fallback.', e);
+            }
+            const byId = {};
+            eventsData.forEach(function(ev) {
+                if (ev.categoryId != null) byId[String(ev.categoryId)] = { id: ev.categoryId, name: ev.categoryName || ('Kategória ' + ev.categoryId) };
+            });
+            allPlayersData.forEach(function(p) {
+                if (p.categoryId != null && !byId[String(p.categoryId)]) byId[String(p.categoryId)] = { id: p.categoryId, name: 'Kategória ' + p.categoryId };
+            });
+            return Object.values(byId).sort(function(a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'sk'); });
+        }
+
+        function populateCategorySelect() {
+            const categorySelect = document.getElementById('categoryId');
+            categorySelect.innerHTML = '<option value="">Všetky kategórie</option>';
+            (allCategoriesData || []).forEach(function(cat) {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name || ('Kategória ' + cat.id);
+                categorySelect.appendChild(option);
+            });
+        }
+
+        function compareEventsByClosestToToday(a, b) {
+            const now = new Date();
+            const aDate = new Date(a.date);
+            const bDate = new Date(b.date);
+            const aDist = Math.abs(aDate.getTime() - now.getTime());
+            const bDist = Math.abs(bDate.getTime() - now.getTime());
+            if (aDist !== bDist) return aDist - bDist;
+            return bDate.getTime() - aDate.getTime();
+        }
+
+        function applyCategoryFilters() {
+            const categoryId = document.getElementById('categoryId').value;
+            const selectedEventId = document.getElementById('eventId').value;
+            const selectedPlayerId = document.getElementById('playerId').value;
+            const selectedPlayerSearch = document.getElementById('playerSearch').value || '';
+
+            const filteredEvents = (eventsData || []).filter(function(ev) {
+                if (!categoryId) return true;
+                return String(ev.categoryId || '') === String(categoryId);
+            });
+            filteredEventsData = filteredEvents;
+
+            const eventSelect = document.getElementById('eventId');
+            eventSelect.innerHTML = '<option value="">Vyberte zápas</option>';
+            filteredEvents.forEach(function(event) {
+                const option = document.createElement('option');
+                option.value = event.id;
+                option.textContent = event.name + ' - ' + formatDate(event.date);
+                option.dataset.opponent = event.opponent || '';
+                option.dataset.date = event.date || '';
+                eventSelect.appendChild(option);
+            });
+
+            if (selectedEventId && filteredEvents.some(function(e) { return String(e.id) === String(selectedEventId); })) {
+                eventSelect.value = selectedEventId;
+            } else if (filteredEvents.length > 0) {
+                eventSelect.value = String(filteredEvents[0].id);
+            } else {
+                eventSelect.value = '';
+            }
+            renderMatchPicker();
+            refreshPlayersForSelectedEvent(selectedPlayerSearch, selectedPlayerId);
+            updateSelectedMatchPreview();
+        }
+
+        function setMatchPickerMode(mode) {
+            matchPickerMode = mode === 'calendar' ? 'calendar' : 'list';
+            const listBtn = document.getElementById('matchModeListBtn');
+            const calendarBtn = document.getElementById('matchModeCalendarBtn');
+            const listPanel = document.getElementById('matchPickerListPanel');
+            const calendarPanel = document.getElementById('matchPickerCalendarPanel');
+            if (listBtn) listBtn.classList.toggle('active', matchPickerMode === 'list');
+            if (calendarBtn) calendarBtn.classList.toggle('active', matchPickerMode === 'calendar');
+            if (listPanel) listPanel.classList.toggle('visible', matchPickerMode === 'list');
+            if (calendarPanel) calendarPanel.classList.toggle('visible', matchPickerMode === 'calendar');
+            if (matchPickerMode === 'list') {
+                const q = (document.getElementById('matchSearchInput') || {}).value || '';
+                renderMatchList(q);
+            } else {
+                const d = (document.getElementById('matchDatePicker') || {}).value || '';
+                renderMatchCalendarList(d);
+            }
+        }
+
+        function renderMatchPicker() {
+            if (isEventLockedMode) return;
+            const eventSelect = document.getElementById('eventId');
+            const selectedEvent = (filteredEventsData || []).find(function(ev) {
+                return String(ev.id) === String((eventSelect || {}).value || '');
+            });
+            const datePicker = document.getElementById('matchDatePicker');
+            if (datePicker) {
+                datePicker.value = selectedEvent && selectedEvent.date ? String(selectedEvent.date).slice(0, 10) : '';
+            }
+            renderMatchList((document.getElementById('matchSearchInput') || {}).value || '');
+            renderMatchCalendarList((datePicker || {}).value || '');
+            setMatchPickerMode(matchPickerMode);
+        }
+
+        function renderMatchList(searchTerm) {
+            const box = document.getElementById('matchListResults');
+            const eventSelect = document.getElementById('eventId');
+            if (!box || !eventSelect) return;
+            const selectedId = String(eventSelect.value || '');
+            const q = normalizeSearchText(searchTerm || '');
+            const rows = (filteredEventsData || []).filter(function(ev) {
+                if (!q) return true;
+                const hay = normalizeSearchText((ev.name || '') + ' ' + (ev.opponent || '') + ' ' + formatDate(ev.date));
+                return hay.includes(q);
+            });
+            if (!rows.length) {
+                box.innerHTML = '<div class="match-empty">Žiadne zápasy pre tento filter.</div>';
+                return;
+            }
+            box.innerHTML = rows.map(function(ev) {
+                const active = String(ev.id) === selectedId ? ' active' : '';
+                return '<div class="match-item' + active + '" data-event-id="' + ev.id + '"><div class="m-name">' + escapeHtml(ev.name || 'Zápas') + '</div><div class="m-meta">' + escapeHtml(formatDate(ev.date)) + (ev.opponent ? ' · ' + escapeHtml(ev.opponent) : '') + '</div></div>';
+            }).join('');
+            box.querySelectorAll('.match-item').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    const eventId = el.getAttribute('data-event-id');
+                    selectMatchById(eventId);
+                });
+            });
+        }
+
+        function renderMatchCalendarList(dateValue) {
+            const box = document.getElementById('matchDateResults');
+            if (!box) return;
+            if (!dateValue) {
+                box.innerHTML = '<div class="match-empty">Vyberte dátum pre zobrazenie zápasov.</div>';
+                return;
+            }
+            const rows = (filteredEventsData || []).filter(function(ev) {
+                return String(ev.date || '').slice(0, 10) === String(dateValue);
+            });
+            if (!rows.length) {
+                box.innerHTML = '<div class="match-empty">V tento deň nie je žiadny zápas.</div>';
+                return;
+            }
+            const selectedId = String((document.getElementById('eventId') || {}).value || '');
+            box.innerHTML = rows.map(function(ev) {
+                const active = String(ev.id) === selectedId ? ' active' : '';
+                return '<div class="match-item' + active + '" data-event-id="' + ev.id + '"><div class="m-name">' + escapeHtml(ev.name || 'Zápas') + '</div><div class="m-meta">' + escapeHtml(formatDate(ev.date)) + (ev.opponent ? ' · ' + escapeHtml(ev.opponent) : '') + '</div></div>';
+            }).join('');
+            box.querySelectorAll('.match-item').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    const eventId = el.getAttribute('data-event-id');
+                    selectMatchById(eventId);
+                });
+            });
+        }
+
+        function selectMatchById(eventId) {
+            const eventSelect = document.getElementById('eventId');
+            if (!eventSelect) return;
+            eventSelect.value = String(eventId || '');
+            updateSelectedMatchPreview();
+            refreshPlayersForSelectedEvent();
+            updateSaveButtonState();
+            loadExistingStatsForSelection();
+            renderMatchList((document.getElementById('matchSearchInput') || {}).value || '');
+            renderMatchCalendarList((document.getElementById('matchDatePicker') || {}).value || '');
+        }
+
+        function applyLockedEventMode() {
+            if (!isEventLockedMode) return;
+            const stepCategoryCard = document.getElementById('stepCategoryCard');
+            const stepMatchCard = document.getElementById('stepMatchCard');
+            const lockedInfo = document.getElementById('lockedEventInfo');
+            const categorySelect = document.getElementById('categoryId');
+            const eventSelect = document.getElementById('eventId');
+            if (stepCategoryCard) stepCategoryCard.style.display = 'none';
+            if (stepMatchCard) stepMatchCard.style.display = 'none';
+            if (lockedInfo) lockedInfo.classList.add('visible');
+            if (eventSelect) eventSelect.disabled = true;
+            if (categorySelect) categorySelect.disabled = true;
+
+            const lockedEvent = (eventsData || []).find(function(ev) {
+                return String(ev.id) === String(preselectedEventId);
+            });
+            if (!lockedEvent) {
+                isEventLockedMode = false;
+                if (stepCategoryCard) stepCategoryCard.style.display = '';
+                if (stepMatchCard) stepMatchCard.style.display = '';
+                if (lockedInfo) lockedInfo.classList.remove('visible');
+                if (eventSelect) eventSelect.disabled = false;
+                if (categorySelect) categorySelect.disabled = false;
+                return;
+            }
+
+            if (eventSelect) eventSelect.value = String(lockedEvent.id);
+            if (categorySelect && lockedEvent.categoryId != null) categorySelect.value = String(lockedEvent.categoryId);
+            refreshPlayersForSelectedEvent();
+            setLockedEventInfo(lockedEvent);
+            updateSelectedMatchPreview();
+        }
+
+        function setLockedEventInfo(eventObj) {
+            const lockedCategoryText = document.getElementById('lockedCategoryText');
+            const lockedMatchText = document.getElementById('lockedMatchText');
+            if (!eventObj) {
+                if (lockedCategoryText) lockedCategoryText.textContent = '-';
+                if (lockedMatchText) lockedMatchText.textContent = '-';
+                return;
+            }
+            const catName = getCategoryNameById(eventObj.categoryId) || '-';
+            const matchName = (eventObj.name || 'Zápas') + ' - ' + formatDate(eventObj.date);
+            if (lockedCategoryText) lockedCategoryText.textContent = catName;
+            if (lockedMatchText) lockedMatchText.textContent = matchName;
+        }
+
+        function getCategoryNameById(categoryId) {
+            if (categoryId == null) return '';
+            const cat = (allCategoriesData || []).find(function(c) {
+                return String(c.id) === String(categoryId);
+            });
+            return cat ? (cat.name || '') : '';
+        }
+
+        async function loadNominatedPlayerIds(eventId) {
+            if (!eventId) return [];
+            const key = String(eventId);
+            if (Object.prototype.hasOwnProperty.call(nominatedPlayerIdsByEvent, key)) {
+                return nominatedPlayerIdsByEvent[key];
+            }
+            const payload = await getEventNominations(eventId);
+            const idsFromPlayerIds = Array.isArray(payload && payload.playerIds)
+                ? payload.playerIds.map(function(id) { return Number(id); })
+                : [];
+            const idsFromNominations = Array.isArray(payload && payload.nominations)
+                ? payload.nominations.map(function(item) { return Number(item && item.playerId); })
+                : [];
+            const ids = idsFromPlayerIds.concat(idsFromNominations).filter(function(id) {
+                return Number.isInteger(id) && id > 0;
+            });
+            nominatedPlayerIdsByEvent[key] = ids;
+            return ids;
+        }
+
+        async function refreshPlayersForSelectedEvent(searchTermOverride, preservePlayerIdOverride) {
+            const eventSelect = document.getElementById('eventId');
+            const selectedEvent = (eventsData || []).find(function(ev) {
+                return String(ev.id) === String(eventSelect.value || '');
+            });
+            const categoryId = selectedEvent && selectedEvent.categoryId != null
+                ? String(selectedEvent.categoryId)
+                : (document.getElementById('categoryId').value || '');
+            const selectedPlayerId = preservePlayerIdOverride != null
+                ? preservePlayerIdOverride
+                : document.getElementById('playerId').value;
+            const selectedPlayerSearch = searchTermOverride != null
+                ? searchTermOverride
+                : (document.getElementById('playerSearch').value || '');
+            const categoryEligiblePlayers = getPlayersEligibleForCategory(categoryId);
+            const selectedEventId = selectedEvent && selectedEvent.id != null ? selectedEvent.id : '';
+            const token = ++nominationLoadToken;
+
+            if (!selectedEventId) {
+                visiblePlayersData = categoryEligiblePlayers;
+                renderPlayerSelectOptions(selectedPlayerSearch, selectedPlayerId);
+                updateSaveButtonState();
+                return;
+            }
+
+            try {
+                const nominatedIds = await loadNominatedPlayerIds(selectedEventId);
+                if (token !== nominationLoadToken) return;
+                if (!nominatedIds.length) {
+                    visiblePlayersData = [];
+                    renderPlayerSelectOptions(selectedPlayerSearch, selectedPlayerId);
+                    const help = document.getElementById('playerHelpText');
+                    if (help) help.textContent = 'Pre tento zápas nie sú nominovaní hráči.';
+                    updateSaveButtonState();
+                    return;
+                }
+                const nominatedSet = new Set(nominatedIds.map(function(id) { return String(id); }));
+                visiblePlayersData = categoryEligiblePlayers.filter(function(player) {
+                    return nominatedSet.has(String(player.id));
+                });
+                renderPlayerSelectOptions(selectedPlayerSearch, selectedPlayerId);
+                const help = document.getElementById('playerHelpText');
+                if (help) {
+                    help.textContent = 'Nominovaní hráči: ' + visiblePlayersData.length;
+                }
+                updateSaveButtonState();
+            } catch (error) {
+                console.error('Error loading match nominations:', error);
+                if (token !== nominationLoadToken) return;
+                visiblePlayersData = [];
+                renderPlayerSelectOptions(selectedPlayerSearch, selectedPlayerId);
+                const help = document.getElementById('playerHelpText');
+                if (help) help.textContent = 'Nepodarilo sa načítať nomináciu hráčov pre zápas.';
+                updateSaveButtonState();
+            }
+        }
+
+        function getPlayersEligibleForCategory(categoryId) {
+            return (allPlayersData || []).filter(function(player) {
+                if (!categoryId) return true;
+                return isPlayerEligibleForCategory(player, categoryId);
+            });
+        }
+
+        function isPlayerEligibleForCategory(player, categoryId) {
+            if (!player || !categoryId) return true;
+            var selectedId = String(categoryId);
+
+            if (player.categoryId != null && String(player.categoryId) === selectedId) return true;
+
+            if (Array.isArray(player.categoryIds)) {
+                var hasId = player.categoryIds.some(function(id) {
+                    return String(id) === selectedId;
+                });
+                if (hasId) return true;
+            }
+
+            if (Array.isArray(player.categories)) {
+                var hasCategoryObj = player.categories.some(function(cat) {
+                    return cat && cat.id != null && String(cat.id) === selectedId;
+                });
+                if (hasCategoryObj) return true;
+            }
+
+            return false;
+        }
+
+        function renderPlayerSelectOptions(searchTerm, preservePlayerId) {
+            const query = normalizeSearchText(searchTerm);
+            const filteredPlayers = (visiblePlayersData || []).filter(function(player) {
+                if (!query) return true;
+                const name = normalizeSearchText(userListLabel(player) || '');
+                return name.includes(query);
+            });
+            const playerSelect = document.getElementById('playerId');
+            playerSelect.innerHTML = '<option value="">Vyberte hráča</option>';
+            filteredPlayers.forEach(function(player) {
+                const option = document.createElement('option');
+                option.value = player.id;
+                option.textContent = userListLabel(player);
+                playerSelect.appendChild(option);
+            });
+
+            if (preservePlayerId && filteredPlayers.some(function(p) { return String(p.id) === String(preservePlayerId); })) {
+                playerSelect.value = String(preservePlayerId);
+            } else {
+                playerSelect.value = '';
+            }
+
+            const help = document.getElementById('playerHelpText');
+            if (help) help.textContent = 'Počet oprávnených hráčov: ' + filteredPlayers.length;
+            updatePlayerSearchResults(filteredPlayers, query);
+        }
+
+        function normalizeSearchText(value) {
+            return String(value || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim();
+        }
+
+        function updatePlayerSearchResults(players, query) {
+            const box = document.getElementById('playerSearchResults');
+            if (!box) return;
+
+            if (!query) {
+                box.classList.remove('visible');
+                box.innerHTML = '';
+                return;
+            }
+
+            const limited = (players || []).slice(0, 12);
+            if (limited.length === 0) {
+                box.innerHTML = '<div class="player-search-empty">Žiadny hráč pre tento výraz.</div>';
+                box.classList.add('visible');
+                return;
+            }
+
+            box.innerHTML = limited.map(function(player) {
+                const safeName = escapeHtml(userListLabel(player) || ('Hráč #' + player.id));
+                return '<div class="player-search-item" data-player-id="' + player.id + '">' + safeName + '</div>';
+            }).join('');
+            box.classList.add('visible');
+
+            box.querySelectorAll('.player-search-item').forEach(function(item) {
+                item.addEventListener('click', function() {
+                    const playerId = item.getAttribute('data-player-id');
+                    const playerSelect = document.getElementById('playerId');
+                    const playerSearch = document.getElementById('playerSearch');
+                    if (playerSelect) playerSelect.value = String(playerId);
+                    if (playerSearch) {
+                        const selected = (players || []).find(function(p) { return String(p.id) === String(playerId); });
+                        playerSearch.value = selected ? (selected.name || '') : '';
+                    }
+                    box.classList.remove('visible');
+                    box.innerHTML = '';
+                    loadExistingStatsForSelection();
+                });
+            });
+        }
+
+        function updateSelectedMatchPreview() {
+            const eventSelect = document.getElementById('eventId');
+            const selected = eventSelect.options[eventSelect.selectedIndex];
+            const opponent = selected && selected.value ? (selected.dataset.opponent || '-') : '-';
+            const matchDate = selected && selected.value ? formatDate(selected.dataset.date || '') : '-';
+            document.getElementById('opponent').value = opponent === '-' ? '' : opponent;
+            document.getElementById('selectedOpponentText').textContent = opponent;
+            document.getElementById('selectedMatchDateText').textContent = matchDate || '-';
+            updateSaveButtonState();
+        }
+
+        function updateSaveButtonState() {
+            const btn = document.getElementById('saveStatisticsBtn');
+            if (!btn) return;
+            const categoryId = (document.getElementById('categoryId') || {}).value || '';
+            const eventId = (document.getElementById('eventId') || {}).value || '';
+            const playerId = (document.getElementById('playerId') || {}).value || '';
+            const canSave = (!!eventId && !!playerId && (isEventLockedMode || !!categoryId));
+            btn.disabled = !canSave;
+        }
+
+        function formatMinutesDecimalToTime(min) {
+            if (min == null || min === '' || isNaN(min)) return '0:00';
+            var n = Number(min);
+            var m = Math.floor(n);
+            var s = Math.round((n - m) * 60);
+            return m + ':' + (s < 10 ? '0' : '') + s;
+        }
+        function parseMinutesTimeToDecimal(str) {
+            if (str == null || str === '') return 0;
+            var t = String(str).trim();
+            if (t.indexOf(':') >= 0) {
+                var parts = t.split(':');
+                var mm = parseInt(parts[0], 10) || 0;
+                var ss = parseInt(parts[1], 10) || 0;
+                return mm + ss / 60;
+            }
+            var n = parseFloat(t);
+            return isNaN(n) ? 0 : n;
+        }
+        function formatMinDisplay() {
+            var el = document.getElementById('MIN');
+            if (el) el.value = formatMinutesDecimalToTime(parseMinutesTimeToDecimal(el.value));
+        }
+        function resetStatFields() {
+            var statIds = ['PTS', '2PÚ', '2PC', '3PÚ', '3PC', 'FGÚ', 'FGC', 'FTÚ', 'FTC', 'F+', 'F-', 'OFF', 'DEF', 'STL', 'AST', 'BLK', 'TO'];
+            statIds.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.value = 0;
+            });
+            var minEl = document.getElementById('MIN');
+            if (minEl) minEl.value = '0:00';
+            document.getElementById('indexValue').textContent = '0.00';
+            validateAllMadeAttempts();
+            calculateIndexValue();
+        }
+
+        function updateEditingHint() {
+            var el = document.getElementById('editingExistingHint');
+            if (el) el.classList.toggle('visible', !!statId);
+        }
+
+        function clearStatFieldsOnly() {
+            resetStatFields();
+        }
+
+        async function loadExistingStatsForSelection() {
+            var eventId = document.getElementById('eventId').value;
+            var playerId = document.getElementById('playerId').value;
+            if (!eventId || !playerId) {
+                statId = null;
+                resetStatFields();
+                updateEditingHint();
+                return;
+            }
+            try {
+                var list = await getStatistics({ eventId: eventId, playerId: playerId, statType: 'GAME' });
+                var existing = list && list.length ? list.find(function(s) {
+                    return String(s.eventId) === String(eventId);
+                }) : null;
+                if (existing) {
+                    statId = String(existing.id);
+                    populateForm(existing, true);
+                } else {
+                    statId = null;
+                    resetStatFields();
+                }
+                updateEditingHint();
+            } catch (err) {
+                console.error('Error loading existing stats:', err);
+                statId = null;
+                resetStatFields();
+                updateEditingHint();
+            }
+        }
+
+        function populateForm(stats, keepEventAndPlayer) {
+            var eventSelect = document.getElementById('eventId');
+            var playerSelect = document.getElementById('playerId');
+            var categorySelect = document.getElementById('categoryId');
+            var eventFromData = (eventsData || []).find(function(ev) { return String(ev.id) === String(stats.eventId); });
+            var desiredCategoryId = eventFromData && eventFromData.categoryId != null ? String(eventFromData.categoryId) : '';
+            if (!desiredCategoryId) {
+                var playerFromData = (allPlayersData || []).find(function(p) { return String(p.id) === String(stats.playerId); });
+                if (playerFromData && playerFromData.categoryId != null) {
+                    desiredCategoryId = String(playerFromData.categoryId);
+                } else if (playerFromData && Array.isArray(playerFromData.categoryIds) && playerFromData.categoryIds.length > 0) {
+                    desiredCategoryId = String(playerFromData.categoryIds[0]);
+                } else if (playerFromData && Array.isArray(playerFromData.categories) && playerFromData.categories.length > 0 && playerFromData.categories[0].id != null) {
+                    desiredCategoryId = String(playerFromData.categories[0].id);
+                }
+            }
+            if (categorySelect && desiredCategoryId) {
+                categorySelect.value = desiredCategoryId;
+                applyCategoryFilters();
+            }
+
+            if (!keepEventAndPlayer) {
+                eventSelect.value = String(stats.eventId);
+                playerSelect.value = String(stats.playerId);
+            }
+            if (stats.opponent != null && stats.opponent !== '') {
+                document.getElementById('opponent').value = stats.opponent;
+            }
+            var oppInput = document.getElementById('opponent');
+            if (oppInput && (stats.opponent == null || stats.opponent === '')) {
+                oppInput.value = '';
+            }
+            var values = stats.values;
+            if (values && typeof values === 'object') {
+                var statFieldIds = ['MIN', 'PTS', '2PÚ', '2PC', '3PÚ', '3PC', 'FGÚ', 'FGC', 'FTÚ', 'FTC', 'F+', 'F-', 'OFF', 'DEF', 'STL', 'AST', 'BLK', 'TO', 'INDEX'];
+                statFieldIds.forEach(function(id) {
+                    var val = values[id];
+                    if (val === undefined || val === null) val = 0;
+                    var input = document.getElementById(id);
+                    if (input) {
+                        input.value = id === 'MIN' ? formatMinutesDecimalToTime(Number(val)) : Number(val);
+                    }
+                });
+                var indexEl = document.getElementById('indexValue');
+                if (indexEl && values['INDEX'] != null) {
+                    indexEl.textContent = Number(values['INDEX']).toFixed(2);
+                }
+            }
+            updateFieldGoals();
+            validateAllMadeAttempts();
+            calculateIndexValue();
+            updateSelectedMatchPreview();
+        }
+
+        function validateMadeAttempts(madeFieldId, attemptsFieldId) {
+            var madeInput = document.getElementById(madeFieldId);
+            var attemptsInput = document.getElementById(attemptsFieldId);
+            if (!madeInput || !attemptsInput) return false;
+            var made = parseFloat(madeInput.value) || 0;
+            var attempts = parseFloat(attemptsInput.value) || 0;
+            if (made > attempts) {
+                madeInput.classList.add('error');
+                return false;
+            } else {
+                madeInput.classList.remove('error');
+                return true;
+            }
+        }
+
+        function validateAllMadeAttempts() {
+            var a = validateMadeAttempts('2PÚ', '2PC');
+            var b = validateMadeAttempts('3PÚ', '3PC');
+            var c = validateMadeAttempts('FGÚ', 'FGC');
+            var d = validateMadeAttempts('FTÚ', 'FTC');
+            return a && b && c && d;
+        }
+
+        function updateFieldGoals() {
+            var twoMade = parseInt(document.getElementById('2PÚ').value, 10) || 0;
+            var twoAttempts = parseInt(document.getElementById('2PC').value, 10) || 0;
+            var threeMade = parseInt(document.getElementById('3PÚ').value, 10) || 0;
+            var threeAttempts = parseInt(document.getElementById('3PC').value, 10) || 0;
+            document.getElementById('FGÚ').value = twoMade + threeMade;
+            document.getElementById('FGC').value = twoAttempts + threeAttempts;
+        }
+
+        function calculateIndexValue() {
+            updateFieldGoals();
+            var pts = calculatePoints();
+            var values = {};
+            ['OFF', 'DEF', 'AST', 'STL', 'BLK', 'FGÚ', 'FGC', 'FTÚ', 'FTC', 'TO'].forEach(function(field) {
+                var input = document.getElementById(field);
+                if (input) values[field] = parseFloat(input.value) || 0;
+            });
+            var off = values['OFF'] || 0, def = values['DEF'] || 0, ast = values['AST'] || 0, stl = values['STL'] || 0, blk = values['BLK'] || 0;
+            var fgMade = values['FGÚ'] || 0, fgAttempts = values['FGC'] || 0, ftMade = values['FTÚ'] || 0, ftAttempts = values['FTC'] || 0, to = values['TO'] || 0;
+            var index = (pts + off + def + ast + stl + blk) - ((fgAttempts - fgMade) + (ftAttempts - ftMade) + to);
+            document.getElementById('indexValue').textContent = (Math.round(index * 100) / 100).toFixed(2);
+        }
+
+        function calculatePoints() {
+            var ftMade = parseInt(document.getElementById('FTÚ').value, 10) || 0;
+            var twoPointMade = parseInt(document.getElementById('2PÚ').value, 10) || 0;
+            var threePointMade = parseInt(document.getElementById('3PÚ').value, 10) || 0;
+            var points = ftMade * 1 + twoPointMade * 2 + threePointMade * 3;
+            document.getElementById('PTS').value = points;
+            return points;
+        }
+
+        async function saveStatistics() {
+            try {
+                if (!validateAllMadeAttempts()) {
+                    showSaveResultPopup(false, 'Zásahy nemôžu byť viac ako pokusy. Skontrolujte označené polia (červený rám).');
+                    var firstError = document.querySelector('.stat-input-group input.error');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstError.focus();
+                    }
+                    return;
+                }
+                var eventId = document.getElementById('eventId').value;
+                var playerId = document.getElementById('playerId').value;
+                var opponent = document.getElementById('opponent').value;
+                if (!eventId || !playerId) {
+                    showSaveResultPopup(false, 'Vyberte zápas a hráča.');
+                    return;
+                }
+                var selectedEvent = (eventsData || []).find(function(ev) {
+                    return String(ev.id) === String(eventId);
+                });
+                var selectedPlayer = (allPlayersData || []).find(function(p) {
+                    return String(p.id) === String(playerId);
+                });
+                if (selectedEvent && selectedEvent.categoryId != null) {
+                    var eligible = isPlayerEligibleForCategory(selectedPlayer, String(selectedEvent.categoryId));
+                    if (!eligible) {
+                        showSaveResultPopup(false, 'Hráč nie je oprávnený pre zvolenú kategóriu zápasu.');
+                        return;
+                    }
+                }
+                var values = {};
+                ['MIN', '2PÚ', '2PC', '3PÚ', '3PC', 'FGÚ', 'FGC', 'FTÚ', 'FTC', 'PTS', 'F+', 'F-', 'OFF', 'DEF', 'STL', 'AST', 'BLK', 'TO'].forEach(function(field) {
+                    var input = document.getElementById(field);
+                    if (input) values[field] = field === 'MIN' ? parseMinutesTimeToDecimal(input.value) : (parseFloat(input.value) || 0);
+                });
+                calculateIndexValue();
+                values['INDEX'] = parseFloat(document.getElementById('indexValue').textContent) || 0;
+                var data = { eventId: parseInt(eventId, 10), playerId: parseInt(playerId, 10), values: values, opponent: opponent || '' };
+                if (statId) {
+                    await updateStatistics(statId, data);
+                    showSaveResultPopup(true, 'Štatistiky boli úspešne upravené.');
+                } else {
+                    await createStatistics(data);
+                    showSaveResultPopup(true, 'Štatistiky boli úspešne uložené.');
+                }
+            } catch (error) {
+                console.error('Error saving statistics:', error);
+                var errMsg = (error && (error.message || error.error)) || 'Štatistiky sa nepodarilo uložiť. Skúste to znova.';
+                showSaveResultPopup(false, errMsg);
+            }
+        }
+
+        function showSaveResultPopup(success, message) {
+            var popup = document.getElementById('saveResultPopup');
+            var content = document.getElementById('saveResultPopupContent');
+            var titleEl = document.getElementById('saveResultTitle');
+            var textEl = document.getElementById('saveResultText');
+            if (!popup || !content || !titleEl || !textEl) return;
+            content.classList.remove('success', 'error');
+            content.classList.add(success ? 'success' : 'error');
+            titleEl.textContent = success ? 'Úspech' : 'Ukladanie zlyhalo';
+            textEl.textContent = message;
+            popup.classList.add('open');
+        }
+
+        function closeSaveResultPopup(event) {
+            if (event && event.target !== document.getElementById('saveResultPopup')) return;
+            document.getElementById('saveResultPopup').classList.remove('open');
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            return new Date(dateString).toLocaleDateString('sk-SK', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function showMessage(message, type) {
+            type = type || 'info';
+            var messageArea = document.getElementById('messageArea');
+            var div = document.createElement('div');
+            div.className = 'message message-' + type;
+            div.textContent = message;
+            messageArea.innerHTML = '';
+            messageArea.appendChild(div);
+            setTimeout(function() { div.remove(); }, 5000);
+        }
+
+        function escapeHtml(text) {
+            var d = document.createElement('div');
+            d.textContent = text || '';
+            return d.innerHTML;
+        }
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

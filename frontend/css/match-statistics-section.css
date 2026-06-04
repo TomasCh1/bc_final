@@ -1,0 +1,263 @@
+/* Štatistiky za zápasy – shared controls and charts (admin-dashboard, admin-matches) */
+.statistics-controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #F8F9FA;
+    border-radius: 8px;
+    padding: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.game-stats-category-filter-wrap {
+    /* wrapper for optional hide when header category selected */
+}
+
+.game-stats-category-filter {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid #E5E7EB;
+    background: #FFFFFF;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+    user-select: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.game-stats-category-filter:hover {
+    background: #F3F4F6;
+    border-color: #E5E7EB;
+}
+.game-stats-category-filter.open {
+    background: #1F2937;
+    color: #FFFFFF;
+    border-color: #1F2937;
+}
+.game-stats-category-filter.open .game-stats-category-caret {
+    color: rgba(255,255,255,0.9);
+}
+.game-stats-category-caret {
+    font-size: 0.6rem;
+    color: #6B7280;
+    transition: transform 0.2s, color 0.2s;
+}
+.game-stats-category-filter.open .game-stats-category-caret {
+    transform: rotate(180deg);
+}
+.game-stats-category-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    min-width: 180px;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #fff;
+    color: #374151;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    z-index: 100;
+}
+.game-stats-category-filter.open .game-stats-category-dropdown {
+    display: block;
+}
+.game-stats-category-option {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #374151;
+}
+.game-stats-category-option:hover {
+    background: #F3F4F6;
+    color: #374151;
+}
+.game-stats-category-option.active {
+    background: rgba(107, 33, 168, 0.12);
+    color: #6B21A8;
+    font-weight: 500;
+}
+
+.game-stats-page-size {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.game-stats-page-size label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+    white-space: nowrap;
+}
+.game-stats-page-size-select {
+    padding: 0.5rem 1rem;
+    border: 1px solid #E5E7EB;
+    background: #FFFFFF;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 3.5rem;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    padding-right: 1.75rem;
+}
+.game-stats-page-size-select:hover {
+    background-color: #F3F4F6;
+}
+.game-stats-page-size-select:focus {
+    outline: none;
+    border-color: #1F2937;
+}
+
+.game-stats-filter-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.game-stats-filter-wrap label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+}
+.game-stats-filter-select {
+    padding: 0.4rem 1.75rem 0.4rem 0.75rem;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background-color: #FFFFFF;
+    cursor: pointer;
+}
+.game-stats-filter-select:hover {
+    background-color: #F9FAFB;
+}
+.game-stats-filter-select:focus {
+    outline: none;
+    border-color: #1F2937;
+}
+
+.statistics-controls-bar .view-toggle {
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.game-stats-pagination-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+.game-stats-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #D1D5DB;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s, transform 0.15s;
+}
+.game-stats-dot:hover {
+    background: #9CA3AF;
+    transform: scale(1.15);
+}
+.game-stats-dot.active {
+    background: #6B21A8;
+    transform: scale(1.2);
+    box-shadow: 0 0 0 2px rgba(107, 33, 168, 0.3);
+}
+
+.statistics-table th:nth-child(5),
+.statistics-table td:nth-child(5) {
+    min-width: 5rem;
+}
+
+/* Charts */
+.charts-view {
+    display: none;
+}
+.charts-view.active {
+    display: block;
+}
+.chart-container {
+    background: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.chart-container h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2C2C2C;
+    margin-bottom: 1rem;
+}
+.chart-wrapper {
+    position: relative;
+    height: 350px;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+.chart-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+.chart-controls label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #666666;
+}
+.chart-controls select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #E0E0E0;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: #FFFFFF;
+    color: #2C2C2C;
+    cursor: pointer;
+}
+.chart-controls select:focus {
+    outline: none;
+    border-color: #6B21A8;
+}
+
+.game-stats-footer {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .statistics-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .statistics-controls {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .statistics-header .section-header {
+        margin-bottom: 1rem;
+    }
+}

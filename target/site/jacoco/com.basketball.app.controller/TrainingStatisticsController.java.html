@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TrainingStatisticsController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.controller</a> &gt; <span class="el_source">TrainingStatisticsController.java</span></div><h1>TrainingStatisticsController.java</h1><pre class="source lang-java linenums">package com.basketball.app.controller;
+
+import com.basketball.app.dto.TrainingStatisticsCreateRequest;
+import com.basketball.app.dto.TrainingStatisticsUpdateRequest;
+import com.basketball.app.model.TrainingStatistics;
+import com.basketball.app.service.TrainingStatisticsService;
+import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/api/training-statistics&quot;)
+public class TrainingStatisticsController {
+
+    private final TrainingStatisticsService trainingStatisticsService;
+
+<span class="fc" id="L24">    public TrainingStatisticsController(TrainingStatisticsService trainingStatisticsService) {</span>
+<span class="fc" id="L25">        this.trainingStatisticsService = trainingStatisticsService;</span>
+<span class="fc" id="L26">    }</span>
+
+    /**
+     * Create training statistics record
+     */
+    @PostMapping
+    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    public ResponseEntity&lt;?&gt; createTrainingStatistics(@Valid @RequestBody TrainingStatisticsCreateRequest request) {
+        try {
+<span class="fc" id="L35">            TrainingStatistics statistics = trainingStatisticsService.createTrainingStatistics(request);</span>
+<span class="fc" id="L36">            return ResponseEntity.status(HttpStatus.CREATED).body(statistics);</span>
+<span class="fc" id="L37">        } catch (Exception e) {</span>
+<span class="fc" id="L38">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L39">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Update training statistics record
+     */
+    @PutMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    public ResponseEntity&lt;?&gt; updateTrainingStatistics(@PathVariable Long id,
+                                                      @Valid @RequestBody TrainingStatisticsUpdateRequest request) {
+        try {
+<span class="fc" id="L51">            TrainingStatistics statistics = trainingStatisticsService.updateTrainingStatistics(id, request);</span>
+<span class="fc" id="L52">            return ResponseEntity.ok(statistics);</span>
+<span class="nc" id="L53">        } catch (Exception e) {</span>
+<span class="nc" id="L54">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L55">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get training statistics by ID
+     */
+    @GetMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    public ResponseEntity&lt;?&gt; getTrainingStatisticsById(@PathVariable Long id) {
+        try {
+<span class="fc" id="L66">            TrainingStatistics statistics = trainingStatisticsService.findById(id);</span>
+<span class="fc" id="L67">            return ResponseEntity.ok(statistics);</span>
+<span class="fc" id="L68">        } catch (Exception e) {</span>
+<span class="fc" id="L69">            return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="fc" id="L70">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get all training statistics for a user
+     */
+    @GetMapping(&quot;/user/{userId}&quot;)
+    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    public ResponseEntity&lt;?&gt; getTrainingStatisticsByUser(@PathVariable Long userId) {
+        try {
+<span class="fc" id="L81">            List&lt;TrainingStatistics&gt; statistics = trainingStatisticsService.findByUserId(userId);</span>
+<span class="fc" id="L82">            return ResponseEntity.ok(statistics);</span>
+<span class="nc" id="L83">        } catch (Exception e) {</span>
+<span class="nc" id="L84">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L85">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get last N training statistics for a user
+     */
+    @GetMapping(&quot;/user/{userId}/last&quot;)
+    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    public ResponseEntity&lt;?&gt; getLastTrainingStatistics(@PathVariable Long userId,
+                                                        @RequestParam(defaultValue = &quot;4&quot;) int limit) {
+        try {
+<span class="fc" id="L97">            List&lt;TrainingStatistics&gt; statistics = trainingStatisticsService.findLastNByUserId(userId, limit);</span>
+<span class="fc" id="L98">            return ResponseEntity.ok(statistics);</span>
+<span class="nc" id="L99">        } catch (Exception e) {</span>
+<span class="nc" id="L100">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L101">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get training statistics with filters.
+     */
+    @GetMapping
+    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    public ResponseEntity&lt;?&gt; getTrainingStatisticsWithFilters(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) TrainingStatistics.TrainingCategory category,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String search) {
+        try {
+<span class="fc" id="L117">            List&lt;TrainingStatistics&gt; statistics = trainingStatisticsService.findWithFilters(</span>
+                    userId, category, startDate, endDate, search);
+
+<span class="fc" id="L120">            return ResponseEntity.ok(statistics);</span>
+<span class="nc" id="L121">        } catch (Exception e) {</span>
+<span class="nc" id="L122">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L123">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Delete training statistics
+     */
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    public ResponseEntity&lt;?&gt; deleteTrainingStatistics(@PathVariable Long id) {
+        try {
+<span class="fc" id="L134">            trainingStatisticsService.deleteTrainingStatistics(id);</span>
+<span class="fc" id="L135">            return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Training statistics deleted successfully&quot;));</span>
+<span class="nc" id="L136">        } catch (Exception e) {</span>
+<span class="nc" id="L137">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L138">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

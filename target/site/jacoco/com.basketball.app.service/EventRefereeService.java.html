@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventRefereeService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.service</a> &gt; <span class="el_source">EventRefereeService.java</span></div><h1>EventRefereeService.java</h1><pre class="source lang-java linenums">package com.basketball.app.service;
+
+import com.basketball.app.dto.EventRefereeItemRequest;
+import com.basketball.app.model.Event;
+import com.basketball.app.model.EventReferee;
+import com.basketball.app.repository.EventRefereeRepository;
+import com.basketball.app.repository.EventRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+public class EventRefereeService {
+
+    private static final int MAX_REFEREES = 3;
+
+    private final EventRepository eventRepository;
+    private final EventRefereeRepository eventRefereeRepository;
+
+<span class="fc" id="L24">    public EventRefereeService(EventRepository eventRepository, EventRefereeRepository eventRefereeRepository) {</span>
+<span class="fc" id="L25">        this.eventRepository = eventRepository;</span>
+<span class="fc" id="L26">        this.eventRefereeRepository = eventRefereeRepository;</span>
+<span class="fc" id="L27">    }</span>
+
+    public Map&lt;String, Object&gt; getRefereesForEvent(Long eventId) {
+<span class="fc" id="L30">        Event event = requireMatchEvent(eventId);</span>
+<span class="fc" id="L31">        List&lt;EventReferee&gt; rows = eventRefereeRepository.findByEventIdOrderBySortOrderAsc(event.getId());</span>
+<span class="fc" id="L32">        List&lt;Map&lt;String, Object&gt;&gt; referees = rows.stream()</span>
+<span class="fc" id="L33">                .map(row -&gt; Map.&lt;String, Object&gt;of(</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">                        &quot;name&quot;, row.getName() != null ? row.getName() : &quot;&quot;,</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">                        &quot;grade&quot;, row.getGrade() != null ? row.getGrade() : &quot;&quot;</span>
+                ))
+<span class="fc" id="L37">                .collect(Collectors.toList());</span>
+<span class="fc" id="L38">        return Map.of(</span>
+<span class="fc" id="L39">                &quot;eventId&quot;, event.getId(),</span>
+                &quot;referees&quot;, referees
+        );
+    }
+
+    @Transactional
+    public Map&lt;String, Object&gt; replaceRefereesForEvent(Long eventId, List&lt;EventRefereeItemRequest&gt; requested) {
+<span class="fc" id="L46">        Event event = requireMatchEvent(eventId);</span>
+<span class="fc" id="L47">        List&lt;NormalizedRef&gt; normalized = normalizeReferees(requested);</span>
+
+<span class="fc" id="L49">        eventRefereeRepository.deleteByEventId(event.getId());</span>
+<span class="fc" id="L50">        eventRefereeRepository.flush();</span>
+
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (!normalized.isEmpty()) {</span>
+<span class="fc" id="L53">            List&lt;EventReferee&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">            for (int i = 0; i &lt; normalized.size(); i++) {</span>
+<span class="fc" id="L55">                NormalizedRef ref = normalized.get(i);</span>
+<span class="fc" id="L56">                EventReferee row = new EventReferee();</span>
+<span class="fc" id="L57">                row.setEventId(event.getId());</span>
+<span class="fc" id="L58">                row.setSortOrder(i);</span>
+<span class="fc" id="L59">                row.setName(ref.name());</span>
+<span class="fc" id="L60">                row.setGrade(ref.grade());</span>
+<span class="fc" id="L61">                rows.add(row);</span>
+            }
+<span class="fc" id="L63">            eventRefereeRepository.saveAll(rows);</span>
+<span class="fc" id="L64">            eventRefereeRepository.flush();</span>
+        }
+
+<span class="fc" id="L67">        List&lt;Map&lt;String, Object&gt;&gt; out = normalized.stream()</span>
+<span class="fc" id="L68">                .map(ref -&gt; Map.&lt;String, Object&gt;of(</span>
+<span class="fc" id="L69">                        &quot;name&quot;, ref.name(),</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">                        &quot;grade&quot;, ref.grade() != null ? ref.grade() : &quot;&quot;</span>
+                ))
+<span class="fc" id="L72">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L74">        return Map.of(</span>
+<span class="fc" id="L75">                &quot;eventId&quot;, event.getId(),</span>
+                &quot;referees&quot;, out
+        );
+    }
+
+    private Event requireMatchEvent(Long eventId) {
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        if (eventId == null) {</span>
+<span class="nc" id="L82">            throw new RuntimeException(&quot;Event ID is required.&quot;);</span>
+        }
+<span class="fc" id="L84">        Event event = eventRepository.findById(eventId)</span>
+<span class="pc" id="L85">                .orElseThrow(() -&gt; new RuntimeException(&quot;Event not found: &quot; + eventId));</span>
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        if (event.getType() != Event.EventType.MATCH) {</span>
+<span class="nc" id="L87">            throw new RuntimeException(&quot;Referees are allowed only for MATCH events.&quot;);</span>
+        }
+<span class="fc" id="L89">        return event;</span>
+    }
+
+    private List&lt;NormalizedRef&gt; normalizeReferees(List&lt;EventRefereeItemRequest&gt; requested) {
+<span class="pc bpc" id="L93" title="2 of 4 branches missed.">        if (requested == null || requested.isEmpty()) {</span>
+<span class="nc" id="L94">            return List.of();</span>
+        }
+<span class="fc" id="L96">        List&lt;NormalizedRef&gt; out = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        for (EventRefereeItemRequest item : requested) {</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            if (item == null) {</span>
+<span class="nc" id="L99">                continue;</span>
+            }
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            String name = item.getName() != null ? item.getName().trim() : &quot;&quot;;</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">            if (name.isEmpty()) {</span>
+<span class="nc" id="L103">                continue;</span>
+            }
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">            if (name.length() &gt; 255) {</span>
+<span class="nc" id="L106">                throw new RuntimeException(&quot;Referee name must be at most 255 characters.&quot;);</span>
+            }
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">            String grade = item.getGrade() != null ? item.getGrade().trim() : &quot;&quot;;</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">            if (grade.length() &gt; 64) {</span>
+<span class="nc" id="L110">                throw new RuntimeException(&quot;Referee grade must be at most 64 characters.&quot;);</span>
+            }
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">            String gradeOrNull = grade.isEmpty() ? null : grade;</span>
+<span class="fc" id="L113">            out.add(new NormalizedRef(name, gradeOrNull));</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">            if (out.size() &gt; MAX_REFEREES) {</span>
+<span class="fc" id="L115">                throw new RuntimeException(&quot;You can add at most &quot; + MAX_REFEREES + &quot; referees per game.&quot;);</span>
+            }
+<span class="fc" id="L117">        }</span>
+<span class="fc" id="L118">        return out;</span>
+    }
+
+<span class="fc" id="L121">    private record NormalizedRef(String name, String grade) {</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

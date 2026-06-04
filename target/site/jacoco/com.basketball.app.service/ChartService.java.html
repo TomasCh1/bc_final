@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChartService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.service</a> &gt; <span class="el_source">ChartService.java</span></div><h1>ChartService.java</h1><pre class="source lang-java linenums">package com.basketball.app.service;
+
+import com.basketball.app.model.Event;
+import com.basketball.app.model.Statistics;
+import com.basketball.app.repository.StatisticsRepository;
+import com.basketball.app.repository.EventRepository;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class ChartService {
+
+    private final StatisticsRepository statisticsRepository;
+    private final EventRepository eventRepository;
+
+    public ChartService(StatisticsRepository statisticsRepository,
+<span class="fc" id="L21">                       EventRepository eventRepository) {</span>
+<span class="fc" id="L22">        this.statisticsRepository = statisticsRepository;</span>
+<span class="fc" id="L23">        this.eventRepository = eventRepository;</span>
+<span class="fc" id="L24">    }</span>
+
+    /**
+     * Get time-series data for performance metrics over time
+     * Returns data points grouped by date for a specific metric with averages per day
+     */
+    public Map&lt;String, Object&gt; getTimeSeriesData(Long playerId, String metric, 
+                                                 LocalDate startDate, LocalDate endDate,
+                                                 Statistics.StatType statType, Long categoryId) {
+        List&lt;Statistics&gt; statistics;
+<span class="pc bpc" id="L34" title="3 of 4 branches missed.">        if (playerId != null &amp;&amp; categoryId != null) {</span>
+<span class="nc" id="L35">            statistics = statisticsRepository.findByPlayerId(playerId);</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        } else if (playerId != null) {</span>
+<span class="nc" id="L37">            statistics = statisticsRepository.findByPlayerId(playerId);</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        } else if (categoryId != null) {</span>
+<span class="nc" id="L39">            statistics = statisticsRepository.findByCategoryId(categoryId);</span>
+        } else {
+<span class="fc" id="L41">            statistics = statisticsRepository.findAll();</span>
+        }
+
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        if (statType != null) {</span>
+<span class="nc" id="L45">            statistics = statistics.stream()</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">                .filter(s -&gt; s.getStatType() == statType)</span>
+<span class="nc" id="L47">                .collect(Collectors.toList());</span>
+        }
+
+<span class="fc" id="L50">        Map&lt;Long, Event&gt; eventMap = eventRepository.findAll().stream()</span>
+<span class="fc" id="L51">            .collect(Collectors.toMap(Event::getId, e -&gt; e));</span>
+
+<span class="fc" id="L53">        Map&lt;String, List&lt;Double&gt;&gt; dateValuesMap = new LinkedHashMap&lt;&gt;();</span>
+        
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        for (Statistics stat : statistics) {</span>
+<span class="fc" id="L56">            Event event = eventMap.get(stat.getEventId());</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">            if (event == null) continue;</span>
+
+<span class="pc bpc" id="L59" title="3 of 4 branches missed.">            if (startDate != null &amp;&amp; event.getDate().isBefore(startDate)) continue;</span>
+<span class="pc bpc" id="L60" title="3 of 4 branches missed.">            if (endDate != null &amp;&amp; event.getDate().isAfter(endDate)) continue;</span>
+            
+<span class="pc bpc" id="L62" title="3 of 4 branches missed.">            if (categoryId != null &amp;&amp; playerId != null) {</span>
+<span class="nc bnc" id="L63" title="All 4 branches missed.">                if (event.getCategoryId() == null || !event.getCategoryId().equals(categoryId)) {</span>
+<span class="nc" id="L64">                    continue;</span>
+                }
+            }
+
+<span class="fc" id="L68">            Double metricValue = stat.getMetricValue(metric);</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">            if (metricValue != null) {</span>
+<span class="fc" id="L70">                String dateStr = event.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE);</span>
+<span class="fc" id="L71">                dateValuesMap.computeIfAbsent(dateStr, k -&gt; new ArrayList&lt;&gt;()).add(metricValue);</span>
+            }
+<span class="fc" id="L73">        }</span>
+
+<span class="fc" id="L75">        Map&lt;String, Map&lt;String, Object&gt;&gt; uniqueDataPoints = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (Map.Entry&lt;String, List&lt;Double&gt;&gt; entry : dateValuesMap.entrySet()) {</span>
+<span class="fc" id="L77">            String date = entry.getKey();</span>
+<span class="fc" id="L78">            List&lt;Double&gt; values = entry.getValue();</span>
+            
+<span class="fc" id="L80">            double average = values.stream()</span>
+<span class="fc" id="L81">                .mapToDouble(Double::doubleValue)</span>
+<span class="fc" id="L82">                .average()</span>
+<span class="fc" id="L83">                .orElse(0.0);</span>
+            
+<span class="fc" id="L85">            average = Math.round(average * 100.0) / 100.0;</span>
+            
+<span class="fc" id="L87">            Map&lt;String, Object&gt; point = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L88">            point.put(&quot;date&quot;, date);</span>
+<span class="fc" id="L89">            point.put(&quot;value&quot;, average);</span>
+<span class="fc" id="L90">            point.put(&quot;count&quot;, values.size());</span>
+            
+<span class="fc" id="L92">            uniqueDataPoints.put(date, point);</span>
+<span class="fc" id="L93">        }</span>
+
+<span class="fc" id="L95">        List&lt;Map&lt;String, Object&gt;&gt; dataPoints = new ArrayList&lt;&gt;(uniqueDataPoints.values());</span>
+<span class="pc" id="L96">        dataPoints.sort(Comparator.comparing(p -&gt; (String) p.get(&quot;date&quot;)));</span>
+
+<span class="fc" id="L98">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L99">        result.put(&quot;metric&quot;, metric);</span>
+<span class="fc" id="L100">        result.put(&quot;playerId&quot;, playerId);</span>
+<span class="fc" id="L101">        result.put(&quot;categoryId&quot;, categoryId);</span>
+<span class="fc" id="L102">        result.put(&quot;statType&quot;, statType);</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">        result.put(&quot;startDate&quot;, startDate != null ? startDate.toString() : null);</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        result.put(&quot;endDate&quot;, endDate != null ? endDate.toString() : null);</span>
+<span class="fc" id="L105">        result.put(&quot;dataPoints&quot;, dataPoints);</span>
+<span class="fc" id="L106">        result.put(&quot;count&quot;, dataPoints.size());</span>
+
+<span class="fc" id="L108">        return result;</span>
+    }
+
+    /**
+     * Get category distribution data
+     * Returns aggregated statistics grouped by category
+     */
+    public Map&lt;String, Object&gt; getCategoryDistribution(String metric, 
+                                                      LocalDate startDate, LocalDate endDate,
+                                                      Statistics.StatType statType) {
+<span class="nc" id="L118">        List&lt;Statistics&gt; statistics = statisticsRepository.findAll();</span>
+        
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (statType != null) {</span>
+<span class="nc" id="L121">            statistics = statistics.stream()</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                .filter(s -&gt; s.getStatType() == statType)</span>
+<span class="nc" id="L123">                .collect(Collectors.toList());</span>
+        }
+
+<span class="nc" id="L126">        Map&lt;Long, Event&gt; eventMap = eventRepository.findAll().stream()</span>
+<span class="nc" id="L127">            .collect(Collectors.toMap(Event::getId, e -&gt; e));</span>
+
+<span class="nc" id="L129">        Map&lt;Long, List&lt;Double&gt;&gt; categoryValues = new HashMap&lt;&gt;();</span>
+        
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        for (Statistics stat : statistics) {</span>
+<span class="nc" id="L132">            Event event = eventMap.get(stat.getEventId());</span>
+<span class="nc bnc" id="L133" title="All 4 branches missed.">            if (event == null || event.getCategoryId() == null) continue;</span>
+
+<span class="nc bnc" id="L135" title="All 4 branches missed.">            if (startDate != null &amp;&amp; event.getDate().isBefore(startDate)) continue;</span>
+<span class="nc bnc" id="L136" title="All 4 branches missed.">            if (endDate != null &amp;&amp; event.getDate().isAfter(endDate)) continue;</span>
+
+<span class="nc" id="L138">            Double metricValue = stat.getMetricValue(metric);</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">            if (metricValue != null) {</span>
+<span class="nc" id="L140">                categoryValues.computeIfAbsent(event.getCategoryId(), k -&gt; new ArrayList&lt;&gt;())</span>
+<span class="nc" id="L141">                    .add(metricValue);</span>
+            }
+<span class="nc" id="L143">        }</span>
+
+<span class="nc" id="L145">        List&lt;Map&lt;String, Object&gt;&gt; distribution = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">        for (Map.Entry&lt;Long, List&lt;Double&gt;&gt; entry : categoryValues.entrySet()) {</span>
+<span class="nc" id="L147">            List&lt;Double&gt; values = entry.getValue();</span>
+<span class="nc" id="L148">            double sum = values.stream().mapToDouble(Double::doubleValue).sum();</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">            double avg = values.isEmpty() ? 0 : sum / values.size();</span>
+            
+<span class="nc" id="L151">            Map&lt;String, Object&gt; categoryData = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L152">            categoryData.put(&quot;categoryId&quot;, entry.getKey());</span>
+<span class="nc" id="L153">            categoryData.put(&quot;average&quot;, Math.round(avg * 100.0) / 100.0);</span>
+<span class="nc" id="L154">            categoryData.put(&quot;total&quot;, Math.round(sum * 100.0) / 100.0);</span>
+<span class="nc" id="L155">            categoryData.put(&quot;count&quot;, values.size());</span>
+<span class="nc" id="L156">            distribution.add(categoryData);</span>
+<span class="nc" id="L157">        }</span>
+
+<span class="nc" id="L159">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L160">        result.put(&quot;metric&quot;, metric);</span>
+<span class="nc" id="L161">        result.put(&quot;statType&quot;, statType);</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        result.put(&quot;startDate&quot;, startDate != null ? startDate.toString() : null);</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        result.put(&quot;endDate&quot;, endDate != null ? endDate.toString() : null);</span>
+<span class="nc" id="L164">        result.put(&quot;distribution&quot;, distribution);</span>
+<span class="nc" id="L165">        result.put(&quot;totalCategories&quot;, distribution.size());</span>
+
+<span class="nc" id="L167">        return result;</span>
+    }
+
+    /**
+     * Get comparative analysis data
+     * Compares players, game vs training, or other dimensions
+     */
+    public Map&lt;String, Object&gt; getComparativeAnalysis(String metric, String comparisonType,
+                                                      List&lt;Long&gt; playerIds, 
+                                                      LocalDate startDate, LocalDate endDate,
+                                                      Long categoryId) {
+        List&lt;Statistics&gt; statistics;
+        
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        if (categoryId != null) {</span>
+<span class="nc" id="L181">            statistics = statisticsRepository.findByCategoryId(categoryId);</span>
+        } else {
+<span class="nc" id="L183">            statistics = statisticsRepository.findAll();</span>
+        }
+        
+<span class="nc bnc" id="L186" title="All 4 branches missed.">        if (playerIds != null &amp;&amp; !playerIds.isEmpty()) {</span>
+<span class="nc" id="L187">            statistics = statistics.stream()</span>
+<span class="nc" id="L188">                .filter(s -&gt; playerIds.contains(s.getPlayerId()))</span>
+<span class="nc" id="L189">                .collect(Collectors.toList());</span>
+        }
+
+<span class="nc" id="L192">        Map&lt;Long, Event&gt; eventMap = eventRepository.findAll().stream()</span>
+<span class="nc" id="L193">            .collect(Collectors.toMap(Event::getId, e -&gt; e));</span>
+
+<span class="nc" id="L195">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L196">        result.put(&quot;metric&quot;, metric);</span>
+<span class="nc" id="L197">        result.put(&quot;comparisonType&quot;, comparisonType);</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        result.put(&quot;startDate&quot;, startDate != null ? startDate.toString() : null);</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        result.put(&quot;endDate&quot;, endDate != null ? endDate.toString() : null);</span>
+
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        if (&quot;players&quot;.equals(comparisonType)) {</span>
+<span class="nc" id="L202">            Map&lt;Long, List&lt;Double&gt;&gt; playerValues = new HashMap&lt;&gt;();</span>
+            
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            for (Statistics stat : statistics) {</span>
+<span class="nc" id="L205">                Event event = eventMap.get(stat.getEventId());</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">                if (event == null) continue;</span>
+
+<span class="nc bnc" id="L208" title="All 4 branches missed.">                if (startDate != null &amp;&amp; event.getDate().isBefore(startDate)) continue;</span>
+<span class="nc bnc" id="L209" title="All 4 branches missed.">                if (endDate != null &amp;&amp; event.getDate().isAfter(endDate)) continue;</span>
+                
+<span class="nc bnc" id="L211" title="All 2 branches missed.">                if (categoryId != null) {</span>
+<span class="nc bnc" id="L212" title="All 4 branches missed.">                    if (event.getCategoryId() == null || !event.getCategoryId().equals(categoryId)) {</span>
+<span class="nc" id="L213">                        continue;</span>
+                    }
+                }
+
+<span class="nc" id="L217">                Double metricValue = stat.getMetricValue(metric);</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                if (metricValue != null) {</span>
+<span class="nc" id="L219">                    playerValues.computeIfAbsent(stat.getPlayerId(), k -&gt; new ArrayList&lt;&gt;())</span>
+<span class="nc" id="L220">                        .add(metricValue);</span>
+                }
+<span class="nc" id="L222">            }</span>
+
+<span class="nc" id="L224">            List&lt;Map&lt;String, Object&gt;&gt; comparison = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">            for (Map.Entry&lt;Long, List&lt;Double&gt;&gt; entry : playerValues.entrySet()) {</span>
+<span class="nc" id="L226">                List&lt;Double&gt; values = entry.getValue();</span>
+<span class="nc" id="L227">                double sum = values.stream().mapToDouble(Double::doubleValue).sum();</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">                double avg = values.isEmpty() ? 0 : sum / values.size();</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">                double max = values.isEmpty() ? 0 : Collections.max(values);</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">                double min = values.isEmpty() ? 0 : Collections.min(values);</span>
+                
+<span class="nc" id="L232">                Map&lt;String, Object&gt; playerData = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L233">                playerData.put(&quot;playerId&quot;, entry.getKey());</span>
+<span class="nc" id="L234">                playerData.put(&quot;average&quot;, Math.round(avg * 100.0) / 100.0);</span>
+<span class="nc" id="L235">                playerData.put(&quot;total&quot;, Math.round(sum * 100.0) / 100.0);</span>
+<span class="nc" id="L236">                playerData.put(&quot;max&quot;, Math.round(max * 100.0) / 100.0);</span>
+<span class="nc" id="L237">                playerData.put(&quot;min&quot;, Math.round(min * 100.0) / 100.0);</span>
+<span class="nc" id="L238">                playerData.put(&quot;count&quot;, values.size());</span>
+<span class="nc" id="L239">                comparison.add(playerData);</span>
+<span class="nc" id="L240">            }</span>
+
+<span class="nc" id="L242">            result.put(&quot;comparison&quot;, comparison);</span>
+<span class="nc" id="L243">            result.put(&quot;count&quot;, comparison.size());</span>
+
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        } else if (&quot;gameVsTraining&quot;.equals(comparisonType)) {</span>
+<span class="nc" id="L246">            Map&lt;Statistics.StatType, List&lt;Double&gt;&gt; typeValues = new HashMap&lt;&gt;();</span>
+            
+<span class="nc bnc" id="L248" title="All 2 branches missed.">            for (Statistics stat : statistics) {</span>
+<span class="nc" id="L249">                Event event = eventMap.get(stat.getEventId());</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">                if (event == null) continue;</span>
+
+<span class="nc bnc" id="L252" title="All 4 branches missed.">                if (startDate != null &amp;&amp; event.getDate().isBefore(startDate)) continue;</span>
+<span class="nc bnc" id="L253" title="All 4 branches missed.">                if (endDate != null &amp;&amp; event.getDate().isAfter(endDate)) continue;</span>
+
+<span class="nc" id="L255">                Double metricValue = stat.getMetricValue(metric);</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">                if (metricValue != null) {</span>
+<span class="nc" id="L257">                    typeValues.computeIfAbsent(stat.getStatType(), k -&gt; new ArrayList&lt;&gt;())</span>
+<span class="nc" id="L258">                        .add(metricValue);</span>
+                }
+<span class="nc" id="L260">            }</span>
+
+<span class="nc" id="L262">            List&lt;Map&lt;String, Object&gt;&gt; comparison = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">            for (Map.Entry&lt;Statistics.StatType, List&lt;Double&gt;&gt; entry : typeValues.entrySet()) {</span>
+<span class="nc" id="L264">                List&lt;Double&gt; values = entry.getValue();</span>
+<span class="nc" id="L265">                double sum = values.stream().mapToDouble(Double::doubleValue).sum();</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">                double avg = values.isEmpty() ? 0 : sum / values.size();</span>
+                
+<span class="nc" id="L268">                Map&lt;String, Object&gt; typeData = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L269">                typeData.put(&quot;statType&quot;, entry.getKey().name());</span>
+<span class="nc" id="L270">                typeData.put(&quot;average&quot;, Math.round(avg * 100.0) / 100.0);</span>
+<span class="nc" id="L271">                typeData.put(&quot;total&quot;, Math.round(sum * 100.0) / 100.0);</span>
+<span class="nc" id="L272">                typeData.put(&quot;count&quot;, values.size());</span>
+<span class="nc" id="L273">                comparison.add(typeData);</span>
+<span class="nc" id="L274">            }</span>
+
+<span class="nc" id="L276">            result.put(&quot;comparison&quot;, comparison);</span>
+<span class="nc" id="L277">            result.put(&quot;count&quot;, comparison.size());</span>
+        }
+
+<span class="nc" id="L280">        return result;</span>
+    }
+
+    /**
+     * Get aggregated statistics summary
+     * Returns overall statistics for dashboard
+     */
+    public Map&lt;String, Object&gt; getAggregatedStatistics(Long playerId, 
+                                                       LocalDate startDate, LocalDate endDate,
+                                                       Statistics.StatType statType) {
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">        List&lt;Statistics&gt; statistics = playerId != null </span>
+<span class="nc" id="L291">            ? statisticsRepository.findByPlayerId(playerId)</span>
+<span class="fc" id="L292">            : statisticsRepository.findAll();</span>
+
+<span class="pc bpc" id="L294" title="1 of 2 branches missed.">        if (statType != null) {</span>
+<span class="nc" id="L295">            statistics = statistics.stream()</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">                .filter(s -&gt; s.getStatType() == statType)</span>
+<span class="nc" id="L297">                .collect(Collectors.toList());</span>
+        }
+
+<span class="fc" id="L300">        Map&lt;Long, Event&gt; eventMap = eventRepository.findAll().stream()</span>
+<span class="fc" id="L301">            .collect(Collectors.toMap(Event::getId, e -&gt; e));</span>
+
+<span class="fc" id="L303">        List&lt;Statistics&gt; filteredStats = statistics.stream()</span>
+<span class="fc" id="L304">            .filter(stat -&gt; {</span>
+<span class="fc" id="L305">                Event event = eventMap.get(stat.getEventId());</span>
+<span class="pc bpc" id="L306" title="1 of 2 branches missed.">                if (event == null) return false;</span>
+<span class="pc bpc" id="L307" title="3 of 4 branches missed.">                if (startDate != null &amp;&amp; event.getDate().isBefore(startDate)) return false;</span>
+<span class="pc bpc" id="L308" title="3 of 4 branches missed.">                if (endDate != null &amp;&amp; event.getDate().isAfter(endDate)) return false;</span>
+<span class="fc" id="L309">                return true;</span>
+            })
+<span class="fc" id="L311">            .collect(Collectors.toList());</span>
+
+<span class="fc" id="L313">        Map&lt;String, List&lt;Double&gt;&gt; metricValues = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L314">        String[] metrics = {&quot;PTS&quot;, &quot;OFF&quot;, &quot;DEF&quot;, &quot;AST&quot;, &quot;STL&quot;, &quot;BLK&quot;, &quot;TO&quot;, &quot;INDEX&quot;};</span>
+
+<span class="fc bfc" id="L316" title="All 2 branches covered.">        for (Statistics stat : filteredStats) {</span>
+<span class="fc bfc" id="L317" title="All 2 branches covered.">            for (String metric : metrics) {</span>
+<span class="fc" id="L318">                Double value = stat.getMetricValue(metric);</span>
+<span class="pc bpc" id="L319" title="1 of 2 branches missed.">                if (value != null) {</span>
+<span class="fc" id="L320">                    metricValues.computeIfAbsent(metric, k -&gt; new ArrayList&lt;&gt;())</span>
+<span class="fc" id="L321">                        .add(value);</span>
+                }
+            }
+<span class="fc" id="L324">        }</span>
+
+<span class="fc" id="L326">        Map&lt;String, Map&lt;String, Object&gt;&gt; aggregates = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L327" title="All 2 branches covered.">        for (Map.Entry&lt;String, List&lt;Double&gt;&gt; entry : metricValues.entrySet()) {</span>
+<span class="fc" id="L328">            List&lt;Double&gt; values = entry.getValue();</span>
+<span class="fc" id="L329">            double sum = values.stream().mapToDouble(Double::doubleValue).sum();</span>
+<span class="pc bpc" id="L330" title="1 of 2 branches missed.">            double avg = values.isEmpty() ? 0 : sum / values.size();</span>
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">            double max = values.isEmpty() ? 0 : Collections.max(values);</span>
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">            double min = values.isEmpty() ? 0 : Collections.min(values);</span>
+            
+<span class="fc" id="L334">            Map&lt;String, Object&gt; agg = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L335">            agg.put(&quot;average&quot;, Math.round(avg * 100.0) / 100.0);</span>
+<span class="fc" id="L336">            agg.put(&quot;total&quot;, Math.round(sum * 100.0) / 100.0);</span>
+<span class="fc" id="L337">            agg.put(&quot;max&quot;, Math.round(max * 100.0) / 100.0);</span>
+<span class="fc" id="L338">            agg.put(&quot;min&quot;, Math.round(min * 100.0) / 100.0);</span>
+<span class="fc" id="L339">            agg.put(&quot;count&quot;, values.size());</span>
+<span class="fc" id="L340">            aggregates.put(entry.getKey(), agg);</span>
+<span class="fc" id="L341">        }</span>
+
+<span class="fc" id="L343">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L344">        result.put(&quot;playerId&quot;, playerId);</span>
+<span class="fc" id="L345">        result.put(&quot;statType&quot;, statType);</span>
+<span class="pc bpc" id="L346" title="1 of 2 branches missed.">        result.put(&quot;startDate&quot;, startDate != null ? startDate.toString() : null);</span>
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">        result.put(&quot;endDate&quot;, endDate != null ? endDate.toString() : null);</span>
+<span class="fc" id="L348">        result.put(&quot;totalRecords&quot;, filteredStats.size());</span>
+<span class="fc" id="L349">        result.put(&quot;aggregates&quot;, aggregates);</span>
+
+<span class="fc" id="L351">        return result;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

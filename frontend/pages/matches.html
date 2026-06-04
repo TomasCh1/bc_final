@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Zápasy - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/statistics-table.css">
+    <link rel="stylesheet" href="/css/match-statistics-section.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: #2C2C2C;
+        }
+
+        /* Header */
+        .dashboard-header {
+            background: #FFFFFF;
+            border-bottom: 1px solid #E0E0E0;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-small {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-small img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .team-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #6B2C91;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: 2rem;
+        }
+
+        .nav-pill {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #2C2C2C;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-pill.active {
+            background: #E8D5FF;
+            color: #6B2C91;
+            font-weight: 600;
+        }
+
+        .nav-pill:hover {
+            background: #F5F0FF;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-info {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            cursor: pointer;
+        }
+
+        .user-info-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #6B2C91;
+            font-size: 0.95rem;
+        }
+
+        .user-role {
+            font-size: 0.85rem;
+            color: #6B2C91;
+        }
+
+        .user-dropdown-arrow {
+            font-size: 0.75rem;
+            color: #2C2C2C;
+            transition: transform 0.3s ease;
+        }
+
+        .user-info.open .user-dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 150px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-info.open .user-dropdown {
+            display: block;
+        }
+
+        .user-dropdown-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            color: #2C2C2C;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+
+        .user-dropdown-item:hover {
+            background-color: #F8F9FA;
+        }
+
+        /* Main Content */
+        .dashboard-content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Calendar Section */
+        .matches-calendar {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 2px 3px 8px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2C2C2C;
+        }
+
+        .calendar-container {
+            background: #FFFFFF;
+            border-radius: 8px;
+        }
+
+        .matches-calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .month-selector-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .calendar-month-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #111827;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            background: #EEF2FF;
+        }
+
+        .calendar-nav-btn {
+            padding: 0.35rem 0.75rem;
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-nav-btn:hover {
+            background: #E5E7EB;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 600;
+            color: #666666;
+            font-size: 0.9rem;
+            padding: 0.5rem;
+        }
+
+        .calendar-day {
+            min-height: 280px;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            padding: 0.5rem;
+            background: #FFFFFF;
+            overflow-y: auto;
+            max-height: 320px;
+        }
+
+        .calendar-day.today {
+            background: #F0F9FF;
+            border: 1px solid #BAE6FD;
+        }
+
+        .calendar-day.other-month {
+            background: #F5F5F5;
+            color: #999999;
+        }
+
+        .calendar-day-number {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #2C2C2C;
+            margin-bottom: 0.5rem;
+        }
+
+        .day-events {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .match-card {
+            background: linear-gradient(180deg, #FFE5F0 0%, #E8D5FF 100%);
+            border-radius: 8px;
+            padding: 0.75rem;
+            box-shadow: 0 2px 6px rgba(139, 92, 246, 0.2);
+            margin-bottom: 0.75rem;
+            border: 1px solid #D8B4FE;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .match-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+        }
+
+        .match-time {
+            display: inline-block;
+            color: #6B21A8;
+            font-weight: 700;
+            font-size: 1.15rem;
+            background: #EDE9FE;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .match-team-home {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
+        }
+
+        .match-team-away {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #DC2626;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .match-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #6B7280;
+            font-size: 0.7rem;
+            margin-bottom: 0.35rem;
+            line-height: 1.4;
+        }
+
+        .match-detail a {
+            color: inherit;
+            text-decoration: underline;
+        }
+
+        .match-detail-icon {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .match-detail-icon img,
+        .match-detail-icon svg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .match-detail-icon svg path {
+            fill: #6B7280;
+        }
+
+        .match-attendance {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(107, 33, 168, 0.3);
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .match-attendance.present {
+            color: #10B981;
+        }
+
+        .match-attendance.absent {
+            color: #DC2626;
+        }
+
+        /* Player match stats card styles are injected by player-match-stats-card-template.js */
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666666;
+        }
+
+        @media (max-width: 1024px) {
+            .matches-calendar {
+                padding: 1rem;
+            }
+
+            .calendar-day {
+                min-height: 120px;
+                max-height: 150px;
+                padding: 0.4rem;
+            }
+
+            .calendar-day-number {
+                font-size: 0.8rem;
+                margin-bottom: 0.35rem;
+            }
+
+            .day-events {
+                gap: 0.35rem;
+            }
+
+            .match-card {
+                padding: 0.4rem 0.5rem;
+                margin-bottom: 0.35rem;
+                border-radius: 6px;
+            }
+
+            .match-card .match-team-home,
+            .match-card .match-team-away,
+            .match-card .match-detail,
+            .match-card .match-attendance {
+                display: none;
+            }
+
+            .match-card .match-time {
+                font-size: 0.75rem;
+                padding: 0.2rem 0.4rem;
+                margin-bottom: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .calendar-grid {
+                grid-template-columns: repeat(7, 1fr);
+                gap: 0.25rem;
+            }
+
+            .calendar-day-header {
+                font-size: 0.7rem;
+                padding: 0.35rem 0.25rem;
+            }
+
+            .calendar-day {
+                min-height: 80px;
+                max-height: 100px;
+                padding: 0.3rem;
+                border-radius: 4px;
+            }
+
+            .calendar-day-number {
+                font-size: 0.75rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .day-events {
+                gap: 0.25rem;
+            }
+
+            .match-card {
+                padding: 0.3rem 0.4rem;
+                margin-bottom: 0.25rem;
+                border-radius: 4px;
+            }
+
+            .match-time {
+                font-size: 0.7rem;
+                padding: 0.15rem 0.3rem;
+                margin-bottom: 0.2rem;
+            }
+
+            .match-team-home,
+            .match-team-away {
+                font-size: 0.7rem;
+            }
+
+            .match-detail {
+                font-size: 0.65rem;
+            }
+
+            .header-nav {
+                display: none;
+            }
+
+            /* Player match stats card responsive styles come from shared template */
+        }
+
+        @media (max-width: 672px) {
+            .calendar-day {
+                min-height: 60px;
+                max-height: 70px;
+                padding: 0.25rem;
+                position: relative;
+            }
+
+            .calendar-day-number {
+                font-size: 0.7rem;
+                margin-bottom: 0.15rem;
+            }
+
+            .day-events {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.3rem;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .match-card {
+                display: none;
+            }
+
+            .match-dot {
+                width: 20px;
+                height: 20px;
+                min-width: 20px;
+                min-height: 20px;
+                border-radius: 50%;
+                background: #6B2C91;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                box-shadow: 0 1px 3px rgba(107, 44, 145, 0.3);
+                padding: 4px;
+                margin: 2px;
+                position: relative;
+            }
+
+            .match-dot::before {
+                content: '';
+                position: absolute;
+                top: -4px;
+                left: -4px;
+                right: -4px;
+                bottom: -4px;
+            }
+
+            .match-dot:hover,
+            .match-dot:active {
+                transform: scale(1.3);
+                box-shadow: 0 2px 6px rgba(107, 44, 145, 0.5);
+            }
+
+            .match-dot.won {
+                background: #28A745;
+                box-shadow: 0 1px 3px rgba(40, 167, 69, 0.3);
+            }
+
+            .match-dot.won:hover,
+            .match-dot.won:active {
+                box-shadow: 0 2px 6px rgba(40, 167, 69, 0.5);
+            }
+
+            .match-dot.lost {
+                background: #DC2626;
+                box-shadow: 0 1px 3px rgba(220, 38, 38, 0.3);
+            }
+
+            .match-dot.lost:hover,
+            .match-dot.lost:active {
+                box-shadow: 0 2px 6px rgba(220, 38, 38, 0.5);
+            }
+
+            .match-dot.pending {
+                background: #9CA3AF;
+                box-shadow: 0 1px 3px rgba(156, 163, 175, 0.3);
+            }
+
+            .match-dot.pending:hover,
+            .match-dot.pending:active {
+                box-shadow: 0 2px 6px rgba(156, 163, 175, 0.5);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav">
+                <a href="/pages/dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                <a href="/pages/matches.html" class="nav-pill active">Zápasy</a>
+                <a href="/pages/trainings.html" class="nav-pill">Tréningy</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" data-initial="U" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">Hráč</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile nav overlay & slide menu -->
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <a href="/pages/dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/matches.html" class="nav-pill active" onclick="closeNavMenu()">Zápasy</a>
+        <a href="/pages/trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="dashboard-content">
+        <!-- Matches Calendar -->
+        <div class="matches-calendar">
+            <div class="matches-calendar-header">
+                <div class="section-header">
+                    <img src="/IMG/schedule-calendar-svgrepo-com.svg" alt="Kalendár ikona" class="section-icon">
+                    <h2 class="section-title">Môj rozvrh zápasov</h2>
+                </div>
+                <div class="month-selector-wrapper">
+                    <button class="calendar-nav-btn" onclick="changeMonth(-1)">←</button>
+                    <div class="calendar-month-selector" id="monthSelector">
+                        <span id="monthName">Január</span>
+                        <span id="monthYear">2025</span>
+                    </div>
+                    <button class="calendar-nav-btn" onclick="changeMonth(1)">→</button>
+                </div>
+            </div>
+            <div class="calendar-container">
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Match Statistics -->
+        <div id="playerMatchStatsCardMount"></div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/statistics.js"></script>
+    <script src="/js/events.js"></script>
+    <script src="/js/categories.js"></script>
+    <script src="/js/attendance.js"></script>
+    <script src="/js/player-match-stats-card-template.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        let currentUser = null;
+        let playerStats = [];
+        let allMatches = [];
+        let playerCategoryIds = []; // Player's category IDs for "Môj rozvrh zápasov"
+        let currentCalendarDate = new Date();
+        let attendanceCache = {}; // Cache attendance records
+        let chartInstances = {
+            indexChart: null,
+            statChart: null,
+            percentageChart: null
+        };
+        let currentChartStats = [];
+        let gameStatsPageSize = 10;
+        let gameStatsCurrentPage = 1;
+        let gameStatsFilter = 'withStats';
+        let gameStatsCategoryId = null;
+        let gameStatsTotalGames = 0;
+        let currentDateMode = 'single';
+        let dateFilterState = {
+            mode: 'single',
+            singleDate: null,
+            startDate: null,
+            endDate: null
+        };
+
+        let allCategories = [];
+
+        function getRowCategoryId(row) {
+            const ev = row && row.event ? row.event : {};
+            const st = row && row.stat ? row.stat : {};
+            if (ev.categoryId != null) return String(ev.categoryId);
+            if (st.eventCategoryId != null) return String(st.eventCategoryId);
+            return null;
+        }
+
+        function categoryNameFromAllCategories(categoryId) {
+            if (categoryId == null) return null;
+            const cat = (allCategories || []).find(function(c) { return String(c.id) === String(categoryId); });
+            if (cat && cat.name) return cat.name;
+            if (typeof currentUser !== 'undefined' && currentUser && Array.isArray(currentUser.categories)) {
+                const pc = currentUser.categories.find(function(c) { return String(c.id) === String(categoryId); });
+                if (pc && pc.name) return pc.name;
+            }
+            return null;
+        }
+
+        function categoryDisplayNameForRow(row) {
+            const ev = row && row.event ? row.event : {};
+            if (ev.categoryName) return ev.categoryName;
+            const cid = getRowCategoryId(row);
+            if (cid == null) return '-';
+            return categoryNameFromAllCategories(cid) || '-';
+        }
+
+        const monthNames = ['Január', 'Február', 'Marec', 'Apríl', 'Máj', 'Jún', 
+                          'Júl', 'August', 'September', 'Október', 'November', 'December'];
+        const dayNames = ['Pon', 'Uto', 'Str', 'Štv', 'Pia', 'Sob', 'Ned'];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (typeof isAuthenticated === 'undefined') {
+                setTimeout(arguments.callee, 100);
+                return;
+            }
+
+            if (!isAuthenticated()) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            currentUser = getCurrentUser();
+            if (!currentUser) {
+                window.location.href = '/';
+                return;
+            }
+            if (currentUser.role === 'TRAINER' || currentUser.role === 'ADMIN') {
+                window.location.href = '/pages/coach-matches.html';
+                return;
+            }
+
+            if (typeof renderPlayerMatchStatsCard === 'function') {
+                renderPlayerMatchStatsCard('playerMatchStatsCardMount', { title: 'Štatistiky za zápasy' });
+            }
+
+            const userInfo = document.getElementById('userInfo');
+            const userNameEl = document.getElementById('userName');
+            const userRoleEl = document.getElementById('userRole');
+            
+            if (userInfo && !userNameEl) {
+                userInfo.innerHTML = `
+                    <div class="user-info-header">
+                        <div>
+                            <div class="user-name" id="userName">Načítava sa...</div>
+                            <div class="user-role" id="userRole">Hráč</div>
+                        </div>
+                        <span class="user-dropdown-arrow">▼</span>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="user-dropdown-profile">
+                            <div class="user-dropdown-name" id="userDropdownName"></div>
+                            <div class="user-dropdown-role" id="userDropdownRole"></div>
+                        </div>
+                        <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                    </div>
+                `;
+            }
+            
+            const updatedUserNameEl = document.getElementById('userName');
+            const updatedUserRoleEl = document.getElementById('userRole');
+            let displayName = formatUserDisplayName(currentUser) || 'Hráč';
+            displayName = displayName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+            displayName = displayName.replace(/\s*\(PLAYER\)\s*/i, '').trim();
+            const displayRole = currentUser.role === 'PLAYER' ? 'Hráč' : currentUser.role;
+            
+            if (updatedUserNameEl) updatedUserNameEl.textContent = displayName;
+            if (updatedUserRoleEl) updatedUserRoleEl.textContent = displayRole;
+            
+            const dropdownName = document.getElementById('userDropdownName');
+            const dropdownRole = document.getElementById('userDropdownRole');
+            if (dropdownName) dropdownName.textContent = displayName;
+            if (dropdownRole) dropdownRole.textContent = displayRole;
+            if (userInfo) userInfo.setAttribute('data-initial', (displayName.charAt(0) || 'H').toUpperCase());
+
+            if (currentUser.categoryIds && Array.isArray(currentUser.categoryIds) && currentUser.categoryIds.length > 0) {
+                playerCategoryIds = currentUser.categoryIds.map(id => Number(id));
+            } else if (currentUser.categoryId) {
+                playerCategoryIds = [Number(currentUser.categoryId)];
+            } else if (currentUser.categories && Array.isArray(currentUser.categories)) {
+                playerCategoryIds = currentUser.categories.map(cat => Number(cat.id)).filter(id => !isNaN(id));
+            }
+            if (playerCategoryIds.length === 0 && typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.USERS) {
+                try {
+                    const profileRes = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.USERS.ME}`, {
+                        headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Authorization': 'Bearer ' + (typeof getStoredToken === 'function' ? getStoredToken() : '') }
+                    });
+                    if (profileRes.ok) {
+                        const profile = await profileRes.json();
+                        if (profile.categoryIds && Array.isArray(profile.categoryIds) && profile.categoryIds.length > 0) {
+                            playerCategoryIds = profile.categoryIds.map(id => Number(id));
+                        } else if (profile.categoryId != null) {
+                            playerCategoryIds = [Number(profile.categoryId)];
+                        } else if (profile.categories && Array.isArray(profile.categories)) {
+                            playerCategoryIds = profile.categories.map(cat => Number(cat.id)).filter(id => !isNaN(id));
+                        }
+                        Object.assign(currentUser, { categoryIds: profile.categoryIds, categoryId: profile.categoryId, categories: profile.categories });
+                        try { localStorage.setItem('basketball_user', JSON.stringify(currentUser)); } catch (e) {}
+                    }
+                } catch (e) {
+                    console.warn('Could not load user profile for categories:', e);
+                }
+            }
+
+            try {
+                if (typeof getCategories === 'function') {
+                    allCategories = await getCategories() || [];
+                }
+            } catch (e) {
+                console.warn('Could not load categories for match stats:', e);
+                allCategories = [];
+            }
+
+            await loadMatches();
+            await loadMatchStatisticsTable();
+        });
+
+        async function loadMatches() {
+            try {
+                const events = await getEvents({ type: 'MATCH' });
+                let matches = events || [];
+                if (playerCategoryIds.length > 0) {
+                    matches = matches.filter(m => m.categoryId != null && playerCategoryIds.includes(Number(m.categoryId)));
+                } else {
+                    matches = [];
+                }
+                allMatches = matches;
+                
+                await loadAttendanceForPastMatches();
+                
+                displayCalendar();
+            } catch (error) {
+                console.error('Error loading matches:', error);
+            }
+        }
+
+        async function loadAttendanceForPastMatches() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const pastMatches = allMatches.filter(match => {
+                const matchDate = new Date(match.date);
+                matchDate.setHours(0, 0, 0, 0);
+                return matchDate < today;
+            });
+
+            for (const match of pastMatches) {
+                try {
+                    const attendance = await getAttendanceByEvent(match.id);
+                    attendanceCache[match.id] = attendance;
+                } catch (error) {
+                    console.error(`Error loading attendance for match ${match.id}:`, error);
+                    attendanceCache[match.id] = [];
+                }
+            }
+        }
+
+        function getPlayerAttendanceStatus(matchId) {
+            const attendance = attendanceCache[matchId] || [];
+            const playerAttendance = attendance.find(a => a.playerId === currentUser.id);
+            
+            if (!playerAttendance) {
+                return { status: 'default', text: 'Odohraný zápas' };
+            }
+            
+            if (playerAttendance.status === 'PRESENT') {
+                return { status: 'present', text: 'Odohraný zápas' };
+            } else if (playerAttendance.status === 'ABSENT') {
+                return { status: 'absent', text: 'V zápase si nehral' };
+            }
+            
+            return { status: 'default', text: 'Odohraný zápas' };
+        }
+
+        function isMatchInPast(matchDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const match = new Date(matchDate);
+            match.setHours(0, 0, 0, 0);
+            return match < today;
+        }
+
+        function changeMonth(direction) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+            displayCalendar();
+        }
+
+        function displayCalendar() {
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            let startDow = firstDay.getDay();
+            startDow = startDow === 0 ? 6 : startDow - 1;
+
+            const monthNameEl = document.getElementById('monthName');
+            const monthYearEl = document.getElementById('monthYear');
+            if (monthNameEl) monthNameEl.textContent = monthNames[month];
+            if (monthYearEl) monthYearEl.textContent = year;
+
+            const matchesByDate = {};
+            allMatches.forEach(match => {
+                const matchDate = new Date(match.date);
+                const dateKey = `${matchDate.getFullYear()}-${String(matchDate.getMonth() + 1).padStart(2, '0')}-${String(matchDate.getDate()).padStart(2, '0')}`;
+                if (!matchesByDate[dateKey]) matchesByDate[dateKey] = [];
+                matchesByDate[dateKey].push(match);
+            });
+
+            let html = '';
+            dayNames.forEach(day => {
+                html += `<div class="calendar-day-header">${day}</div>`;
+            });
+
+            if (startDow > 0) {
+                const prevMonthLastDay = new Date(year, month, 0);
+                const prevMonthYear = prevMonthLastDay.getFullYear();
+                const prevMonth = prevMonthLastDay.getMonth() + 1;
+                const prevMonthDays = prevMonthLastDay.getDate();
+
+                for (let i = startDow - 1; i >= 0; i--) {
+                    const prevMonthDay = prevMonthDays - i;
+                    const prevDateKey = `${prevMonthYear}-${String(prevMonth).padStart(2, '0')}-${String(prevMonthDay).padStart(2, '0')}`;
+                    const prevDayMatches = matchesByDate[prevDateKey] || [];
+                    html += renderDayCell(prevMonthDay, prevDayMatches, false, true, prevMonth);
+                }
+            }
+
+            const today = new Date();
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayMatches = matchesByDate[dateKey] || [];
+                const isToday = year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
+                html += renderDayCell(day, dayMatches, isToday, false, month + 1);
+            }
+
+            const calendarGrid = document.getElementById('calendarGrid');
+            if (calendarGrid) calendarGrid.innerHTML = html;
+        }
+
+        function formatLocation(location) {
+            if (!location) return '';
+            const parts = location.split(',');
+            return parts[0].trim();
+        }
+
+        function renderDayCell(day, dayMatches, isToday, otherMonth, monthNumber) {
+            const homeIconImg = '<img src="/IMG/home-1-svgrepo-com%20(2).svg" alt="" class="home-away-icon" aria-hidden="true">';
+            const awayIconImg = '<img src="/IMG/plane-svgrepo-com%20(1).svg" alt="" class="home-away-icon" aria-hidden="true">';
+            const locationSvg = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M3.37892 10.2236L8 16L12.6211 10.2236C13.5137 9.10788 14 7.72154 14 6.29266V6C14 2.68629 11.3137 0 8 0C4.68629 0 2 2.68629 2 6V6.29266C2 7.72154 2.4863 9.10788 3.37892 10.2236ZM8 8C9.10457 8 10 7.10457 10 6C10 4.89543 9.10457 4 8 4C6.89543 4 6 4.89543 6 6C6 7.10457 6.89543 8 8 8Z" fill="#6B7280"/></svg>';
+            let html = `<div class="calendar-day ${isToday ? 'today' : ''} ${otherMonth ? 'other-month' : ''}">
+                <div class="calendar-day-number">${day}${otherMonth ? '.' + monthNumber + '.' : ''}</div>
+                <div class="day-events">`;
+
+            dayMatches.forEach(match => {
+                const matchDate = new Date(match.date);
+                const isPast = isMatchInPast(matchDate);
+                const time = match.time ? match.time.substring(0, 5) : '';
+                const matchName = escapeHtml(match.name || '');
+                const opponent = escapeHtml(match.opponent || '');
+                const categoryRaw = (match.categoryName || '').trim();
+                const categoryText = categoryRaw ? escapeHtml(categoryRaw) : '';
+                const locationRaw = match.location || '';
+                const locationText = escapeHtml(formatLocation(locationRaw));
+                const isDotView = window.innerWidth <= 672;
+
+                if (isDotView) {
+                    let dotClass = 'match-dot';
+                    if (match.matchWon === true) dotClass += ' won';
+                    else if (match.matchWon === false) dotClass += ' lost';
+                    else if (isPast) dotClass += ' pending';
+
+                    const dotTitle = (match.name || 'Zápas')
+                        + (categoryRaw ? ` [${categoryRaw}]` : '')
+                        + (match.opponent ? ` vs ${match.opponent}` : '')
+                        + (time ? ` (${time})` : '');
+                    html += `<div class="${dotClass}" title="${escapeHtml(dotTitle)}" aria-label="${escapeHtml(match.name || 'Zápas')}"></div>`;
+                    return;
+                }
+
+                const matchInfo = [];
+                if (match.isHomeMatch === true) matchInfo.push(homeIconImg + ' Domáci');
+                else if (match.isHomeMatch === false) matchInfo.push(awayIconImg + ' Hostia');
+
+                const locationDisplay = locationRaw
+                    ? `<div class="match-detail"><span class="match-detail-icon">${locationSvg}</span><span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationRaw)}" target="_blank">${locationText}</a></span></div>`
+                    : '';
+
+                const attendanceStatus = isPast ? getPlayerAttendanceStatus(match.id) : null;
+
+                html += `<div class="match-card">
+                    ${time ? `<div class="match-time">${time}</div>` : ''}
+                    <div class="match-team-home">${matchName}</div>
+                    ${opponent ? `<div class="match-team-away">vs ${opponent}</div>` : ''}
+                    ${categoryText ? `<div class="match-detail"><span style="font-weight:600;">Kategória:</span> ${categoryText}</div>` : ''}
+                    ${matchInfo.length > 0 ? `<div class="match-detail" style="font-weight: 600; color: #6B21A8;">${matchInfo.join(' • ')}</div>` : ''}
+                    ${locationDisplay}
+                    ${isPast && attendanceStatus ? `<div class="match-attendance ${attendanceStatus.status}">${attendanceStatus.text}</div>` : ''}
+                </div>`;
+            });
+
+            html += '</div></div>';
+            return html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function toggleNavMenu() {
+            document.getElementById('hamburgerBtn').classList.toggle('open');
+            document.getElementById('navOverlay').classList.toggle('open');
+            document.getElementById('navSlideMenu').classList.toggle('open');
+            document.body.style.overflow = document.getElementById('navSlideMenu').classList.contains('open') ? 'hidden' : '';
+        }
+        function closeNavMenu() {
+            document.getElementById('hamburgerBtn').classList.remove('open');
+            document.getElementById('navOverlay').classList.remove('open');
+            document.getElementById('navSlideMenu').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function toggleUserDropdown(event) {
+            event.stopPropagation();
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo) {
+                userInfo.classList.toggle('open');
+            }
+        }
+
+        function handleSignOut() {
+            if (typeof logout === 'function') {
+                logout();
+            } else {
+                localStorage.removeItem('basketball_auth_token');
+                localStorage.removeItem('basketball_user');
+                sessionStorage.removeItem('basketball_auth_token');
+                sessionStorage.removeItem('basketball_user');
+                window.location.href = '/pages/login.html';
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const userInfo = document.getElementById('userInfo');
+            const userDropdown = document.getElementById('userDropdown');
+            if (userInfo && userDropdown && !userInfo.contains(event.target)) {
+                userInfo.classList.remove('open');
+            }
+            const dateFilterWrapper = document.getElementById('dateFilterWrapper');
+            if (dateFilterWrapper && !dateFilterWrapper.contains(event.target)) {
+                dateFilterWrapper.classList.remove('open');
+            }
+            const gameStatsCategoryFilter = document.getElementById('gameStatsCategoryFilter');
+            if (gameStatsCategoryFilter && !gameStatsCategoryFilter.contains(event.target)) {
+                gameStatsCategoryFilter.classList.remove('open');
+            }
+        });
+
+        async function loadMatchStatisticsTable(startDate = null, endDate = null) {
+            try {
+                const stats = await getStatistics({
+                    playerId: currentUser.id
+                });
+                playerStats = stats || [];
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+
+            const matchById = new Map((allMatches || [])
+                .filter(function(match) { return match && match.id != null; })
+                .map(function(match) { return [String(match.id), match]; }));
+            const eventByIdCache = {};
+            const sortedPlayerStats = [...(playerStats || [])].sort(function(a, b) {
+                const aDate = new Date(a.eventDate || a.event?.date || a.timestamp || 0).getTime();
+                const bDate = new Date(b.eventDate || b.event?.date || b.timestamp || 0).getTime();
+                return bDate - aDate;
+            });
+            const statsByEventId = new Map();
+            sortedPlayerStats.forEach(function(stat) {
+                const key = stat && stat.eventId != null ? String(stat.eventId) : '';
+                if (key && !statsByEventId.has(key)) statsByEventId.set(key, stat);
+            });
+
+            for (const [eventId, stat] of statsByEventId.entries()) {
+                if (matchById.has(eventId)) continue;
+                if (stat && stat.event) {
+                    eventByIdCache[eventId] = stat.event;
+                    continue;
+                }
+                try {
+                    eventByIdCache[eventId] = await getEventById(eventId);
+                } catch (error) {
+                    eventByIdCache[eventId] = null;
+                }
+            }
+
+            const rows = [];
+            matchById.forEach(function(match, eventId) {
+                const stat = statsByEventId.get(eventId) || null;
+                rows.push({ eventId: eventId, event: match, stat: stat, hasStats: !!stat });
+            });
+            statsByEventId.forEach(function(stat, eventId) {
+                if (matchById.has(eventId)) return;
+                rows.push({
+                    eventId: eventId,
+                    event: eventByIdCache[eventId] || stat.event || null,
+                    stat: stat,
+                    hasStats: true
+                });
+            });
+
+            const toDayDate = function(value) {
+                const d = new Date(value);
+                if (Number.isNaN(d.getTime())) return null;
+                d.setHours(0, 0, 0, 0);
+                return d;
+            };
+            const getRowDate = function(row) {
+                if (row && row.event && row.event.date) return toDayDate(row.event.date);
+                if (row && row.stat && row.stat.eventDate) return toDayDate(row.stat.eventDate);
+                if (row && row.stat && row.stat.timestamp) return toDayDate(row.stat.timestamp);
+                return null;
+            };
+
+            let filteredRows = rows.filter(function(row) {
+                if (!startDate) return true;
+                const rowDate = getRowDate(row);
+                if (!rowDate) return false;
+                const start = toDayDate(startDate + 'T00:00:00');
+                const end = endDate ? toDayDate(endDate + 'T00:00:00') : toDayDate(startDate + 'T00:00:00');
+                return !!start && !!end && rowDate >= start && rowDate <= end;
+            });
+
+            if (gameStatsFilter === 'withStats') {
+                filteredRows = filteredRows.filter(function(row) { return row.hasStats; });
+            } else if (gameStatsFilter === 'withoutStats') {
+                filteredRows = filteredRows.filter(function(row) { return !row.hasStats; });
+            }
+
+            if (gameStatsCategoryId != null && gameStatsCategoryId !== '') {
+                filteredRows = filteredRows.filter(function(row) {
+                    const cid = getRowCategoryId(row);
+                    return cid != null && cid === String(gameStatsCategoryId);
+                });
+            }
+
+            filteredRows.sort(function(a, b) {
+                const aDate = getRowDate(a);
+                const bDate = getRowDate(b);
+                return (bDate ? bDate.getTime() : 0) - (aDate ? aDate.getTime() : 0);
+            });
+
+            gameStatsTotalGames = filteredRows.length;
+            if (!gameStatsTotalGames) {
+                document.getElementById('statisticsContent').innerHTML = 
+                    '<div class="loading">Žiadne zápasy pre zvolený filter</div>';
+                return;
+            }
+
+            const totalPages = Math.max(1, Math.ceil(gameStatsTotalGames / gameStatsPageSize));
+            if (gameStatsCurrentPage > totalPages) gameStatsCurrentPage = totalPages;
+            const startIdx = (gameStatsCurrentPage - 1) * gameStatsPageSize;
+            const pageRows = filteredRows.slice(startIdx, startIdx + gameStatsPageSize);
+
+            populateGameStatsCategoryDropdown(rows);
+
+            const tableHTML = `
+                <div style="overflow-x: auto;">
+                    <table class="statistics-table">
+                        <thead>
+                            <tr>
+                                <th>Dátum</th>
+                                <th>Kategória</th>
+                                <th>Proti</th>
+                                <th>V/P</th>
+                                <th>Skóre</th>
+                                <th>MIN</th>
+                                <th>PTS</th>
+                                <th>AST</th>
+                                <th>OFF</th>
+                                <th>DEF</th>
+                                <th>INDEX</th>
+                                <th>2PÚ</th>
+                                <th>2PC</th>
+                                <th>3PÚ</th>
+                                <th>3PC</th>
+                                <th>FTÚ</th>
+                                <th>FTC</th>
+                                <th>FGÚ</th>
+                                <th>FGC</th>
+                                <th>BLK</th>
+                                <th>STL</th>
+                                <th>TO</th>
+                                <th>F+</th>
+                                <th>F-</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pageRows.map(function(row) {
+                                const stat = row.stat || {};
+                                const event = row.event || stat.event || {};
+                                const values = stat.values || {};
+                                const rowDate = getRowDate(row);
+                                const date = rowDate ? rowDate.toLocaleDateString('sk-SK') : '-';
+                                const opponent = stat.opponent || event.opponent || '-';
+                                const matchWon = event?.matchWon;
+                                let vp = '-';
+                                if (matchWon === true) vp = 'V';
+                                else if (matchWon === false) vp = 'P';
+                                const vpClass = vp === 'V' ? 'win-indicator' : (vp === 'P' ? 'loss-indicator' : 'pending-indicator');
+                                const ours = event?.ourScore != null ? event.ourScore : event?.teamScore;
+                                const oppSc = event?.opponentScore != null ? event.opponentScore : null;
+                                const scoreText = (ours != null && oppSc != null) ? `${ours} : ${oppSc}` : '-';
+                                const hasStats = row.hasStats;
+                                const valueOrDash = function(key, formatFn) {
+                                    if (!hasStats || values[key] === undefined || values[key] === null || values[key] === '') return '-';
+                                    const raw = values[key];
+                                    return formatFn ? formatFn(raw) : raw;
+                                };
+                                return `
+                                    <tr>
+                                        <td>${date}</td>
+                                        <td>${escapeHtml(categoryDisplayNameForRow(row))}</td>
+                                        <td>${escapeHtml(opponent)}</td>
+                                        <td class="${vpClass}">${vp}</td>
+                                        <td>${scoreText}</td>
+                                        <td>${hasStats ? formatMinutes(values.MIN) : '-'}</td>
+                                        <td>${valueOrDash('PTS')}</td>
+                                        <td>${valueOrDash('AST')}</td>
+                                        <td>${valueOrDash('OFF')}</td>
+                                        <td>${valueOrDash('DEF')}</td>
+                                        <td>${valueOrDash('INDEX', function(v) { return parseFloat(v).toFixed(1); })}</td>
+                                        <td>${valueOrDash('2PÚ')}</td>
+                                        <td>${valueOrDash('2PC')}</td>
+                                        <td>${valueOrDash('3PÚ')}</td>
+                                        <td>${valueOrDash('3PC')}</td>
+                                        <td>${valueOrDash('FTÚ')}</td>
+                                        <td>${valueOrDash('FTC')}</td>
+                                        <td>${valueOrDash('FGÚ')}</td>
+                                        <td>${valueOrDash('FGC')}</td>
+                                        <td>${valueOrDash('BLK')}</td>
+                                        <td>${valueOrDash('STL')}</td>
+                                        <td>${valueOrDash('TO')}</td>
+                                        <td>${valueOrDash('F+')}</td>
+                                        <td>${valueOrDash('F-')}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="game-stats-footer">
+                    <div class="game-stats-pagination-dots">
+                        ${Array.from({ length: totalPages }, function(_, idx) {
+                            const page = idx + 1;
+                            return `<button type="button" class="game-stats-dot ${page === gameStatsCurrentPage ? 'active' : ''}" title="Strana ${page}" onclick="goToGameStatsPage(${page})" aria-label="Strana ${page}"></button>`;
+                        }).join('')}
+                    </div>
+                    <span class="game-stats-count" style="font-size: 0.85rem; color: #6B7280;">Zobrazených ${Math.min(pageRows.length, gameStatsPageSize)} z ${gameStatsTotalGames} zápasov${totalPages > 1 ? ' · strana ' + gameStatsCurrentPage + ' z ' + totalPages : ''}</span>
+                </div>
+            `;
+
+            document.getElementById('statisticsContent').innerHTML = tableHTML;
+            const pageSizeSel = document.getElementById('gameStatsPageSizeSelect');
+            if (pageSizeSel) pageSizeSel.value = String(gameStatsPageSize);
+            const filterSel = document.getElementById('gameStatsFilterSelect');
+            if (filterSel) filterSel.value = gameStatsFilter;
+            document.getElementById('statisticsContent').style.display = 'block';
+        }
+
+        function toggleGameStatsCategoryDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('gameStatsCategoryFilter');
+            if (dropdown) dropdown.classList.toggle('open');
+        }
+
+        function selectGameStatsCategory(event, categoryId) {
+            event.stopPropagation();
+            gameStatsCategoryId = categoryId === '' || categoryId == null ? null : String(categoryId);
+            const label = document.getElementById('gameStatsCategoryText');
+            let displayName = 'Všetky';
+            if (gameStatsCategoryId != null) {
+                displayName = categoryNameFromAllCategories(gameStatsCategoryId) || ('Kategória ' + gameStatsCategoryId);
+            }
+            if (label) label.textContent = 'Kategória: ' + displayName;
+            document.querySelectorAll('#gameStatsCategoryDropdown .game-stats-category-option').forEach(function(opt) {
+                opt.classList.remove('active');
+                if ((opt.getAttribute('data-category-id') || '') === String(categoryId == null ? '' : categoryId)) {
+                    opt.classList.add('active');
+                }
+            });
+            const dropdown = document.getElementById('gameStatsCategoryFilter');
+            if (dropdown) dropdown.classList.remove('open');
+            gameStatsCurrentPage = 1;
+            reloadMatchStatisticsWithCurrentDate();
+        }
+
+        function populateGameStatsCategoryDropdown(rows) {
+            const dropdown = document.getElementById('gameStatsCategoryDropdown');
+            if (!dropdown) return;
+            const unique = new Map();
+            rows.forEach(function(row) {
+                const cid = getRowCategoryId(row);
+                if (cid == null) return;
+                const name = categoryNameFromAllCategories(cid) || ('Kategória ' + cid);
+                if (!unique.has(cid)) unique.set(cid, name);
+            });
+            const sorted = Array.from(unique.entries()).sort(function(a, b) {
+                return a[1].localeCompare(b[1], 'sk');
+            });
+            dropdown.innerHTML = `<div class="game-stats-category-option ${gameStatsCategoryId == null ? 'active' : ''}" data-category-id="" onclick="selectGameStatsCategory(event, '')">Všetky</div>`
+                + sorted.map(function(entry) {
+                    const id = entry[0];
+                    const name = entry[1];
+                    const activeClass = String(gameStatsCategoryId) === String(id) ? 'active' : '';
+                    return `<div class="game-stats-category-option ${activeClass}" data-category-id="${id}" onclick="selectGameStatsCategory(event, '${id}')">${escapeHtml(name)}</div>`;
+                }).join('');
+        }
+
+        function formatMinutes(min) {
+            if (!min) return '-';
+            const minutes = Math.floor(min);
+            const seconds = Math.round((min - minutes) * 60);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function reloadMatchStatisticsWithCurrentDate() {
+            if (dateFilterState.singleDate) {
+                return loadMatchStatisticsTable(dateFilterState.singleDate, null);
+            }
+            if (dateFilterState.startDate && dateFilterState.endDate) {
+                return loadMatchStatisticsTable(dateFilterState.startDate, dateFilterState.endDate);
+            }
+            return loadMatchStatisticsTable(null, null);
+        }
+
+        function setGameStatsPageSize(size) {
+            if (!Number.isInteger(size) || size <= 0) return;
+            gameStatsPageSize = size;
+            gameStatsCurrentPage = 1;
+            reloadMatchStatisticsWithCurrentDate();
+        }
+
+        function setGameStatsFilter(value) {
+            if (value !== 'all' && value !== 'withStats' && value !== 'withoutStats') return;
+            gameStatsFilter = value;
+            gameStatsCurrentPage = 1;
+            reloadMatchStatisticsWithCurrentDate();
+        }
+
+        function goToGameStatsPage(page) {
+            if (!Number.isInteger(page) || page < 1) return;
+            const totalPages = Math.max(1, Math.ceil(gameStatsTotalGames / gameStatsPageSize));
+            if (page > totalPages) return;
+            gameStatsCurrentPage = page;
+            reloadMatchStatisticsWithCurrentDate();
+        }
+
+        function showTableView() {
+            document.getElementById('tableViewBtn').classList.add('active');
+            document.getElementById('graphViewBtn').classList.remove('active');
+            document.getElementById('statisticsContent').style.display = 'block';
+            document.getElementById('chartsContent').style.display = 'none';
+            const pageSizeWrap = document.getElementById('gameStatsPageSizeWrap');
+            const filterWrap = document.getElementById('gameStatsFilterWrap');
+            if (pageSizeWrap) pageSizeWrap.style.display = '';
+            if (filterWrap) filterWrap.style.display = '';
+            reloadMatchStatisticsWithCurrentDate();
+        }
+
+        function showGraphView() {
+            document.getElementById('tableViewBtn').classList.remove('active');
+            document.getElementById('graphViewBtn').classList.add('active');
+            document.getElementById('statisticsContent').style.display = 'none';
+            document.getElementById('chartsContent').style.display = 'block';
+            const pageSizeWrap = document.getElementById('gameStatsPageSizeWrap');
+            const filterWrap = document.getElementById('gameStatsFilterWrap');
+            if (pageSizeWrap) pageSizeWrap.style.display = 'none';
+            if (filterWrap) filterWrap.style.display = 'none';
+            loadCharts();
+        }
+
+        function handleDateFilterClick(event) {
+            if (event.target.closest('.date-filter-clear') || event.target.closest('.date-filter-dropdown')) {
+                return;
+            }
+            const dateFilterWrapper = document.getElementById('dateFilterWrapper');
+            if (dateFilterWrapper) dateFilterWrapper.classList.toggle('open');
+        }
+
+        function setDateMode(mode) {
+            currentDateMode = mode;
+            dateFilterState.mode = mode;
+            const singleModeBtn = document.getElementById('singleDateMode');
+            const rangeModeBtn = document.getElementById('rangeDateMode');
+            const singleDateGroup = document.getElementById('singleDateGroup');
+            const rangeDateGroup = document.getElementById('rangeDateGroup');
+
+            if (mode === 'single') {
+                if (singleModeBtn) singleModeBtn.classList.add('active');
+                if (rangeModeBtn) rangeModeBtn.classList.remove('active');
+                if (singleDateGroup) singleDateGroup.style.display = 'flex';
+                if (rangeDateGroup) rangeDateGroup.style.display = 'none';
+            } else {
+                if (singleModeBtn) singleModeBtn.classList.remove('active');
+                if (rangeModeBtn) rangeModeBtn.classList.add('active');
+                if (singleDateGroup) singleDateGroup.style.display = 'none';
+                if (rangeDateGroup) rangeDateGroup.style.display = 'flex';
+            }
+        }
+
+        function applyDateFilter() {
+            const dateFilterText = document.getElementById('dateFilterText');
+            const dateFilterWrapper = document.getElementById('dateFilterWrapper');
+            if (currentDateMode === 'single') {
+                const singleDate = document.getElementById('singleDateInput').value;
+                if (!singleDate) return;
+                dateFilterState.singleDate = singleDate;
+                dateFilterState.startDate = null;
+                dateFilterState.endDate = null;
+                const date = new Date(singleDate + 'T00:00:00');
+                const formattedDate = date.toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                if (dateFilterText) dateFilterText.textContent = formattedDate;
+                if (dateFilterWrapper) {
+                    dateFilterWrapper.classList.add('has-date');
+                    dateFilterWrapper.classList.remove('open');
+                }
+                gameStatsCurrentPage = 1;
+                loadMatchStatisticsTable(singleDate, null);
+            } else {
+                const startDate = document.getElementById('startDateInput').value;
+                const endDate = document.getElementById('endDateInput').value;
+                if (!startDate || !endDate) {
+                    showAppAlert('Prosím vyberte oba dátumy');
+                    return;
+                }
+                if (new Date(startDate) > new Date(endDate)) {
+                    showAppAlert('Dátum "Od" musí byť pred dátumom "Do"');
+                    return;
+                }
+                dateFilterState.singleDate = null;
+                dateFilterState.startDate = startDate;
+                dateFilterState.endDate = endDate;
+                const start = new Date(startDate + 'T00:00:00');
+                const end = new Date(endDate + 'T00:00:00');
+                const formattedStart = start.toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const formattedEnd = end.toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                if (dateFilterText) dateFilterText.textContent = `${formattedStart} - ${formattedEnd}`;
+                if (dateFilterWrapper) {
+                    dateFilterWrapper.classList.add('has-date');
+                    dateFilterWrapper.classList.remove('open');
+                }
+                gameStatsCurrentPage = 1;
+                loadMatchStatisticsTable(startDate, endDate);
+            }
+
+            if (document.getElementById('graphViewBtn').classList.contains('active')) {
+                loadCharts();
+            }
+        }
+
+        function cancelDateFilter() {
+            const dateFilterWrapper = document.getElementById('dateFilterWrapper');
+            if (dateFilterWrapper) dateFilterWrapper.classList.remove('open');
+        }
+
+        function clearDateFilter(event) {
+            if (event) event.stopPropagation();
+            const dateFilterText = document.getElementById('dateFilterText');
+            const dateFilterWrapper = document.getElementById('dateFilterWrapper');
+            const singleDateInput = document.getElementById('singleDateInput');
+            const startDateInput = document.getElementById('startDateInput');
+            const endDateInput = document.getElementById('endDateInput');
+            if (singleDateInput) singleDateInput.value = '';
+            if (startDateInput) startDateInput.value = '';
+            if (endDateInput) endDateInput.value = '';
+            dateFilterState = { mode: 'single', singleDate: null, startDate: null, endDate: null };
+            if (dateFilterText) dateFilterText.textContent = 'Vlastný dátum';
+            if (dateFilterWrapper) dateFilterWrapper.classList.remove('has-date');
+            gameStatsCurrentPage = 1;
+            loadMatchStatisticsTable(null, null);
+            if (document.getElementById('graphViewBtn').classList.contains('active')) {
+                loadCharts();
+            }
+        }
+
+        async function loadCharts() {
+            try {
+                let gameStats = playerStats.filter(s => s.statType === 'GAME');
+                if (dateFilterState.singleDate) {
+                    gameStats = await filterStatsByDate(gameStats, dateFilterState.singleDate, null);
+                } else if (dateFilterState.startDate && dateFilterState.endDate) {
+                    gameStats = await filterStatsByDate(gameStats, dateFilterState.startDate, dateFilterState.endDate);
+                }
+                
+                if (gameStats.length === 0) {
+                    document.getElementById('chartsContent').innerHTML = 
+                        '<div class="loading">Žiadne štatistiky zápasov pre zobrazenie grafov</div>';
+                    return;
+                }
+                
+                const statsWithEvents = await Promise.all(gameStats.map(async (stat) => {
+                    if (stat.event || stat.eventDate) {
+                        return stat;
+                    }
+                    if (stat.eventId) {
+                        try {
+                            const event = await getEventById(stat.eventId);
+                            return { ...stat, event };
+                        } catch (error) {
+                            console.error(`Error loading event ${stat.eventId}:`, error);
+                            return stat;
+                        }
+                    }
+                    return stat;
+                }));
+
+                statsWithEvents.sort((a, b) => {
+                    let dateA = null;
+                    if (a.eventDate) {
+                        dateA = new Date(a.eventDate);
+                    } else if (a.event?.date) {
+                        dateA = new Date(a.event.date);
+                    } else if (a.timestamp) {
+                        dateA = new Date(a.timestamp);
+                    } else {
+                        dateA = new Date(0);
+                    }
+                    
+                    let dateB = null;
+                    if (b.eventDate) {
+                        dateB = new Date(b.eventDate);
+                    } else if (b.event?.date) {
+                        dateB = new Date(b.event.date);
+                    } else if (b.timestamp) {
+                        dateB = new Date(b.timestamp);
+                    } else {
+                        dateB = new Date(0);
+                    }
+                    
+                    return dateA - dateB;
+                });
+
+                currentChartStats = statsWithEvents;
+                
+                renderIndexChart(statsWithEvents);
+                renderStatChart(statsWithEvents);
+                renderPercentageChart(statsWithEvents);
+            } catch (error) {
+                console.error('Error loading charts:', error);
+                document.getElementById('chartsContent').innerHTML = 
+                    '<div class="loading" style="color: #dc3545;">Chyba pri načítaní grafov</div>';
+            }
+        }
+
+        async function filterStatsByDate(stats, startDate, endDate) {
+            if (!startDate) return stats;
+            const startDateObj = new Date(startDate + 'T00:00:00');
+            startDateObj.setHours(0, 0, 0, 0);
+            let endDateObj = null;
+            if (endDate) {
+                endDateObj = new Date(endDate + 'T23:59:59');
+                endDateObj.setHours(23, 59, 59, 999);
+            } else {
+                endDateObj = new Date(startDate + 'T23:59:59');
+                endDateObj.setHours(23, 59, 59, 999);
+            }
+
+            return stats.filter(function(stat) {
+                let statDate = null;
+                if (stat.eventDate) statDate = new Date(stat.eventDate);
+                else if (stat.event && stat.event.date) statDate = new Date(stat.event.date);
+                else if (stat.timestamp) statDate = new Date(stat.timestamp);
+                if (statDate && !isNaN(statDate.getTime())) {
+                    statDate.setHours(0, 0, 0, 0);
+                    return statDate >= startDateObj && statDate <= endDateObj;
+                }
+                return false;
+            });
+        }
+
+        function renderIndexChart(stats) {
+            if (!stats || stats.length === 0) {
+                return;
+            }
+            
+            const canvasId = 'indexChart';
+            let canvas = document.getElementById(canvasId);
+            
+            if (!canvas) {
+                const chartContainer = document.getElementById('chartsContent');
+                chartContainer.innerHTML = `
+                    <div class="chart-container">
+                        <h3>Index Efektivity</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="${canvasId}"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Štatistiky</h3>
+                        <div class="chart-controls">
+                            <label for="statSelect">Vyberte štatistiku:</label>
+                            <select id="statSelect" onchange="updateStatChart()">
+                                <option value="PTS">Body (PTS)</option>
+                                <option value="AST">Asistencie (AST)</option>
+                                <option value="REB">Reboundy (REB)</option>
+                                <option value="STL">Stealy (STL)</option>
+                                <option value="BLK">Bloky (BLK)</option>
+                                <option value="TO">Straty (TO)</option>
+                            </select>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="statChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Presnosť Strelby</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="percentageChart"></canvas>
+                        </div>
+                    </div>
+                `;
+                canvas = document.getElementById(canvasId);
+            }
+
+            const labels = stats.map(stat => {
+                let date = '';
+                if (stat.eventDate) {
+                    date = new Date(stat.eventDate).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.event?.date) {
+                    date = new Date(stat.event.date).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.timestamp) {
+                    date = new Date(stat.timestamp).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                }
+                return date || '-';
+            });
+
+            const indexData = stats.map(stat => {
+                const values = stat.values || {};
+                return values.INDEX !== undefined ? parseFloat(values.INDEX) : 0;
+            });
+
+            if (chartInstances.indexChart) {
+                chartInstances.indexChart.destroy();
+            }
+
+            chartInstances.indexChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Index Efektivity',
+                        data: indexData,
+                        borderColor: '#6B21A8',
+                        backgroundColor: 'rgba(107, 33, 168, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Index'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Zápas'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderStatChart(stats) {
+            if (!stats || stats.length === 0) {
+                return;
+            }
+            
+            const canvasId = 'statChart';
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+
+            const statSelect = document.getElementById('statSelect');
+            const selectedStat = statSelect ? statSelect.value : 'PTS';
+
+            const labels = stats.map(stat => {
+                let date = '';
+                if (stat.eventDate) {
+                    date = new Date(stat.eventDate).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.event?.date) {
+                    date = new Date(stat.event.date).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.timestamp) {
+                    date = new Date(stat.timestamp).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                }
+                return date || '-';
+            });
+
+            const statData = stats.map(stat => {
+                const values = stat.values || {};
+                if (selectedStat === 'REB') {
+                    const off = parseFloat(values.OFF) || 0;
+                    const def = parseFloat(values.DEF) || 0;
+                    return off + def;
+                }
+                return values[selectedStat] !== undefined ? parseFloat(values[selectedStat]) : 0;
+            });
+
+            if (chartInstances.statChart) {
+                chartInstances.statChart.destroy();
+            }
+
+            const statLabels = {
+                'PTS': 'Body',
+                'AST': 'Asistencie',
+                'REB': 'Reboundy',
+                'STL': 'Stealy',
+                'BLK': 'Bloky',
+                'TO': 'Straty'
+            };
+
+            chartInstances.statChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: statLabels[selectedStat] || selectedStat,
+                        data: statData,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: statLabels[selectedStat] || selectedStat
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Zápas'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateStatChart() {
+            if (currentChartStats.length > 0) {
+                renderStatChart(currentChartStats);
+            } else {
+                loadCharts();
+            }
+        }
+
+        function renderPercentageChart(stats) {
+            if (!stats || stats.length === 0) {
+                return;
+            }
+            
+            const canvasId = 'percentageChart';
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+
+            const labels = stats.map(stat => {
+                let date = '';
+                if (stat.eventDate) {
+                    date = new Date(stat.eventDate).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.event?.date) {
+                    date = new Date(stat.event.date).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                } else if (stat.timestamp) {
+                    date = new Date(stat.timestamp).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' });
+                }
+                return date || '-';
+            });
+
+            const calculatePercentage = (made, attempts) => {
+                if (!attempts || attempts === 0) return null;
+                return (made / attempts) * 100;
+            };
+
+            const ftData = stats.map(stat => {
+                const values = stat.values || {};
+                const made = parseFloat(values['FTÚ']) || 0;
+                const attempts = parseFloat(values.FTC) || 0;
+                return calculatePercentage(made, attempts);
+            });
+
+            const threePtData = stats.map(stat => {
+                const values = stat.values || {};
+                const made = parseFloat(values['3PÚ']) || 0;
+                const attempts = parseFloat(values['3PC']) || 0;
+                return calculatePercentage(made, attempts);
+            });
+
+            const twoPtData = stats.map(stat => {
+                const values = stat.values || {};
+                const made = parseFloat(values['2PÚ']) || 0;
+                const attempts = parseFloat(values['2PC']) || 0;
+                return calculatePercentage(made, attempts);
+            });
+
+            const fgData = stats.map(stat => {
+                const values = stat.values || {};
+                const made = parseFloat(values['FGÚ']) || 0;
+                const attempts = parseFloat(values.FGC) || 0;
+                return calculatePercentage(made, attempts);
+            });
+
+            if (chartInstances.percentageChart) {
+                chartInstances.percentageChart.destroy();
+            }
+
+            chartInstances.percentageChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'FT%',
+                            data: ftData,
+                            borderColor: '#10B981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: '3PT%',
+                            data: threePtData,
+                            borderColor: '#F59E0B',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: '2PT%',
+                            data: twoPtData,
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'FG%',
+                            data: fgData,
+                            borderColor: '#EF4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    spanGaps: true,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.parsed == null || !Number.isFinite(context.parsed.y)) {
+                                        return context.dataset.label + ': -';
+                                    }
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Presnosť (%)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Zápas'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

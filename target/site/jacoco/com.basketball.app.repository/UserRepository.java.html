@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.repository</a> &gt; <span class="el_source">UserRepository.java</span></div><h1>UserRepository.java</h1><pre class="source lang-java linenums">package com.basketball.app.repository;
+
+import com.basketball.app.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends JpaRepository&lt;User, Long&gt; {
+    Optional&lt;User&gt; findByEmail(String email);
+
+    Optional&lt;User&gt; findByPasswordResetTokenHash(String passwordResetTokenHash);
+
+    /** For login: only non-deleted users can log in. Treats NULL deleted as not deleted (existing rows before column existed). */
+    @Query(&quot;SELECT u FROM User u WHERE u.email = :email AND (u.deleted = false OR u.deleted IS NULL)&quot;)
+    Optional&lt;User&gt; findByEmailAndDeletedFalse(@Param(&quot;email&quot;) String email);
+
+    @Query(&quot;SELECT u FROM User u WHERE LOWER(TRIM(u.email)) = LOWER(TRIM(:email)) AND (u.deleted = false OR u.deleted IS NULL)&quot;)
+    Optional&lt;User&gt; findByEmailTrimmedIgnoreCaseAndDeletedFalse(@Param(&quot;email&quot;) String email);
+
+    /** Same as above but with categories loaded (for login response with categoryIds). */
+    @Query(&quot;SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.categories WHERE u.email = :email AND (u.deleted = false OR u.deleted IS NULL)&quot;)
+    Optional&lt;User&gt; findByEmailAndDeletedFalseWithCategories(@Param(&quot;email&quot;) String email);
+
+    boolean existsByEmail(String email);
+
+    /** For create/update: allow same email if only deleted user had it. Treats NULL deleted as not deleted. */
+    @Query(&quot;SELECT COUNT(u) FROM User u WHERE u.email = :email AND (u.deleted = false OR u.deleted IS NULL)&quot;)
+    long countByEmailAndNotDeleted(@Param(&quot;email&quot;) String email);
+
+    default boolean existsByEmailAndDeletedFalse(String email) {
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        return countByEmailAndNotDeleted(email) &gt; 0;</span>
+    }
+
+    // Search and filter methods (exclude deleted users from lists)
+    @Query(&quot;SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.categories WHERE u.role = :role AND (u.deleted = false OR u.deleted IS NULL)&quot;)
+    List&lt;User&gt; findByRole(@Param(&quot;role&quot;) User.Role role);
+
+    @Query(&quot;SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.categories WHERE u.categoryId = :categoryId AND (u.deleted = false OR u.deleted IS NULL)&quot;)
+    List&lt;User&gt; findByCategoryId(@Param(&quot;categoryId&quot;) Long categoryId);
+
+    @Query(&quot;SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.categories c WHERE c.id = :categoryId AND (u.deleted = false OR u.deleted IS NULL)&quot;)
+    List&lt;User&gt; findByCategoryInCategories(@Param(&quot;categoryId&quot;) Long categoryId);
+
+    /** Coaches linked via category_coaches (many-to-many), not deprecated coachId. */
+    @Query(&quot;SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.categories WHERE &quot; +
+           &quot;EXISTS (SELECT 1 FROM Category cat JOIN cat.coaches coach WHERE cat.id = :categoryId AND coach = u) AND (u.deleted = false OR u.deleted IS NULL)&quot;)
+    List&lt;User&gt; findByCoachedCategory(@Param(&quot;categoryId&quot;) Long categoryId);
+
+    /** Users in category (user_categories) OR coaches of category (category_coaches). Uses many-to-many, not deprecated coachId. */
+    @Query(&quot;SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.categories c WHERE (u.deleted = false OR u.deleted IS NULL) AND &quot; +
+           &quot;(EXISTS (SELECT 1 FROM User u2 JOIN u2.categories c2 WHERE u2 = u AND c2.id = :categoryId) OR &quot; +
+           &quot;EXISTS (SELECT 1 FROM Category cat JOIN cat.coaches coach WHERE cat.id = :categoryId AND coach = u))&quot;)
+    List&lt;User&gt; findByCategoryInCategoriesOrCoached(@Param(&quot;categoryId&quot;) Long categoryId);
+
+    List&lt;User&gt; findByIsActive(Boolean isActive);
+
+    @Query(&quot;SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.categories WHERE u.role = :role AND u.categoryId = :categoryId AND (u.deleted = false OR u.deleted IS NULL)&quot;)
+    List&lt;User&gt; findByRoleAndCategoryId(@Param(&quot;role&quot;) User.Role role, @Param(&quot;categoryId&quot;) Long categoryId);
+
+    @Query(&quot;SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.categories c WHERE u.role = :role AND (u.deleted = false OR u.deleted IS NULL) AND &quot; +
+           &quot;(EXISTS (SELECT 1 FROM User u2 JOIN u2.categories c2 WHERE u2 = u AND c2.id = :categoryId) OR &quot; +
+           &quot;EXISTS (SELECT 1 FROM Category cat JOIN cat.coaches coach WHERE cat.id = :categoryId AND coach = u))&quot;)
+    List&lt;User&gt; findByRoleAndCategoryInCategoriesOrCoached(@Param(&quot;role&quot;) User.Role role, @Param(&quot;categoryId&quot;) Long categoryId);
+
+    @Query(&quot;SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.categories WHERE &quot; +
+           &quot;(LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(u.surname) LIKE LOWER(CONCAT('%', :search, '%')) &quot; +
+           &quot;OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))) AND (u.deleted = false OR u.deleted IS NULL)&quot;)
+    List&lt;User&gt; searchByNameOrEmail(@Param(&quot;search&quot;) String search);
+
+    @Query(&quot;SELECT u FROM User u WHERE u.categoryId = :categoryId AND u.role = :role AND (u.deleted = false OR u.deleted IS NULL)&quot;)
+    List&lt;User&gt; findByCategoryIdAndRole(@Param(&quot;categoryId&quot;) Long categoryId, @Param(&quot;role&quot;) User.Role role);
+
+    @Query(&quot;SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.categories WHERE (u.deleted = false OR u.deleted IS NULL)&quot;)
+    List&lt;User&gt; findAllWithCategories();
+
+    /** Player count per category (user_categories + users with role PLAYER, non-deleted). Single query, no full user load. */
+    @Query(value = &quot;SELECT uc.category_id AS categoryId, COUNT(uc.user_id) AS playerCount FROM user_categories uc &quot; +
+            &quot;INNER JOIN users u ON u.id = uc.user_id WHERE (u.deleted = false OR u.deleted IS NULL) AND u.role = 'PLAYER' &quot; +
+            &quot;GROUP BY uc.category_id&quot;, nativeQuery = true)
+    List&lt;PlayerCountByCategory&gt; getPlayerCountPerCategory();
+
+    /** Remove all user–category links for a category (including deleted users). Use when deleting a category. */
+    @Modifying
+    @Query(value = &quot;DELETE FROM user_categories WHERE category_id = :categoryId&quot;, nativeQuery = true)
+    void deleteUserCategoryLinksByCategoryId(@Param(&quot;categoryId&quot;) Long categoryId);
+
+    /** Clear legacy category_id on users for a category. Use when deleting a category. */
+    @Modifying
+    @Query(value = &quot;UPDATE users SET category_id = NULL WHERE category_id = :categoryId&quot;, nativeQuery = true)
+    void clearLegacyCategoryIdByCategoryId(@Param(&quot;categoryId&quot;) Long categoryId);
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

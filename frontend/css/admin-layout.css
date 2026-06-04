@@ -1,0 +1,35 @@
+/* Admin layout: same window sizing and nav behaviour on every admin page.
+   Load after main.css and coach-nav.css. Nav breakpoint (hamburger at 1673px) is in coach-nav.css. */
+
+body.admin {
+    overflow-x: hidden;
+}
+
+/* Same content area width and padding on all admin pages */
+body.admin .dashboard-content {
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+/* Optional inner wrapper for form pages (create/edit user) to keep form width 900px */
+body.admin .admin-form-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Responsive: reduce padding on small screens - same on all admin pages */
+@media (max-width: 768px) {
+    body.admin .dashboard-content {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    body.admin .dashboard-content {
+        padding: 0.75rem;
+    }
+}

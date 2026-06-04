@@ -1,0 +1,279 @@
+/* Statistics table - shared across admin-dashboard, admin-matches, coach-matches, dashboard (player), etc. */
+/* Look matches player dashboard (dashboard.html). */
+
+.match-statistics {
+    background: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 2px 3px 8px 2px rgba(0, 0, 0, 0.05);
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+/* Table body fills card width; scroll only when content is wider than card */
+.match-statistics #statisticsContent,
+.match-statistics #matchStatisticsContent {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.match-statistics #chartsContent {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.statistics-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.statistics-header .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0;
+}
+
+.statistics-header .section-title-with-action {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.statistics-header .section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2C2C2C;
+}
+
+/* Link to full team match stats page (team-stats.html) */
+a.team-stats-page-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6B21A8;
+    background: #F5F3FF;
+    border: 1px solid #E9D5FF;
+    border-radius: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.2s, border-color 0.2s;
+}
+a.team-stats-page-btn:hover {
+    background: #EDE9FE;
+    border-color: #DDD6FE;
+    color: #581C87;
+}
+
+.statistics-header .section-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.statistics-header .section-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.statistics-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* View toggle (Table / Graph) - same as player dashboard */
+.view-toggle {
+    display: flex;
+    gap: 0.5rem;
+    background: #F8F9FA;
+    border-radius: 8px;
+    padding: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.view-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #E5E7EB;
+    background: #FFFFFF;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #374151;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.view-btn:hover {
+    background: #F3F4F6;
+}
+
+.view-btn.active {
+    background: #1F2937;
+    color: #FFFFFF;
+    border-color: #1F2937;
+}
+
+.view-btn-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.view-btn-icon svg,
+.view-btn .view-btn-icon svg {
+    width: 100%;
+    height: 100%;
+    color: inherit;
+}
+
+.statistics-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0;
+}
+
+/* Same as admin-dashboard.html inline .statistics-table */
+.match-statistics .statistics-table {
+    margin-top: 1rem;
+}
+
+.statistics-table th,
+.statistics-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #E0E0E0;
+    font-size: 0.9rem;
+}
+
+.statistics-table th {
+    background: #F8F9FA;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #666666;
+    border-bottom: 2px solid #E0E0E0;
+}
+
+.statistics-table tr:hover {
+    background: #F8F9FA;
+}
+
+/* Skóre column — admin-dashboard */
+.statistics-table th:nth-child(5),
+.statistics-table td:nth-child(5) {
+    min-width: 7rem;
+}
+
+/* Stat columns from MIN/PTS onward (column 6+): center like admin player table */
+.statistics-table th:nth-child(n+6),
+.statistics-table td:nth-child(n+6) {
+    text-align: center;
+}
+
+/* Totals row first cell (Spolu): allow to fill */
+.statistics-table tr.totals-row td:first-child {
+    text-align: left;
+}
+
+.statistics-table tr.totals-row {
+    background: #E8D5FF;
+    font-weight: 700;
+}
+
+.statistics-table tr.totals-row td {
+    border-top: 2px solid #6B2C91;
+    text-align: left; /* Keep 'Spolu' text aligned left */
+}
+
+/* Indicators */
+.win-indicator {
+    color: #28A745;
+    font-weight: 700;
+}
+
+.loss-indicator {
+    color: #DC2626;
+    font-weight: 700;
+}
+
+.pending-indicator {
+    color: #9CA3AF;
+    font-weight: 700;
+}
+
+/* Mobile Adjustments - match player dashboard */
+@media (max-width: 768px) {
+    .statistics-table {
+        font-size: 0.8rem;
+    }
+
+    .statistics-table th,
+    .statistics-table td {
+        padding: 0.5rem;
+    }
+
+    .statistics-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .statistics-controls {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .view-toggle {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .view-btn {
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+    }
+}
+
+[data-theme="dark"] .statistics-header .section-title {
+    color: var(--text-primary, #F3F4F6);
+}
+
+[data-theme="dark"] a.team-stats-page-btn {
+    background: rgba(107, 33, 168, 0.22);
+    border-color: rgba(167, 139, 250, 0.35);
+    color: #E9D5FF;
+}
+
+[data-theme="dark"] a.team-stats-page-btn:hover {
+    background: rgba(107, 33, 168, 0.38);
+    border-color: rgba(167, 139, 250, 0.55);
+    color: #F5F3FF;
+}

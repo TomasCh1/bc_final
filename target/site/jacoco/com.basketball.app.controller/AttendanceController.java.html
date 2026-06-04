@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AttendanceController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.controller</a> &gt; <span class="el_source">AttendanceController.java</span></div><h1>AttendanceController.java</h1><pre class="source lang-java linenums">package com.basketball.app.controller;
+
+import com.basketball.app.dto.AttendanceRecordRequest;
+import com.basketball.app.dto.BulkAttendanceRecordRequest;
+import com.basketball.app.model.Attendance;
+import com.basketball.app.service.AttendanceService;
+import com.basketball.app.service.AttendanceExportService;
+import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/api/attendance&quot;)
+public class AttendanceController {
+
+    private final AttendanceService attendanceService;
+    private final AttendanceExportService exportService;
+
+<span class="fc" id="L28">    public AttendanceController(AttendanceService attendanceService, AttendanceExportService exportService) {</span>
+<span class="fc" id="L29">        this.attendanceService = attendanceService;</span>
+<span class="fc" id="L30">        this.exportService = exportService;</span>
+<span class="fc" id="L31">    }</span>
+
+    /**
+     * Record attendance for a single player
+     */
+    @PostMapping
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; recordAttendance(@Valid @RequestBody AttendanceRecordRequest request) {
+        try {
+<span class="fc" id="L40">            Attendance attendance = attendanceService.recordAttendance(request);</span>
+<span class="fc" id="L41">            return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="fc" id="L42">                    .body(attendanceService.toAttendanceMap(attendance));</span>
+<span class="fc" id="L43">        } catch (Exception e) {</span>
+<span class="fc" id="L44">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L45">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Record attendance for multiple players
+     */
+    @PostMapping(&quot;/bulk&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; recordBulkAttendance(@Valid @RequestBody BulkAttendanceRecordRequest request) {
+        try {
+<span class="fc" id="L56">            List&lt;Attendance&gt; attendanceRecords = attendanceService.recordBulkAttendance(request);</span>
+<span class="fc" id="L57">            List&lt;Map&lt;String, Object&gt;&gt; attendanceMaps = attendanceRecords.stream()</span>
+<span class="fc" id="L58">                    .map(attendanceService::toAttendanceMap)</span>
+<span class="fc" id="L59">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L60">            return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="fc" id="L61">                    .body(attendanceMaps);</span>
+<span class="nc" id="L62">        } catch (Exception e) {</span>
+<span class="nc" id="L63">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L64">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get attendance by ID
+     */
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;?&gt; getAttendanceById(@PathVariable Long id) {
+        try {
+<span class="fc" id="L74">            Attendance attendance = attendanceService.findById(id)</span>
+<span class="fc" id="L75">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Attendance record not found: &quot; + id));</span>
+<span class="fc" id="L76">            return ResponseEntity.ok(attendanceService.toAttendanceMap(attendance));</span>
+<span class="fc" id="L77">        } catch (Exception e) {</span>
+<span class="fc" id="L78">            return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="fc" id="L79">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get attendance for an event
+     */
+    @GetMapping(&quot;/event/{eventId}&quot;)
+    public ResponseEntity&lt;?&gt; getAttendanceByEvent(@PathVariable Long eventId) {
+        try {
+<span class="fc" id="L89">            List&lt;Attendance&gt; attendanceRecords = attendanceService.findByEvent(eventId);</span>
+<span class="fc" id="L90">            List&lt;Map&lt;String, Object&gt;&gt; attendanceMaps = attendanceRecords.stream()</span>
+<span class="fc" id="L91">                    .map(attendanceService::toAttendanceMap)</span>
+<span class="fc" id="L92">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L93">            return ResponseEntity.ok(attendanceMaps);</span>
+<span class="nc" id="L94">        } catch (Exception e) {</span>
+<span class="nc" id="L95">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L96">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get attendance for a player
+     */
+    @GetMapping(&quot;/player/{playerId}&quot;)
+    public ResponseEntity&lt;?&gt; getAttendanceByPlayer(@PathVariable Long playerId) {
+        try {
+<span class="fc" id="L106">            List&lt;Attendance&gt; attendanceRecords = attendanceService.findByPlayer(playerId);</span>
+<span class="fc" id="L107">            List&lt;Map&lt;String, Object&gt;&gt; attendanceMaps = attendanceRecords.stream()</span>
+<span class="fc" id="L108">                    .map(attendanceService::toAttendanceMap)</span>
+<span class="fc" id="L109">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L110">            return ResponseEntity.ok(attendanceMaps);</span>
+<span class="nc" id="L111">        } catch (Exception e) {</span>
+<span class="nc" id="L112">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L113">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get attendance by player and date range
+     */
+    @GetMapping(&quot;/player/{playerId}/range&quot;)
+    public ResponseEntity&lt;?&gt; getAttendanceByPlayerAndDateRange(
+            @PathVariable Long playerId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        try {
+<span class="fc" id="L126">            List&lt;Attendance&gt; attendanceRecords = attendanceService.findByPlayerAndDateRange(</span>
+                    playerId, startDate, endDate);
+<span class="fc" id="L128">            List&lt;Map&lt;String, Object&gt;&gt; attendanceMaps = attendanceRecords.stream()</span>
+<span class="fc" id="L129">                    .map(attendanceService::toAttendanceMap)</span>
+<span class="fc" id="L130">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L131">            return ResponseEntity.ok(attendanceMaps);</span>
+<span class="nc" id="L132">        } catch (Exception e) {</span>
+<span class="nc" id="L133">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L134">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get attendance for all players in a date range
+     */
+    @GetMapping(&quot;/range&quot;)
+    public ResponseEntity&lt;?&gt; getAttendanceByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        try {
+<span class="fc" id="L146">            List&lt;Map&lt;String, Object&gt;&gt; attendanceMaps = attendanceService.findByDateRangeAsMaps(startDate, endDate);</span>
+<span class="fc" id="L147">            return ResponseEntity.ok(attendanceMaps);</span>
+<span class="nc" id="L148">        } catch (Exception e) {</span>
+<span class="nc" id="L149">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L150">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get attendance statistics for a player
+     */
+    @GetMapping(&quot;/player/{playerId}/statistics&quot;)
+    public ResponseEntity&lt;?&gt; getPlayerStatistics(
+            @PathVariable Long playerId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        try {
+<span class="fc" id="L163">            Map&lt;String, Object&gt; statistics = attendanceService.calculatePlayerStatistics(</span>
+                    playerId, startDate, endDate);
+<span class="fc" id="L165">            return ResponseEntity.ok(statistics);</span>
+<span class="nc" id="L166">        } catch (Exception e) {</span>
+<span class="nc" id="L167">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L168">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get attendance by category
+     */
+    @GetMapping(&quot;/category/{categoryId}&quot;)
+    public ResponseEntity&lt;?&gt; getAttendanceByCategory(@PathVariable Long categoryId) {
+        try {
+<span class="fc" id="L178">            List&lt;Attendance&gt; attendanceRecords = attendanceService.findByCategory(categoryId);</span>
+<span class="fc" id="L179">            List&lt;Map&lt;String, Object&gt;&gt; attendanceMaps = attendanceRecords.stream()</span>
+<span class="fc" id="L180">                    .map(attendanceService::toAttendanceMap)</span>
+<span class="fc" id="L181">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L182">            return ResponseEntity.ok(attendanceMaps);</span>
+<span class="nc" id="L183">        } catch (Exception e) {</span>
+<span class="nc" id="L184">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L185">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Export attendance to Excel
+     */
+    @GetMapping(&quot;/export/excel&quot;)
+    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    public ResponseEntity&lt;?&gt; exportToExcel(
+            @RequestParam(required = false) Long playerId,
+            @RequestParam(required = false) Long eventId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        try {
+<span class="fc" id="L201">            byte[] excelData = exportService.exportToExcel(playerId, eventId, categoryId, startDate, endDate);</span>
+            
+<span class="fc" id="L203">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L204">            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);</span>
+<span class="fc" id="L205">            headers.setContentDispositionFormData(&quot;attachment&quot;, &quot;attendance_report.xlsx&quot;);</span>
+            
+<span class="fc" id="L207">            return ResponseEntity.ok()</span>
+<span class="fc" id="L208">                    .headers(headers)</span>
+<span class="fc" id="L209">                    .body(excelData);</span>
+<span class="nc" id="L210">        } catch (Exception e) {</span>
+<span class="nc" id="L211">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L212">                    .body(Map.of(&quot;error&quot;, &quot;Failed to export attendance: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Export attendance to PDF
+     */
+    @GetMapping(&quot;/export/pdf&quot;)
+    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    public ResponseEntity&lt;?&gt; exportToPdf(
+            @RequestParam(required = false) Long playerId,
+            @RequestParam(required = false) Long eventId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        try {
+<span class="nc" id="L228">            byte[] pdfData = exportService.exportToPdf(playerId, eventId, categoryId, startDate, endDate);</span>
+            
+<span class="nc" id="L230">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="nc" id="L231">            headers.setContentType(MediaType.APPLICATION_PDF);</span>
+<span class="nc" id="L232">            headers.setContentDispositionFormData(&quot;attachment&quot;, &quot;attendance_report.pdf&quot;);</span>
+            
+<span class="nc" id="L234">            return ResponseEntity.ok()</span>
+<span class="nc" id="L235">                    .headers(headers)</span>
+<span class="nc" id="L236">                    .body(pdfData);</span>
+<span class="fc" id="L237">        } catch (Exception e) {</span>
+<span class="fc" id="L238">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L239">                    .body(Map.of(&quot;error&quot;, &quot;Failed to export attendance: &quot; + e.getMessage()));</span>
+        }
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoryController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.controller</a> &gt; <span class="el_source">CategoryController.java</span></div><h1>CategoryController.java</h1><pre class="source lang-java linenums">package com.basketball.app.controller;
+
+import com.basketball.app.dto.CategoryCreateRequest;
+import com.basketball.app.dto.CategoryUpdateRequest;
+import com.basketball.app.model.Category;
+import com.basketball.app.service.CategoryService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/api/categories&quot;)
+public class CategoryController {
+
+    private final CategoryService categoryService;
+
+<span class="fc" id="L24">    public CategoryController(CategoryService categoryService) {</span>
+<span class="fc" id="L25">        this.categoryService = categoryService;</span>
+<span class="fc" id="L26">    }</span>
+
+    /**
+     * Create a new category
+     */
+    @PostMapping
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; createCategory(@Valid @RequestBody CategoryCreateRequest request) {
+        try {
+<span class="fc" id="L35">            Category category = categoryService.createCategory(request);</span>
+<span class="fc" id="L36">            return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.toCategoryMap(category));</span>
+<span class="nc" id="L37">        } catch (Exception e) {</span>
+<span class="nc" id="L38">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L39">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get all categories.
+     */
+    @GetMapping
+    public ResponseEntity&lt;?&gt; getAllCategories(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String season,
+            @RequestParam(required = false) Long coachId,
+            @RequestParam(required = false, defaultValue = &quot;false&quot;) boolean summary) {
+        
+        List&lt;Category&gt; categories;
+<span class="pc bpc" id="L54" title="1 of 4 branches missed.">        if (search != null &amp;&amp; !search.trim().isEmpty()) {</span>
+<span class="fc" id="L55">            categories = categoryService.searchCategories(search);</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        } else if (season != null) {</span>
+<span class="fc" id="L57">            categories = categoryService.findBySeason(season);</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        } else if (coachId != null) {</span>
+<span class="nc" id="L59">            categories = categoryService.findByCoach(coachId);</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        } else if (summary) {</span>
+<span class="nc" id="L61">            categories = categoryService.findAllForSummary();</span>
+        } else {
+<span class="fc" id="L63">            categories = categoryService.findAll();</span>
+        }
+        
+<span class="fc" id="L66">        List&lt;Map&lt;String, Object&gt;&gt; result = categories.stream()</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">                .map(c -&gt; summary ? categoryService.toCategorySummaryMap(c) : categoryService.toCategoryMap(c))</span>
+<span class="fc" id="L68">                .collect(java.util.stream.Collectors.toList());</span>
+        
+<span class="fc" id="L70">        return ResponseEntity.ok(result);</span>
+    }
+
+    /**
+     * Get player count per category (stats only, no user list). For admin categories overview.
+     */
+    @GetMapping(&quot;/player-counts&quot;)
+    public ResponseEntity&lt;?&gt; getPlayerCounts() {
+<span class="nc" id="L78">        return ResponseEntity.ok(categoryService.getPlayerCountByCategoryId());</span>
+    }
+
+    /**
+     * Get category by ID
+     */
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;?&gt; getCategoryById(@PathVariable Long id) {
+        try {
+            // Fetch category and ensure coaches are loaded
+<span class="fc" id="L88">            Optional&lt;Category&gt; categoryOpt = categoryService.findById(id);</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            if (categoryOpt.isEmpty()) {</span>
+                // Try fetching from all categories with coaches loaded
+<span class="fc" id="L91">                List&lt;Category&gt; allCategories = categoryService.findAll();</span>
+<span class="fc" id="L92">                Category category = allCategories.stream()</span>
+<span class="pc" id="L93">                        .filter(c -&gt; c.getId().equals(id))</span>
+<span class="fc" id="L94">                        .findFirst()</span>
+<span class="pc" id="L95">                        .orElseThrow(() -&gt; new RuntimeException(&quot;Category not found: &quot; + id));</span>
+<span class="nc" id="L96">                return ResponseEntity.ok(categoryService.toCategoryMap(category));</span>
+            }
+            
+<span class="fc" id="L99">            Category category = categoryOpt.get();</span>
+            // Ensure coaches are loaded
+            try {
+<span class="fc" id="L102">                category.getCoaches().size(); // Force lazy load</span>
+<span class="nc" id="L103">            } catch (Exception e) {</span>
+                // If lazy loading fails, fetch with coaches
+<span class="nc" id="L105">                List&lt;Category&gt; allCategories = categoryService.findAll();</span>
+<span class="nc" id="L106">                category = allCategories.stream()</span>
+<span class="nc" id="L107">                        .filter(c -&gt; c.getId().equals(id))</span>
+<span class="nc" id="L108">                        .findFirst()</span>
+<span class="nc" id="L109">                        .orElse(category);</span>
+<span class="fc" id="L110">            }</span>
+            
+<span class="fc" id="L112">            return ResponseEntity.ok(categoryService.toCategoryMap(category));</span>
+<span class="fc" id="L113">        } catch (Exception e) {</span>
+<span class="fc" id="L114">            return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="fc" id="L115">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Update category
+     */
+    @PutMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; updateCategory(@PathVariable Long id,
+                                           @Valid @RequestBody CategoryUpdateRequest request) {
+        try {
+<span class="fc" id="L127">            Category category = categoryService.updateCategory(id, request);</span>
+<span class="fc" id="L128">            return ResponseEntity.ok(categoryService.toCategoryMap(category));</span>
+<span class="nc" id="L129">        } catch (Exception e) {</span>
+<span class="nc" id="L130">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L131">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Delete category
+     */
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; deleteCategory(@PathVariable Long id) {
+        try {
+<span class="fc" id="L142">            categoryService.deleteCategory(id);</span>
+<span class="fc" id="L143">            return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Category deleted successfully&quot;));</span>
+<span class="nc" id="L144">        } catch (Exception e) {</span>
+<span class="nc" id="L145">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L146">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Assign coach to category
+     */
+    @PostMapping(&quot;/{id}/assign-coach&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; assignCoach(@PathVariable Long id,
+                                        @RequestBody Map&lt;String, Long&gt; request) {
+        try {
+<span class="nc" id="L158">            Long coachId = request.get(&quot;coachId&quot;);</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            if (coachId == null) {</span>
+<span class="nc" id="L160">                return ResponseEntity.badRequest()</span>
+<span class="nc" id="L161">                        .body(Map.of(&quot;error&quot;, &quot;coachId is required&quot;));</span>
+            }
+<span class="nc" id="L163">            Category category = categoryService.assignCoach(id, coachId);</span>
+<span class="nc" id="L164">            return ResponseEntity.ok(categoryService.toCategoryMap(category));</span>
+<span class="nc" id="L165">        } catch (Exception e) {</span>
+<span class="nc" id="L166">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L167">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Remove coach from category
+     */
+    @PostMapping(&quot;/{id}/remove-coach&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; removeCoach(@PathVariable Long id) {
+        try {
+<span class="nc" id="L178">            Category category = categoryService.removeCoach(id);</span>
+<span class="nc" id="L179">            return ResponseEntity.ok(categoryService.toCategoryMap(category));</span>
+<span class="nc" id="L180">        } catch (Exception e) {</span>
+<span class="nc" id="L181">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L182">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Search categories
+     */
+    @GetMapping(&quot;/search&quot;)
+    public ResponseEntity&lt;?&gt; searchCategories(@RequestParam String q) {
+<span class="nc" id="L191">        List&lt;Category&gt; categories = categoryService.searchCategories(q);</span>
+<span class="nc" id="L192">        List&lt;Map&lt;String, Object&gt;&gt; enrichedCategories = categories.stream()</span>
+<span class="nc" id="L193">                .map(categoryService::toCategoryMap)</span>
+<span class="nc" id="L194">                .collect(Collectors.toList());</span>
+<span class="nc" id="L195">        return ResponseEntity.ok(enrichedCategories);</span>
+    }
+
+    /**
+     * Get categories by season
+     */
+    @GetMapping(&quot;/season/{season}&quot;)
+    public ResponseEntity&lt;?&gt; getCategoriesBySeason(@PathVariable String season) {
+<span class="nc" id="L203">        List&lt;Category&gt; categories = categoryService.findBySeason(season);</span>
+<span class="nc" id="L204">        List&lt;Map&lt;String, Object&gt;&gt; enrichedCategories = categories.stream()</span>
+<span class="nc" id="L205">                .map(categoryService::toCategoryMap)</span>
+<span class="nc" id="L206">                .collect(Collectors.toList());</span>
+<span class="nc" id="L207">        return ResponseEntity.ok(enrichedCategories);</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

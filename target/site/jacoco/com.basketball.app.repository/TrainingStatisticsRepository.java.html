@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TrainingStatisticsRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.repository</a> &gt; <span class="el_source">TrainingStatisticsRepository.java</span></div><h1>TrainingStatisticsRepository.java</h1><pre class="source lang-java linenums">package com.basketball.app.repository;
+
+import com.basketball.app.model.BehStats;
+import com.basketball.app.model.PoslnovanieStats;
+import com.basketball.app.model.StrelbaStats;
+import com.basketball.app.model.TrainingStatistics;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface TrainingStatisticsRepository extends JpaRepository&lt;TrainingStatistics, Long&gt; {
+    List&lt;TrainingStatistics&gt; findByUserId(Long userId);
+
+    List&lt;TrainingStatistics&gt; findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    @Query(&quot;SELECT t FROM TrainingStatistics t WHERE TYPE(t) = :type&quot;)
+    List&lt;TrainingStatistics&gt; findByType(@Param(&quot;type&quot;) Class&lt;? extends TrainingStatistics&gt; type);
+
+    default List&lt;TrainingStatistics&gt; findByCategory(TrainingStatistics.TrainingCategory category) {
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">        if (category == null) return List.of();</span>
+<span class="pc bpc" id="L26" title="2 of 3 branches missed.">        return findByType(switch (category) {</span>
+<span class="fc" id="L27">            case POSLNOVANIE -&gt; PoslnovanieStats.class;</span>
+<span class="nc" id="L28">            case BEH -&gt; BehStats.class;</span>
+<span class="nc" id="L29">            case STRELBA -&gt; StrelbaStats.class;</span>
+        });
+    }
+
+    @Query(&quot;SELECT t FROM TrainingStatistics t WHERE t.userId = :userId AND TYPE(t) = :type&quot;)
+    List&lt;TrainingStatistics&gt; findByUserIdAndType(@Param(&quot;userId&quot;) Long userId, @Param(&quot;type&quot;) Class&lt;? extends TrainingStatistics&gt; type);
+
+    default List&lt;TrainingStatistics&gt; findByUserIdAndCategory(Long userId, TrainingStatistics.TrainingCategory category) {
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        if (category == null) return findByUserId(userId);</span>
+<span class="nc bnc" id="L38" title="All 3 branches missed.">        return findByUserIdAndType(userId, switch (category) {</span>
+<span class="nc" id="L39">            case POSLNOVANIE -&gt; PoslnovanieStats.class;</span>
+<span class="nc" id="L40">            case BEH -&gt; BehStats.class;</span>
+<span class="nc" id="L41">            case STRELBA -&gt; StrelbaStats.class;</span>
+        });
+    }
+    
+    @Query(&quot;SELECT t FROM TrainingStatistics t WHERE t.userId = :userId AND t.createdAt &gt;= :startDate AND t.createdAt &lt;= :endDate ORDER BY t.createdAt DESC&quot;)
+    List&lt;TrainingStatistics&gt; findByUserIdAndDateRange(@Param(&quot;userId&quot;) Long userId, 
+                                                       @Param(&quot;startDate&quot;) LocalDateTime startDate, 
+                                                       @Param(&quot;endDate&quot;) LocalDateTime endDate);
+    
+    @Query(&quot;SELECT t FROM TrainingStatistics t WHERE t.userId = :userId AND LOWER(t.exerciseName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) ORDER BY t.createdAt DESC&quot;)
+    List&lt;TrainingStatistics&gt; findByUserIdAndExerciseNameContaining(@Param(&quot;userId&quot;) Long userId, 
+                                                                    @Param(&quot;searchTerm&quot;) String searchTerm);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

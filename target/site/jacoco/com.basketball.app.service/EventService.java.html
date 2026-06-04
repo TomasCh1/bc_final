@@ -1,0 +1,613 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.service</a> &gt; <span class="el_source">EventService.java</span></div><h1>EventService.java</h1><pre class="source lang-java linenums">package com.basketball.app.service;
+
+import com.basketball.app.dto.EventCreateRequest;
+import com.basketball.app.dto.EventUpdateRequest;
+import com.basketball.app.model.Event;
+import com.basketball.app.repository.AttendanceRepository;
+import com.basketball.app.repository.EventRepository;
+import com.basketball.app.repository.EventLiveActionRepository;
+import com.basketball.app.repository.EventNominatedPlayerRepository;
+import com.basketball.app.repository.EventOpponentPlayerRepository;
+import com.basketball.app.repository.EventRefereeRepository;
+import com.basketball.app.repository.MatchResultProjection;
+import com.basketball.app.repository.StatisticsRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class EventService {
+
+    private final EventRepository eventRepository;
+    private final CategoryService categoryService;
+    private final EventNominatedPlayerRepository eventNominatedPlayerRepository;
+    private final EventOpponentPlayerRepository eventOpponentPlayerRepository;
+    private final EventRefereeRepository eventRefereeRepository;
+    private final EventLiveActionRepository eventLiveActionRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final StatisticsRepository statisticsRepository;
+
+    public EventService(
+            EventRepository eventRepository,
+            CategoryService categoryService,
+            EventNominatedPlayerRepository eventNominatedPlayerRepository,
+            EventOpponentPlayerRepository eventOpponentPlayerRepository,
+            EventRefereeRepository eventRefereeRepository,
+            EventLiveActionRepository eventLiveActionRepository,
+            AttendanceRepository attendanceRepository,
+<span class="fc" id="L47">            StatisticsRepository statisticsRepository) {</span>
+<span class="fc" id="L48">        this.eventRepository = eventRepository;</span>
+<span class="fc" id="L49">        this.categoryService = categoryService;</span>
+<span class="fc" id="L50">        this.eventNominatedPlayerRepository = eventNominatedPlayerRepository;</span>
+<span class="fc" id="L51">        this.eventOpponentPlayerRepository = eventOpponentPlayerRepository;</span>
+<span class="fc" id="L52">        this.eventRefereeRepository = eventRefereeRepository;</span>
+<span class="fc" id="L53">        this.eventLiveActionRepository = eventLiveActionRepository;</span>
+<span class="fc" id="L54">        this.attendanceRepository = attendanceRepository;</span>
+<span class="fc" id="L55">        this.statisticsRepository = statisticsRepository;</span>
+<span class="fc" id="L56">    }</span>
+
+    /**
+     * Get all events with optional filters
+     */
+    public List&lt;Event&gt; findAll(Long categoryId, Event.EventType type, LocalDate startDate, LocalDate endDate, String search) {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        String searchTrimmed = search != null ? search.trim() : null;</span>
+
+        // Start from a reasonably filtered base set to keep performance good
+        List&lt;Event&gt; results;
+<span class="pc bpc" id="L66" title="1 of 4 branches missed.">        if (startDate != null &amp;&amp; endDate != null) {</span>
+<span class="fc" id="L67">            results = eventRepository.findByDateBetween(startDate, endDate);</span>
+        } else {
+<span class="fc" id="L69">            results = eventRepository.findAll();</span>
+        }
+
+        // Apply filters in memory – cheap on the already narrowed set
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (categoryId != null) {</span>
+<span class="fc" id="L74">            results = results.stream()</span>
+<span class="pc bpc" id="L75" title="1 of 4 branches missed.">                    .filter(e -&gt; e.getCategoryId() != null &amp;&amp; e.getCategoryId().equals(categoryId))</span>
+<span class="fc" id="L76">                    .collect(java.util.stream.Collectors.toList());</span>
+        }
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (type != null) {</span>
+<span class="fc" id="L80">            results = results.stream()</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">                    .filter(e -&gt; e.getType() == type)</span>
+<span class="fc" id="L82">                    .collect(java.util.stream.Collectors.toList());</span>
+        }
+
+<span class="pc bpc" id="L85" title="1 of 4 branches missed.">        if (searchTrimmed != null &amp;&amp; !searchTrimmed.isEmpty()) {</span>
+<span class="fc" id="L86">            String searchLower = searchTrimmed.toLowerCase();</span>
+<span class="fc" id="L87">            results = results.stream()</span>
+<span class="fc" id="L88">                    .filter(e -&gt;</span>
+<span class="fc bfc" id="L89" title="All 4 branches covered.">                            (e.getName() != null &amp;&amp; e.getName().toLowerCase().contains(searchLower)) ||</span>
+<span class="fc bfc" id="L90" title="All 4 branches covered.">                            (e.getLocation() != null &amp;&amp; e.getLocation().toLowerCase().contains(searchLower)) ||</span>
+<span class="fc bfc" id="L91" title="All 4 branches covered.">                            (e.getOpponent() != null &amp;&amp; e.getOpponent().toLowerCase().contains(searchLower))</span>
+                    )
+<span class="fc" id="L93">                    .collect(java.util.stream.Collectors.toList());</span>
+        }
+
+<span class="fc" id="L96">        return results;</span>
+    }
+
+    /**
+     * Get event by ID
+     */
+    public Optional&lt;Event&gt; findById(Long id) {
+<span class="fc" id="L103">        return eventRepository.findById(id);</span>
+    }
+
+    /**
+     * Create a new event (or multiple events if recurring)
+     */
+    @Transactional
+    public Event createEvent(EventCreateRequest request) {
+<span class="fc" id="L111">        validateCategoryRequired(request.getCategoryId());</span>
+<span class="fc" id="L112">        validateCategoryExists(request.getCategoryId());</span>
+
+<span class="fc" id="L114">        validateTrainingStartTime(request.getType(), request.getTime());</span>
+<span class="fc" id="L115">        validateTimeWindow(request.getTime(), request.getEndTime());</span>
+
+        // Check if this is a recurring training event
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        if (Boolean.TRUE.equals(request.getIsRecurring()) &amp;&amp; </span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">            request.getType() == Event.EventType.TRAINING &amp;&amp; </span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">            request.getRecurrencePattern() != null) {</span>
+            
+<span class="nc" id="L122">            return createRecurringEvents(request);</span>
+        }
+
+        // Create single event
+<span class="fc" id="L126">        Event event = new Event();</span>
+<span class="fc" id="L127">        event.setName(request.getName());</span>
+<span class="fc" id="L128">        event.setType(request.getType());</span>
+<span class="fc" id="L129">        event.setDate(request.getDate());</span>
+<span class="fc" id="L130">        event.setTime(request.getTime());</span>
+<span class="fc" id="L131">        event.setEndTime(request.getEndTime());</span>
+<span class="fc" id="L132">        event.setLocation(request.getLocation());</span>
+<span class="fc" id="L133">        event.setCategoryId(request.getCategoryId());</span>
+<span class="fc" id="L134">        event.setOpponent(request.getOpponent());</span>
+<span class="fc" id="L135">        event.setNotes(request.getNotes());</span>
+<span class="fc" id="L136">        event.setCancelled(false);</span>
+
+        // Set isHomeMatch: use provided value, or auto-determine from location for MATCH type
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (request.getIsHomeMatch() != null) {</span>
+<span class="nc" id="L140">            event.setIsHomeMatch(request.getIsHomeMatch());</span>
+<span class="fc bfc" id="L141" title="All 4 branches covered.">        } else if (event.getType() == Event.EventType.MATCH &amp;&amp; event.getLocation() != null) {</span>
+<span class="fc" id="L142">            event.setIsHomeMatch(determineIsHomeMatch(event.getLocation()));</span>
+        }
+        
+        // Set matchWon (only for MATCH type)
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        if (event.getType() == Event.EventType.MATCH) {</span>
+<span class="fc" id="L147">            event.setMatchWon(request.getMatchWon());</span>
+        }
+
+<span class="fc" id="L150">        return eventRepository.save(event);</span>
+    }
+
+    /**
+     * Create event and return creation result with count (for recurring events)
+     */
+    @Transactional
+    public Map&lt;String, Object&gt; createEventWithDetails(EventCreateRequest request) {
+<span class="fc" id="L158">        validateCategoryRequired(request.getCategoryId());</span>
+<span class="fc" id="L159">        validateCategoryExists(request.getCategoryId());</span>
+
+<span class="fc" id="L161">        validateTrainingStartTime(request.getType(), request.getTime());</span>
+<span class="fc" id="L162">        validateTimeWindow(request.getTime(), request.getEndTime());</span>
+
+        // Check if this is a recurring training event
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">        if (Boolean.TRUE.equals(request.getIsRecurring()) &amp;&amp; </span>
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">            request.getType() == Event.EventType.TRAINING &amp;&amp; </span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">            request.getRecurrencePattern() != null) {</span>
+            
+<span class="fc" id="L169">            List&lt;Event&gt; createdEvents = createRecurringEventsList(request);</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">            Event firstEvent = createdEvents.isEmpty() ? null : createdEvents.get(0);</span>
+            
+<span class="fc" id="L172">            Map&lt;String, Object&gt; result = new java.util.HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">            result.put(&quot;event&quot;, firstEvent != null ? toEventMap(firstEvent) : null);</span>
+<span class="fc" id="L174">            result.put(&quot;count&quot;, createdEvents.size());</span>
+<span class="fc" id="L175">            result.put(&quot;isRecurring&quot;, true);</span>
+<span class="fc" id="L176">            return result;</span>
+        }
+
+        // Create single event
+<span class="nc" id="L180">        Event event = new Event();</span>
+<span class="nc" id="L181">        event.setName(request.getName());</span>
+<span class="nc" id="L182">        event.setType(request.getType());</span>
+<span class="nc" id="L183">        event.setDate(request.getDate());</span>
+<span class="nc" id="L184">        event.setTime(request.getTime());</span>
+<span class="nc" id="L185">        event.setEndTime(request.getEndTime());</span>
+<span class="nc" id="L186">        event.setLocation(request.getLocation());</span>
+<span class="nc" id="L187">        event.setCategoryId(request.getCategoryId());</span>
+<span class="nc" id="L188">        event.setOpponent(request.getOpponent());</span>
+<span class="nc" id="L189">        event.setNotes(request.getNotes());</span>
+<span class="nc" id="L190">        event.setCancelled(false);</span>
+
+        // Set isHomeMatch: use provided value, or auto-determine from location for MATCH type
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        if (request.getIsHomeMatch() != null) {</span>
+<span class="nc" id="L194">            event.setIsHomeMatch(request.getIsHomeMatch());</span>
+<span class="nc bnc" id="L195" title="All 4 branches missed.">        } else if (event.getType() == Event.EventType.MATCH &amp;&amp; event.getLocation() != null) {</span>
+<span class="nc" id="L196">            event.setIsHomeMatch(determineIsHomeMatch(event.getLocation()));</span>
+        }
+        
+        // Set matchWon (only for MATCH type)
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (event.getType() == Event.EventType.MATCH) {</span>
+<span class="nc" id="L201">            event.setMatchWon(request.getMatchWon());</span>
+        }
+
+<span class="nc" id="L204">        Event savedEvent = eventRepository.save(event);</span>
+        
+<span class="nc" id="L206">        Map&lt;String, Object&gt; result = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L207">        result.put(&quot;event&quot;, toEventMap(savedEvent));</span>
+<span class="nc" id="L208">        result.put(&quot;count&quot;, 1);</span>
+<span class="nc" id="L209">        result.put(&quot;isRecurring&quot;, false);</span>
+<span class="nc" id="L210">        return result;</span>
+    }
+
+    /**
+     * Create multiple recurring events based on the recurrence pattern
+     */
+    private Event createRecurringEvents(EventCreateRequest request) {
+<span class="nc" id="L217">        List&lt;Event&gt; events = createRecurringEventsList(request);</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        return events.isEmpty() ? null : events.get(0);</span>
+    }
+
+    /**
+     * Create multiple recurring events and return the list
+     */
+    private List&lt;Event&gt; createRecurringEventsList(EventCreateRequest request) {
+<span class="fc" id="L225">        List&lt;Event&gt; events = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L226">        LocalDate currentDate = request.getDate();</span>
+<span class="fc" id="L227">        LocalDate endDate = determineEndDate(request);</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">        int interval = request.getRecurrenceInterval() != null ? request.getRecurrenceInterval() : 1;</span>
+<span class="fc" id="L229">        int count = 0;</span>
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">        int maxOccurrences = request.getNumberOfOccurrences() != null ? request.getNumberOfOccurrences() : Integer.MAX_VALUE;</span>
+
+        // Generate events based on recurrence pattern
+<span class="fc bfc" id="L233" title="All 4 branches covered.">        while (currentDate.isBefore(endDate) || currentDate.isEqual(endDate)) {</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">            if (count &gt;= maxOccurrences) {</span>
+<span class="nc" id="L235">                break;</span>
+            }
+
+<span class="fc" id="L238">            Event event = new Event();</span>
+<span class="fc" id="L239">            event.setName(request.getName());</span>
+<span class="fc" id="L240">            event.setType(request.getType());</span>
+<span class="fc" id="L241">            event.setDate(currentDate);</span>
+<span class="fc" id="L242">            event.setTime(request.getTime());</span>
+<span class="fc" id="L243">            event.setEndTime(request.getEndTime());</span>
+<span class="fc" id="L244">            event.setLocation(request.getLocation());</span>
+<span class="fc" id="L245">            event.setCategoryId(request.getCategoryId());</span>
+<span class="fc" id="L246">            event.setOpponent(request.getOpponent());</span>
+<span class="fc" id="L247">            event.setNotes(request.getNotes());</span>
+<span class="fc" id="L248">            event.setCancelled(false);</span>
+
+            // Set isHomeMatch: use provided value, or auto-determine from location for MATCH type
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">            if (request.getIsHomeMatch() != null) {</span>
+<span class="nc" id="L252">                event.setIsHomeMatch(request.getIsHomeMatch());</span>
+<span class="pc bpc" id="L253" title="3 of 4 branches missed.">            } else if (event.getType() == Event.EventType.MATCH &amp;&amp; event.getLocation() != null) {</span>
+<span class="nc" id="L254">                event.setIsHomeMatch(determineIsHomeMatch(event.getLocation()));</span>
+            }
+            
+            // Set matchWon (only for MATCH type)
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">            if (event.getType() == Event.EventType.MATCH) {</span>
+<span class="nc" id="L259">                event.setMatchWon(request.getMatchWon());</span>
+            }
+
+<span class="fc" id="L262">            events.add(event);</span>
+<span class="fc" id="L263">            count++;</span>
+
+            // Calculate next date based on recurrence pattern
+<span class="fc" id="L266">            currentDate = calculateNextDate(currentDate, request.getRecurrencePattern(), interval);</span>
+<span class="fc" id="L267">        }</span>
+
+        // Save all events
+<span class="fc" id="L270">        return eventRepository.saveAll(events);</span>
+    }
+
+    /**
+     * Determine the end date for recurring events
+     */
+    private LocalDate determineEndDate(EventCreateRequest request) {
+<span class="pc bpc" id="L277" title="1 of 2 branches missed.">        if (request.getRecurrenceEndDate() != null) {</span>
+<span class="nc" id="L278">            return request.getRecurrenceEndDate();</span>
+        }
+        
+<span class="pc bpc" id="L281" title="2 of 4 branches missed.">        if (request.getNumberOfOccurrences() != null &amp;&amp; request.getNumberOfOccurrences() &gt; 0) {</span>
+            // Calculate end date based on number of occurrences
+<span class="fc" id="L283">            LocalDate startDate = request.getDate();</span>
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">            int interval = request.getRecurrenceInterval() != null ? request.getRecurrenceInterval() : 1;</span>
+<span class="fc" id="L285">            int occurrences = request.getNumberOfOccurrences();</span>
+            
+<span class="fc" id="L287">            LocalDate calculatedEndDate = startDate;</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">            for (int i = 1; i &lt; occurrences; i++) {</span>
+<span class="fc" id="L289">                calculatedEndDate = calculateNextDate(calculatedEndDate, request.getRecurrencePattern(), interval);</span>
+            }
+<span class="fc" id="L291">            return calculatedEndDate;</span>
+        }
+        
+        // Default: 1 year from start date
+<span class="nc" id="L295">        return request.getDate().plusYears(1);</span>
+    }
+
+    /**
+     * Calculate the next date based on recurrence pattern
+     */
+    private LocalDate calculateNextDate(LocalDate currentDate, EventCreateRequest.RecurrencePattern pattern, int interval) {
+<span class="pc bpc" id="L302" title="3 of 4 branches missed.">        switch (pattern) {</span>
+            case DAILY:
+<span class="nc" id="L304">                return currentDate.plusDays(interval);</span>
+            case WEEKLY:
+<span class="fc" id="L306">                return currentDate.plusWeeks(interval);</span>
+            case MONTHLY:
+<span class="nc" id="L308">                return currentDate.plusMonths(interval);</span>
+            default:
+<span class="nc" id="L310">                return currentDate.plusWeeks(interval);</span>
+        }
+    }
+
+    /**
+     * Update an existing event
+     */
+    @Transactional
+    public Event updateEvent(Long id, EventUpdateRequest request) {
+<span class="fc" id="L319">        Event event = eventRepository.findById(id)</span>
+<span class="fc" id="L320">                .orElseThrow(() -&gt; new RuntimeException(&quot;Event not found: &quot; + id));</span>
+
+<span class="fc bfc" id="L322" title="All 2 branches covered.">        if (request.getCategoryId() != null) {</span>
+<span class="nc" id="L323">            validateCategoryExists(request.getCategoryId());</span>
+<span class="nc" id="L324">            event.setCategoryId(request.getCategoryId());</span>
+        }
+
+<span class="pc bpc" id="L327" title="1 of 2 branches missed.">        if (request.getName() != null) {</span>
+<span class="fc" id="L328">            event.setName(request.getName());</span>
+        }
+<span class="pc bpc" id="L330" title="1 of 2 branches missed.">        if (request.getType() != null) {</span>
+<span class="nc" id="L331">            event.setType(request.getType());</span>
+        }
+<span class="pc bpc" id="L333" title="1 of 2 branches missed.">        if (request.getDate() != null) {</span>
+<span class="nc" id="L334">            event.setDate(request.getDate());</span>
+        }
+<span class="pc bpc" id="L336" title="1 of 2 branches missed.">        if (request.getTime() != null) {</span>
+<span class="nc" id="L337">            event.setTime(request.getTime());</span>
+        }
+<span class="pc bpc" id="L339" title="1 of 2 branches missed.">        if (request.getEndTime() != null) {</span>
+<span class="nc" id="L340">            event.setEndTime(request.getEndTime());</span>
+        }
+<span class="pc bpc" id="L342" title="1 of 2 branches missed.">        if (request.getLocation() != null) {</span>
+<span class="fc" id="L343">            event.setLocation(request.getLocation());</span>
+        }
+<span class="pc bpc" id="L345" title="1 of 2 branches missed.">        if (request.getOpponent() != null) {</span>
+<span class="nc" id="L346">            event.setOpponent(request.getOpponent());</span>
+        }
+<span class="pc bpc" id="L348" title="1 of 2 branches missed.">        if (request.getNotes() != null) {</span>
+<span class="nc" id="L349">            event.setNotes(request.getNotes());</span>
+        }
+        
+        // Update isHomeMatch: use provided value, or auto-determine from location for MATCH type
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">        if (request.getIsHomeMatch() != null) {</span>
+<span class="nc" id="L354">            event.setIsHomeMatch(request.getIsHomeMatch());</span>
+<span class="pc bpc" id="L355" title="3 of 4 branches missed.">        } else if (event.getType() == Event.EventType.MATCH &amp;&amp; request.getLocation() != null) {</span>
+<span class="nc" id="L356">            event.setIsHomeMatch(determineIsHomeMatch(request.getLocation()));</span>
+<span class="pc bpc" id="L357" title="5 of 6 branches missed.">        } else if (event.getType() == Event.EventType.MATCH &amp;&amp; event.getLocation() != null &amp;&amp; event.getIsHomeMatch() == null) {</span>
+            // Re-evaluate if location changed
+<span class="nc" id="L359">            event.setIsHomeMatch(determineIsHomeMatch(event.getLocation()));</span>
+        }
+        
+        // Update matchWon (only for MATCH type)
+        // Allow setting to null to mark as &quot;not played yet&quot;
+<span class="pc bpc" id="L364" title="1 of 2 branches missed.">        if (event.getType() == Event.EventType.MATCH) {</span>
+            // Check if matchWon field is present in the request (even if null)
+            // We need to distinguish between &quot;not provided&quot; and &quot;explicitly set to null&quot;
+            // Since Boolean can be null, we'll always update if it's a MATCH type
+            // The frontend will send null when &quot;not played yet&quot; is selected
+<span class="nc" id="L369">            event.setMatchWon(request.getMatchWon());</span>
+<span class="nc bnc" id="L370" title="All 2 branches missed.">            if (request.getOurScore() != null) {</span>
+<span class="nc" id="L371">                event.setOurScore(request.getOurScore());</span>
+            }
+<span class="nc bnc" id="L373" title="All 2 branches missed.">            if (request.getOpponentScore() != null) {</span>
+<span class="nc" id="L374">                event.setOpponentScore(request.getOpponentScore());</span>
+            }
+            // Auto-set matchWon from score when both scores are provided
+<span class="nc bnc" id="L377" title="All 4 branches missed.">            if (request.getOurScore() != null &amp;&amp; request.getOpponentScore() != null) {</span>
+                //event.setMatchWon(request.getOurScore() &gt; request.getOpponentScore());
+            }
+        }
+<span class="pc bpc" id="L381" title="3 of 4 branches missed.">        if (request.getCancelled() != null &amp;&amp; event.getType() == Event.EventType.TRAINING) {</span>
+<span class="nc" id="L382">            event.setCancelled(request.getCancelled());</span>
+        }
+
+<span class="fc" id="L385">        validateCategoryRequired(event.getCategoryId());</span>
+<span class="fc" id="L386">        validateTrainingStartTime(event.getType(), event.getTime());</span>
+<span class="fc" id="L387">        validateTimeWindow(event.getTime(), event.getEndTime());</span>
+<span class="fc" id="L388">        return eventRepository.save(event);</span>
+    }
+
+    /**
+     * Delete an event
+     */
+    @Transactional
+    public void deleteEvent(Long id) {
+<span class="fc bfc" id="L396" title="All 2 branches covered.">        if (!eventRepository.existsById(id)) {</span>
+<span class="fc" id="L397">            throw new RuntimeException(&quot;Event not found: &quot; + id);</span>
+        }
+        // Explicitly remove all event-linked data first so admin deletion is complete
+        // even when legacy DB constraints are missing CASCADE rules.
+<span class="fc" id="L401">        eventNominatedPlayerRepository.deleteByEventId(id);</span>
+<span class="fc" id="L402">        eventOpponentPlayerRepository.deleteByEventId(id);</span>
+<span class="fc" id="L403">        eventRefereeRepository.deleteByEventId(id);</span>
+<span class="fc" id="L404">        eventLiveActionRepository.deleteByEventId(id);</span>
+<span class="fc" id="L405">        attendanceRepository.deleteByEventId(id);</span>
+<span class="fc" id="L406">        statisticsRepository.deleteByEventId(id);</span>
+<span class="fc" id="L407">        eventRepository.deleteById(id);</span>
+<span class="fc" id="L408">    }</span>
+
+    /**
+     * Get events by category
+     */
+    public List&lt;Event&gt; findByCategory(Long categoryId) {
+<span class="fc" id="L414">        return eventRepository.findByCategoryId(categoryId);</span>
+    }
+
+    /**
+     * Get events by type
+     */
+    public List&lt;Event&gt; findByType(Event.EventType type) {
+<span class="nc" id="L421">        return eventRepository.findByType(type);</span>
+    }
+
+    /**
+     * Get events by date range
+     */
+    public List&lt;Event&gt; findByDateRange(LocalDate startDate, LocalDate endDate) {
+<span class="nc" id="L428">        return eventRepository.findByDateBetween(startDate, endDate);</span>
+    }
+
+    /**
+     * Get the single match closest to the given date.
+     * Optional category filter.
+     */
+    public Optional&lt;Event&gt; findClosestMatch(LocalDate onOrAfter, Long categoryId) {
+<span class="fc bfc" id="L436" title="All 2 branches covered.">        if (categoryId != null) {</span>
+<span class="fc" id="L437">            return eventRepository.findFirstByTypeAndCategoryIdAndDateGreaterThanEqualOrderByDateAscTimeAsc(</span>
+                    Event.EventType.MATCH, categoryId, onOrAfter);
+        }
+<span class="fc" id="L440">        return eventRepository.findFirstByTypeAndDateGreaterThanEqualOrderByDateAscTimeAsc(</span>
+                Event.EventType.MATCH, onOrAfter);
+    }
+
+    /**
+     * Get season summary: wins, losses, win percent, per-category balances, last 5 results.
+     */
+    public Map&lt;String, Object&gt; getSeasonSummary(LocalDate startDate, LocalDate endDate, Long categoryId) {
+<span class="fc" id="L448">        List&lt;MatchResultProjection&gt; matches = eventRepository.findMatchResultsBetween(</span>
+                Event.EventType.MATCH, startDate, endDate);
+
+<span class="pc bpc" id="L451" title="1 of 2 branches missed.">        List&lt;MatchResultProjection&gt; filtered = categoryId != null</span>
+<span class="nc" id="L452">                ? matches.stream().filter(m -&gt; categoryId.equals(m.getCategoryId())).collect(Collectors.toList())</span>
+<span class="fc" id="L453">                : matches;</span>
+
+<span class="fc" id="L455">        int wins = 0, losses = 0;</span>
+<span class="fc bfc" id="L456" title="All 2 branches covered.">        for (MatchResultProjection m : filtered) {</span>
+<span class="fc bfc" id="L457" title="All 2 branches covered.">            if (Boolean.TRUE.equals(m.getMatchWon())) wins++;</span>
+<span class="pc bpc" id="L458" title="1 of 2 branches missed.">            else if (Boolean.FALSE.equals(m.getMatchWon())) losses++;</span>
+<span class="fc" id="L459">        }</span>
+<span class="fc" id="L460">        int totalPlayed = wins + losses;</span>
+<span class="pc bpc" id="L461" title="1 of 2 branches missed.">        double winPercent = totalPlayed &gt; 0 ? (wins * 100.0 / totalPlayed) : 0;</span>
+
+<span class="fc" id="L463">        Map&lt;Long, int[]&gt; byCategory = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L464" title="All 2 branches covered.">        for (MatchResultProjection m : matches) {</span>
+<span class="fc" id="L465">            Long cid = m.getCategoryId();</span>
+<span class="pc bpc" id="L466" title="1 of 2 branches missed.">            if (cid == null) cid = -1L;</span>
+<span class="fc" id="L467">            byCategory.computeIfAbsent(cid, k -&gt; new int[]{0, 0});</span>
+<span class="fc bfc" id="L468" title="All 2 branches covered.">            if (Boolean.TRUE.equals(m.getMatchWon())) byCategory.get(cid)[0]++;</span>
+<span class="pc bpc" id="L469" title="1 of 2 branches missed.">            else if (Boolean.FALSE.equals(m.getMatchWon())) byCategory.get(cid)[1]++;</span>
+<span class="fc" id="L470">        }</span>
+<span class="fc" id="L471">        List&lt;Map&lt;String, Object&gt;&gt; categoryBalances = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L472" title="All 2 branches covered.">        for (Map.Entry&lt;Long, int[]&gt; e : byCategory.entrySet()) {</span>
+<span class="fc" id="L473">            int w = e.getValue()[0], l = e.getValue()[1], games = w + l;</span>
+<span class="pc bpc" id="L474" title="1 of 2 branches missed.">            if (games == 0) continue;</span>
+<span class="pc bpc" id="L475" title="1 of 2 branches missed.">            String name = e.getKey() &gt;= 0</span>
+<span class="fc" id="L476">                    ? categoryService.findById(e.getKey()).map(c -&gt; c.getName()).orElse(&quot;?&quot;)</span>
+<span class="pc" id="L477">                    : &quot;-&quot;;</span>
+<span class="fc" id="L478">            categoryBalances.add(Map.&lt;String, Object&gt;of(</span>
+<span class="fc" id="L479">                    &quot;categoryId&quot;, e.getKey(),</span>
+                    &quot;categoryName&quot;, name,
+<span class="fc" id="L481">                    &quot;wins&quot;, w,</span>
+<span class="fc" id="L482">                    &quot;losses&quot;, l,</span>
+<span class="fc" id="L483">                    &quot;games&quot;, games,</span>
+<span class="fc" id="L484">                    &quot;balance&quot;, w - l</span>
+            ));
+<span class="fc" id="L486">        }</span>
+<span class="fc" id="L487">        categoryBalances.sort((a, b) -&gt; {</span>
+<span class="nc" id="L488">            int ba = (int) a.get(&quot;balance&quot;), bb = (int) b.get(&quot;balance&quot;);</span>
+<span class="nc bnc" id="L489" title="All 2 branches missed.">            if (ba != bb) return Integer.compare(bb, ba);</span>
+<span class="nc" id="L490">            int wa = (int) a.get(&quot;wins&quot;), wb = (int) b.get(&quot;wins&quot;);</span>
+<span class="nc bnc" id="L491" title="All 2 branches missed.">            if (wa != wb) return Integer.compare(wb, wa);</span>
+<span class="nc" id="L492">            return Integer.compare((int) b.get(&quot;games&quot;), (int) a.get(&quot;games&quot;));</span>
+        });
+
+<span class="fc" id="L495">        List&lt;Map&lt;String, Object&gt;&gt; last5Results = filtered.stream()</span>
+<span class="pc bpc" id="L496" title="1 of 2 branches missed.">                .filter(m -&gt; m.getMatchWon() != null)</span>
+<span class="fc" id="L497">                .sorted(Comparator.comparing(MatchResultProjection::getDate).reversed())</span>
+<span class="fc" id="L498">                .limit(5)</span>
+<span class="fc" id="L499">                .map(m -&gt; {</span>
+<span class="fc" id="L500">                    Map&lt;String, Object&gt; map = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L501">                    map.put(&quot;date&quot;, m.getDate().toString());</span>
+<span class="fc" id="L502">                    map.put(&quot;won&quot;, m.getMatchWon());</span>
+<span class="fc" id="L503">                    map.put(&quot;categoryId&quot;, m.getCategoryId());</span>
+<span class="fc" id="L504">                    return map;</span>
+                })
+<span class="fc" id="L506">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L508">        Map&lt;String, Object&gt; out = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L509">        out.put(&quot;wins&quot;, wins);</span>
+<span class="fc" id="L510">        out.put(&quot;losses&quot;, losses);</span>
+<span class="fc" id="L511">        out.put(&quot;totalPlayed&quot;, totalPlayed);</span>
+<span class="fc" id="L512">        out.put(&quot;winPercent&quot;, Math.round(winPercent * 10) / 10.0);</span>
+<span class="fc" id="L513">        out.put(&quot;categoryBalances&quot;, categoryBalances);</span>
+<span class="fc" id="L514">        out.put(&quot;last5Results&quot;, last5Results);</span>
+<span class="fc" id="L515">        return out;</span>
+    }
+
+    /**
+     * Determine if a match is a home match based on location
+     * Returns true if location contains &quot;Trnava&quot; (case-insensitive), false otherwise
+     */
+    private Boolean determineIsHomeMatch(String location) {
+<span class="pc bpc" id="L523" title="2 of 4 branches missed.">        if (location == null || location.trim().isEmpty()) {</span>
+<span class="nc" id="L524">            return null;</span>
+        }
+<span class="fc" id="L526">        return location.toLowerCase().contains(&quot;trnava&quot;);</span>
+    }
+
+    private void validateCategoryRequired(Long categoryId) {
+<span class="pc bpc" id="L530" title="1 of 2 branches missed.">        if (categoryId == null) {</span>
+<span class="nc" id="L531">            throw new RuntimeException(&quot;Category is required for all events&quot;);</span>
+        }
+<span class="fc" id="L533">    }</span>
+
+    private void validateCategoryExists(Long categoryId) {
+<span class="fc" id="L536">        categoryService.findById(categoryId)</span>
+<span class="fc" id="L537">                .orElseThrow(() -&gt; new RuntimeException(&quot;Category not found: &quot; + categoryId));</span>
+<span class="fc" id="L538">    }</span>
+
+    /**
+     * When recording a training, start time is required.
+     */
+    private void validateTrainingStartTime(Event.EventType type, LocalTime time) {
+<span class="fc bfc" id="L544" title="All 4 branches covered.">        if (type == Event.EventType.TRAINING &amp;&amp; time == null) {</span>
+<span class="fc" id="L545">            throw new RuntimeException(&quot;Start time is required for training events&quot;);</span>
+        }
+<span class="fc" id="L547">    }</span>
+
+    /**
+     * When both start and end time are set, end must be after start.
+     */
+    private void validateTimeWindow(LocalTime start, LocalTime end) {
+<span class="pc bpc" id="L553" title="1 of 6 branches missed.">        if (start != null &amp;&amp; end != null &amp;&amp; !end.isAfter(start)) {</span>
+<span class="fc" id="L554">            throw new RuntimeException(&quot;End time must be after start time&quot;);</span>
+        }
+<span class="fc" id="L556">    }</span>
+
+    /**
+     * Convert Event to map with enriched data.
+     * When enrich=false skips category/coach lookup for smaller payload.
+     */
+    public Map&lt;String, Object&gt; toEventMap(Event event) {
+<span class="fc" id="L563">        return toEventMap(event, true);</span>
+    }
+
+    public Map&lt;String, Object&gt; toEventMap(Event event, boolean enrich) {
+<span class="fc" id="L567">        Map&lt;String, Object&gt; eventMap = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc" id="L568">        eventMap.put(&quot;id&quot;, event.getId());</span>
+<span class="fc" id="L569">        eventMap.put(&quot;name&quot;, event.getName());</span>
+<span class="fc" id="L570">        eventMap.put(&quot;type&quot;, event.getType());</span>
+<span class="fc" id="L571">        eventMap.put(&quot;date&quot;, event.getDate());</span>
+<span class="fc" id="L572">        eventMap.put(&quot;time&quot;, event.getTime());</span>
+<span class="fc" id="L573">        eventMap.put(&quot;endTime&quot;, event.getEndTime());</span>
+<span class="fc" id="L574">        eventMap.put(&quot;location&quot;, event.getLocation());</span>
+<span class="fc" id="L575">        eventMap.put(&quot;categoryId&quot;, event.getCategoryId());</span>
+        
+<span class="pc bpc" id="L577" title="1 of 4 branches missed.">        if (enrich &amp;&amp; event.getCategoryId() != null) {</span>
+            try {
+<span class="fc" id="L579">                categoryService.findById(event.getCategoryId()).ifPresent(category -&gt; {</span>
+<span class="fc" id="L580">                    eventMap.put(&quot;categoryName&quot;, category.getName());</span>
+                    try {
+<span class="fc" id="L582">                        java.util.Set&lt;com.basketball.app.model.User&gt; coaches = category.getCoaches();</span>
+<span class="pc bpc" id="L583" title="2 of 4 branches missed.">                        if (coaches != null &amp;&amp; !coaches.isEmpty()) {</span>
+<span class="nc" id="L584">                            String coachName = coaches.stream()</span>
+<span class="nc" id="L585">                                .findFirst()</span>
+<span class="nc" id="L586">                                .map(com.basketball.app.model.User::getName)</span>
+<span class="nc" id="L587">                                .orElse(null);</span>
+<span class="nc bnc" id="L588" title="All 2 branches missed.">                            if (coachName != null) eventMap.put(&quot;coachName&quot;, coachName);</span>
+                        }
+<span class="nc" id="L590">                    } catch (Exception e) {</span>
+<span class="nc" id="L591">                        System.err.println(&quot;Error loading coaches for category &quot; + category.getId() + &quot;: &quot; + e.getMessage());</span>
+<span class="fc" id="L592">                    }</span>
+<span class="fc" id="L593">                });</span>
+<span class="nc" id="L594">            } catch (Exception e) {</span>
+<span class="nc" id="L595">                System.err.println(&quot;Error loading category for event &quot; + event.getId() + &quot;: &quot; + e.getMessage());</span>
+<span class="fc" id="L596">            }</span>
+        }
+        
+<span class="fc" id="L599">        eventMap.put(&quot;opponent&quot;, event.getOpponent());</span>
+<span class="fc" id="L600">        eventMap.put(&quot;notes&quot;, event.getNotes());</span>
+<span class="fc" id="L601">        eventMap.put(&quot;isHomeMatch&quot;, event.getIsHomeMatch());</span>
+<span class="fc" id="L602">        eventMap.put(&quot;matchWon&quot;, event.getMatchWon());</span>
+<span class="fc" id="L603">        eventMap.put(&quot;ourScore&quot;, event.getOurScore());</span>
+<span class="fc" id="L604">        eventMap.put(&quot;opponentScore&quot;, event.getOpponentScore());</span>
+<span class="fc" id="L605">        eventMap.put(&quot;cancelled&quot;, Boolean.TRUE.equals(event.getCancelled()));</span>
+<span class="fc" id="L606">        eventMap.put(&quot;createdAt&quot;, event.getCreatedAt());</span>
+<span class="fc" id="L607">        eventMap.put(&quot;updatedAt&quot;, event.getUpdatedAt());</span>
+<span class="fc" id="L608">        return eventMap;</span>
+    }
+    
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

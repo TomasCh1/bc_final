@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventNominationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.service</a> &gt; <span class="el_source">EventNominationService.java</span></div><h1>EventNominationService.java</h1><pre class="source lang-java linenums">package com.basketball.app.service;
+
+import com.basketball.app.dto.EventNominationItemRequest;
+import com.basketball.app.model.Event;
+import com.basketball.app.model.EventNominatedPlayer;
+import com.basketball.app.model.User;
+import com.basketball.app.repository.EventNominatedPlayerRepository;
+import com.basketball.app.repository.EventRepository;
+import com.basketball.app.repository.UserRepository;
+import com.basketball.app.util.UserNames;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Service
+public class EventNominationService {
+
+    private final EventRepository eventRepository;
+    private final UserRepository userRepository;
+    private final EventNominatedPlayerRepository eventNominatedPlayerRepository;
+
+    public EventNominationService(
+            EventRepository eventRepository,
+            UserRepository userRepository,
+            EventNominatedPlayerRepository eventNominatedPlayerRepository
+<span class="fc" id="L34">    ) {</span>
+<span class="fc" id="L35">        this.eventRepository = eventRepository;</span>
+<span class="fc" id="L36">        this.userRepository = userRepository;</span>
+<span class="fc" id="L37">        this.eventNominatedPlayerRepository = eventNominatedPlayerRepository;</span>
+<span class="fc" id="L38">    }</span>
+
+    public Map&lt;String, Object&gt; getNominationsForEvent(Long eventId) {
+<span class="fc" id="L41">        Event event = requireMatchEvent(eventId);</span>
+<span class="fc" id="L42">        List&lt;EventNominatedPlayer&gt; rows = eventNominatedPlayerRepository.findByEventId(event.getId());</span>
+<span class="fc" id="L43">        List&lt;Long&gt; playerIds = rows.stream()</span>
+<span class="fc" id="L44">                .map(EventNominatedPlayer::getPlayerId)</span>
+<span class="fc" id="L45">                .distinct()</span>
+<span class="fc" id="L46">                .collect(Collectors.toList());</span>
+<span class="fc" id="L47">        Set&lt;Long&gt; resolvablePlayerIds = playerIds.stream()</span>
+<span class="fc" id="L48">                .filter(Objects::nonNull)</span>
+<span class="fc" id="L49">                .collect(Collectors.toSet());</span>
+<span class="fc" id="L50">        Map&lt;Long, String&gt; playerNameById = userRepository.findAllById(resolvablePlayerIds).stream()</span>
+<span class="fc" id="L51">                .collect(Collectors.toMap(User::getId, UserNames::getDisplayName));</span>
+<span class="fc" id="L52">        List&lt;Map&lt;String, Object&gt;&gt; nominations = rows.stream()</span>
+<span class="fc" id="L53">                .map(row -&gt; Map.&lt;String, Object&gt;of(</span>
+<span class="fc" id="L54">                        &quot;playerId&quot;, row.getPlayerId(),</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">                        &quot;jerseyNumber&quot;, row.getJerseyNumber() == null ? &quot;&quot; : row.getJerseyNumber(),</span>
+<span class="fc" id="L56">                        &quot;isStartingFive&quot;, Boolean.TRUE.equals(row.getStartingFive()),</span>
+<span class="fc" id="L57">                        &quot;playerName&quot;, playerNameById.getOrDefault(row.getPlayerId(), &quot;&quot;)</span>
+                ))
+<span class="fc" id="L59">                .collect(Collectors.toList());</span>
+<span class="fc" id="L60">        return Map.of(</span>
+<span class="fc" id="L61">                &quot;eventId&quot;, event.getId(),</span>
+                &quot;playerIds&quot;, playerIds,
+                &quot;nominations&quot;, nominations
+        );
+    }
+
+    @Transactional
+    public Map&lt;String, Object&gt; replaceNominationsForEvent(
+            Long eventId,
+            List&lt;Long&gt; requestedPlayerIds,
+            List&lt;EventNominationItemRequest&gt; requestedNominations
+    ) {
+<span class="fc" id="L73">        Event event = requireMatchEvent(eventId);</span>
+<span class="nc" id="L74">        List&lt;NormalizedNomination&gt; normalizedNominations = normalizeNominations(requestedPlayerIds, requestedNominations);</span>
+<span class="nc" id="L75">        List&lt;Long&gt; playerIds = normalizedNominations.stream()</span>
+<span class="nc" id="L76">                .map(NormalizedNomination::playerId)</span>
+<span class="nc" id="L77">                .collect(Collectors.toList());</span>
+
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (!playerIds.isEmpty()) {</span>
+<span class="nc" id="L80">            List&lt;User&gt; players = userRepository.findAllById(playerIds);</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (players.size() != playerIds.size()) {</span>
+<span class="nc" id="L82">                throw new RuntimeException(&quot;Some nominated players were not found.&quot;);</span>
+            }
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            for (User user : players) {</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                if (user.getRole() != User.Role.PLAYER) {</span>
+<span class="nc" id="L86">                    throw new RuntimeException(&quot;Only users with role PLAYER can be nominated.&quot;);</span>
+                }
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                if (Boolean.TRUE.equals(user.getDeleted())) {</span>
+<span class="nc" id="L89">                    throw new RuntimeException(&quot;Deleted players cannot be nominated.&quot;);</span>
+                }
+<span class="nc" id="L91">            }</span>
+        }
+
+        // Ensure old nominations are physically deleted before we insert replacements,
+        // otherwise DB unique constraint (event_id, player_id) can fail in one transaction.
+<span class="nc" id="L96">        eventNominatedPlayerRepository.deleteByEventId(event.getId());</span>
+<span class="nc" id="L97">        eventNominatedPlayerRepository.flush();</span>
+
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (!normalizedNominations.isEmpty()) {</span>
+<span class="nc" id="L100">            List&lt;EventNominatedPlayer&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            for (NormalizedNomination nomination : normalizedNominations) {</span>
+<span class="nc" id="L102">                EventNominatedPlayer row = new EventNominatedPlayer();</span>
+<span class="nc" id="L103">                row.setEventId(event.getId());</span>
+<span class="nc" id="L104">                row.setPlayerId(nomination.playerId());</span>
+<span class="nc" id="L105">                row.setJerseyNumber(nomination.jerseyNumber());</span>
+<span class="nc" id="L106">                row.setStartingFive(nomination.startingFive());</span>
+<span class="nc" id="L107">                rows.add(row);</span>
+<span class="nc" id="L108">            }</span>
+<span class="nc" id="L109">            eventNominatedPlayerRepository.saveAll(rows);</span>
+<span class="nc" id="L110">            eventNominatedPlayerRepository.flush();</span>
+        }
+
+<span class="nc" id="L113">        Set&lt;Long&gt; resolvableSavedPlayerIds = playerIds.stream()</span>
+<span class="nc" id="L114">                .filter(Objects::nonNull)</span>
+<span class="nc" id="L115">                .collect(Collectors.toSet());</span>
+<span class="nc" id="L116">        Map&lt;Long, String&gt; savedPlayerNameById = userRepository.findAllById(resolvableSavedPlayerIds).stream()</span>
+<span class="nc" id="L117">                .collect(Collectors.toMap(User::getId, UserNames::getDisplayName));</span>
+<span class="nc" id="L118">        List&lt;Map&lt;String, Object&gt;&gt; nominations = normalizedNominations.stream()</span>
+<span class="nc" id="L119">                .map(item -&gt; Map.&lt;String, Object&gt;of(</span>
+<span class="nc" id="L120">                        &quot;playerId&quot;, item.playerId(),</span>
+<span class="nc" id="L121">                        &quot;jerseyNumber&quot;, item.jerseyNumber(),</span>
+<span class="nc" id="L122">                        &quot;isStartingFive&quot;, item.startingFive(),</span>
+<span class="nc" id="L123">                        &quot;playerName&quot;, savedPlayerNameById.getOrDefault(item.playerId(), &quot;&quot;)</span>
+                ))
+<span class="nc" id="L125">                .collect(Collectors.toList());</span>
+
+<span class="nc" id="L127">        return Map.of(</span>
+<span class="nc" id="L128">                &quot;eventId&quot;, event.getId(),</span>
+                &quot;playerIds&quot;, playerIds,
+                &quot;nominations&quot;, nominations
+        );
+    }
+
+    private Event requireMatchEvent(Long eventId) {
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        if (eventId == null) {</span>
+<span class="nc" id="L136">            throw new RuntimeException(&quot;Event ID is required.&quot;);</span>
+        }
+<span class="fc" id="L138">        Event event = eventRepository.findById(eventId)</span>
+<span class="pc" id="L139">                .orElseThrow(() -&gt; new RuntimeException(&quot;Event not found: &quot; + eventId));</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">        if (event.getType() != Event.EventType.MATCH) {</span>
+<span class="nc" id="L141">            throw new RuntimeException(&quot;Nominations are allowed only for MATCH events.&quot;);</span>
+        }
+<span class="fc" id="L143">        return event;</span>
+    }
+
+    private List&lt;NormalizedNomination&gt; normalizeNominations(
+            List&lt;Long&gt; requestedPlayerIds,
+            List&lt;EventNominationItemRequest&gt; requestedNominations
+    ) {
+<span class="pc bpc" id="L150" title="4 of 6 branches missed.">        if ((requestedNominations == null || requestedNominations.isEmpty())</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                &amp;&amp; (requestedPlayerIds == null || requestedPlayerIds.isEmpty())) {</span>
+<span class="nc" id="L152">            return List.of();</span>
+        }
+
+<span class="fc" id="L155">        LinkedHashMap&lt;Long, NormalizedNomination&gt; normalizedByPlayer = new LinkedHashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L156" title="2 of 4 branches missed.">        if (requestedNominations != null &amp;&amp; !requestedNominations.isEmpty()) {</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">            for (EventNominationItemRequest nomination : requestedNominations) {</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">                if (nomination == null) continue;</span>
+<span class="fc" id="L159">                Long playerId = nomination.getPlayerId();</span>
+<span class="fc" id="L160">                Integer jerseyNumber = nomination.getJerseyNumber();</span>
+<span class="fc" id="L161">                boolean startingFive = Boolean.TRUE.equals(nomination.getStartingFive());</span>
+<span class="pc bpc" id="L162" title="2 of 4 branches missed.">                if (playerId == null || playerId &lt;= 0) continue;</span>
+<span class="pc bpc" id="L163" title="2 of 4 branches missed.">                if (jerseyNumber == null || jerseyNumber &lt;= 0) {</span>
+<span class="nc" id="L164">                    throw new RuntimeException(&quot;Every nominated player must have a valid jersey number.&quot;);</span>
+                }
+<span class="fc" id="L166">                normalizedByPlayer.put(playerId, new NormalizedNomination(playerId, jerseyNumber, startingFive));</span>
+<span class="fc" id="L167">            }</span>
+        } else {
+            // Backward compatibility: convert playerIds into placeholder jersey numbers.
+<span class="nc" id="L170">            int fallbackJersey = 1;</span>
+<span class="nc" id="L171">            Set&lt;Long&gt; uniqueIds = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            for (Long playerId : requestedPlayerIds) {</span>
+<span class="nc bnc" id="L173" title="All 4 branches missed.">                if (playerId == null || playerId &lt;= 0) continue;</span>
+<span class="nc" id="L174">                uniqueIds.add(playerId);</span>
+<span class="nc" id="L175">            }</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">            for (Long playerId : uniqueIds) {</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">                while (containsJersey(normalizedByPlayer, fallbackJersey)) {</span>
+<span class="nc" id="L178">                    fallbackJersey++;</span>
+                }
+<span class="nc" id="L180">                normalizedByPlayer.put(playerId, new NormalizedNomination(playerId, fallbackJersey++, false));</span>
+<span class="nc" id="L181">            }</span>
+        }
+
+<span class="fc" id="L184">        Set&lt;Integer&gt; seenJerseyNumbers = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L185">        int startingFiveCount = 0;</span>
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">        for (NormalizedNomination nomination : normalizedByPlayer.values()) {</span>
+<span class="fc" id="L187">            Integer jersey = nomination.jerseyNumber();</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">            if (!seenJerseyNumbers.add(jersey)) {</span>
+<span class="fc" id="L189">                throw new RuntimeException(&quot;Two nominated players cannot share the same jersey number.&quot;);</span>
+            }
+<span class="pc bpc" id="L191" title="1 of 2 branches missed.">            if (nomination.startingFive()) {</span>
+<span class="nc" id="L192">                startingFiveCount++;</span>
+            }
+<span class="fc" id="L194">        }</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        if (startingFiveCount &gt; 5) {</span>
+<span class="nc" id="L196">            throw new RuntimeException(&quot;You can select at most 5 players in the starting five.&quot;);</span>
+        }
+
+<span class="nc" id="L199">        return new ArrayList&lt;&gt;(normalizedByPlayer.values());</span>
+    }
+
+    private boolean containsJersey(Map&lt;Long, NormalizedNomination&gt; normalizedByPlayer, int jersey) {
+<span class="nc" id="L203">        return normalizedByPlayer.values().stream()</span>
+<span class="nc" id="L204">                .anyMatch(item -&gt; Objects.equals(item.jerseyNumber(), jersey));</span>
+    }
+
+<span class="fc" id="L207">    private record NormalizedNomination(Long playerId, Integer jerseyNumber, boolean startingFive) {</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

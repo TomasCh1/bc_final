@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AttendanceExportService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.service</a> &gt; <span class="el_source">AttendanceExportService.java</span></div><h1>AttendanceExportService.java</h1><pre class="source lang-java linenums">package com.basketball.app.service;
+
+import com.basketball.app.model.Attendance;
+import com.basketball.app.model.User;
+import com.basketball.app.repository.CategoryRepository;
+import com.basketball.app.repository.EventRepository;
+import com.basketball.app.repository.UserRepository;
+import com.basketball.app.util.PlayerNameFormatter;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import com.itextpdf.io.font.PdfEncodings;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.UnitValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.time.YearMonth;
+
+@Service
+public class AttendanceExportService {
+
+<span class="fc" id="L38">    private static final Logger log = LoggerFactory.getLogger(AttendanceExportService.class);</span>
+    /** DejaVu Sans from jasperreports-fonts */
+    private static final String FONT_RESOURCE = &quot;/net/sf/jasperreports/fonts/dejavu/DejaVuSans.ttf&quot;;
+
+    private final AttendanceService attendanceService;
+    private final UserRepository userRepository;
+    private final EventRepository eventRepository;
+    private final CategoryRepository categoryRepository;
+
+    public AttendanceExportService(AttendanceService attendanceService, UserRepository userRepository,
+<span class="fc" id="L48">                                   EventRepository eventRepository, CategoryRepository categoryRepository) {</span>
+<span class="fc" id="L49">        this.attendanceService = attendanceService;</span>
+<span class="fc" id="L50">        this.userRepository = userRepository;</span>
+<span class="fc" id="L51">        this.eventRepository = eventRepository;</span>
+<span class="fc" id="L52">        this.categoryRepository = categoryRepository;</span>
+<span class="fc" id="L53">    }</span>
+
+    /** Resolve trainer ID to coach/trainer name for &quot;Recorded By&quot; column. */
+    private String getTrainerName(Long trainerId) {
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (trainerId == null) return &quot;&quot;;</span>
+<span class="fc" id="L58">        return userRepository.findById(trainerId)</span>
+<span class="fc" id="L59">                .map(PlayerNameFormatter::toSurnameAndGivenName)</span>
+<span class="fc" id="L60">                .orElse(&quot;&quot;);</span>
+    }
+
+    private static String formatPlayerNameForExport(Object playerName) {
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        if (playerName == null) {</span>
+<span class="nc" id="L65">            return &quot;&quot;;</span>
+        }
+<span class="fc" id="L67">        return PlayerNameFormatter.toSurnameAndGivenName(playerName.toString());</span>
+    }
+
+    /** Resolve category ID to category name. */
+    private String getCategoryName(Long categoryId) {
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        if (categoryId == null) return &quot;&quot;;</span>
+<span class="fc" id="L73">        return categoryRepository.findById(categoryId)</span>
+<span class="fc" id="L74">                .map(c -&gt; c.getName())</span>
+<span class="fc" id="L75">                .orElse(&quot;&quot;);</span>
+    }
+
+
+    private String translateStatus(Attendance.AttendanceStatus status) {
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (status == null) return &quot;&quot;;</span>
+<span class="pc bpc" id="L81" title="3 of 4 branches missed.">        return switch (status) {</span>
+<span class="fc" id="L82">            case PRESENT -&gt; &quot;Prítomný&quot;;</span>
+<span class="nc" id="L83">            case ABSENT -&gt; &quot;Neprítomný&quot;;</span>
+<span class="nc" id="L84">            case LATE -&gt; &quot;Meškajúci&quot;;</span>
+<span class="nc" id="L85">            case EXCUSED -&gt; &quot;Ospravedlnený&quot;;</span>
+        };
+    }
+
+    private static final String FONT_FALLBACK = &quot;/fonts/DejaVuSans.ttf&quot;;
+
+    /** Create a PDF font that supports Slovak, or null if not available. */
+    private PdfFont createSlovakPdfFont() {
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        for (String path : new String[]{ FONT_RESOURCE, FONT_FALLBACK }) {</span>
+<span class="nc" id="L94">            try (InputStream is = getClass().getResourceAsStream(path)) {</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                if (is != null) {</span>
+<span class="nc" id="L96">                    byte[] fontBytes = is.readAllBytes();</span>
+<span class="nc" id="L97">                    return PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H, PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);</span>
+                }
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            } catch (Exception e) {</span>
+<span class="nc" id="L100">                log.debug(&quot;Could not load font from {}: {}&quot;, path, e.getMessage());</span>
+<span class="nc" id="L101">            }</span>
+        }
+<span class="nc" id="L103">        log.warn(&quot;No font for Slovak characters found; PDF may not display ť, č, etc. correctly.&quot;);</span>
+<span class="nc" id="L104">        return null;</span>
+    }
+
+    /**
+     * Export attendance data to Excel format
+     */
+    public byte[] exportToExcel(Long playerId, Long eventId, Long categoryId, 
+                                 LocalDate startDate, LocalDate endDate) throws IOException {
+<span class="fc" id="L112">        List&lt;Attendance&gt; attendanceRecords = getAttendanceRecords(playerId, eventId, categoryId, startDate, endDate);</span>
+
+<span class="fc" id="L114">        try (Workbook workbook = new XSSFWorkbook()) {</span>
+<span class="fc" id="L115">            Sheet sheet = workbook.createSheet(&quot;Účast&quot;);</span>
+
+<span class="fc" id="L117">            CellStyle headerStyle = workbook.createCellStyle();</span>
+<span class="fc" id="L118">            Font headerFont = workbook.createFont();</span>
+<span class="fc" id="L119">            headerFont.setBold(true);</span>
+<span class="fc" id="L120">            headerFont.setFontHeightInPoints((short) 12);</span>
+<span class="fc" id="L121">            headerStyle.setFont(headerFont);</span>
+<span class="fc" id="L122">            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());</span>
+<span class="fc" id="L123">            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
+
+<span class="fc" id="L125">            Row headerRow = sheet.createRow(0);</span>
+<span class="fc" id="L126">            String[] headers = {&quot;Dátum&quot;, &quot;Udalosť&quot;, &quot;Kategória&quot;, &quot;Hráč&quot;, &quot;Stav&quot;, &quot;Poznámky&quot;, &quot;Zaznamenal&quot;};</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            for (int i = 0; i &lt; headers.length; i++) {</span>
+<span class="fc" id="L128">                org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);</span>
+<span class="fc" id="L129">                cell.setCellValue(headers[i]);</span>
+<span class="fc" id="L130">                cell.setCellStyle(headerStyle);</span>
+            }
+
+<span class="fc" id="L133">            int rowNum = 1;</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">            for (Attendance attendance : attendanceRecords) {</span>
+<span class="fc" id="L135">                Row row = sheet.createRow(rowNum++);</span>
+                
+<span class="fc" id="L137">                Map&lt;String, Object&gt; attendanceMap = attendanceService.toAttendanceMap(attendance);</span>
+<span class="fc" id="L138">                Long attEventId = attendance.getEventId();</span>
+<span class="fc" id="L139">                Long attCategoryId = eventRepository.findById(attEventId)</span>
+<span class="fc" id="L140">                        .map(e -&gt; e.getCategoryId())</span>
+<span class="fc" id="L141">                        .orElse(null);</span>
+                
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                row.createCell(0).setCellValue(attendanceMap.get(&quot;eventDate&quot;) != null ? </span>
+<span class="pc" id="L144">                    attendanceMap.get(&quot;eventDate&quot;).toString() : &quot;&quot;);</span>
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">                row.createCell(1).setCellValue(attendanceMap.get(&quot;eventName&quot;) != null ? </span>
+<span class="pc" id="L146">                    attendanceMap.get(&quot;eventName&quot;).toString() : &quot;&quot;);</span>
+<span class="fc" id="L147">                row.createCell(2).setCellValue(getCategoryName(attCategoryId));</span>
+<span class="fc" id="L148">                row.createCell(3).setCellValue(formatPlayerNameForExport(attendanceMap.get(&quot;playerName&quot;)));</span>
+<span class="fc" id="L149">                row.createCell(4).setCellValue(translateStatus(attendance.getStatus()));</span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">                row.createCell(5).setCellValue(attendance.getNotes() != null ? attendance.getNotes() : &quot;&quot;);</span>
+<span class="fc" id="L151">                row.createCell(6).setCellValue(getTrainerName(attendance.getTrainerId()));</span>
+<span class="fc" id="L152">            }</span>
+
+<span class="fc bfc" id="L154" title="All 2 branches covered.">            for (int i = 0; i &lt; headers.length; i++) {</span>
+<span class="fc" id="L155">                sheet.autoSizeColumn(i);</span>
+            }
+
+<span class="fc" id="L158">            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();</span>
+<span class="fc" id="L159">            workbook.write(outputStream);</span>
+<span class="fc" id="L160">            return outputStream.toByteArray();</span>
+        }
+    }
+
+    /**
+     * Export attendance data to PDF format
+     */
+    public byte[] exportToPdf(Long playerId, Long eventId, Long categoryId, 
+                              LocalDate startDate, LocalDate endDate) throws IOException {
+<span class="nc" id="L169">        List&lt;Attendance&gt; attendanceRecords = getAttendanceRecords(playerId, eventId, categoryId, startDate, endDate);</span>
+
+<span class="nc" id="L171">        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();</span>
+<span class="nc" id="L172">        PdfWriter writer = new PdfWriter(outputStream);</span>
+<span class="nc" id="L173">        PdfDocument pdf = new PdfDocument(writer);</span>
+<span class="nc" id="L174">        Document document = new Document(pdf);</span>
+
+<span class="nc" id="L176">        PdfFont slovakFont = createSlovakPdfFont();</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        if (slovakFont != null) {</span>
+<span class="nc" id="L178">            document.setFont(slovakFont);</span>
+        }
+
+<span class="nc" id="L181">        Paragraph title = new Paragraph(&quot;Prehľad účasti&quot;).setBold().setFontSize(16);</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (slovakFont != null) {</span>
+<span class="nc" id="L183">            title.setFont(slovakFont);</span>
+        }
+<span class="nc" id="L185">        document.add(title);</span>
+
+<span class="nc" id="L187">        Table table = new Table(UnitValue.createPercentArray(new float[]{2, 3, 2, 2, 1.5f, 2, 2}))</span>
+<span class="nc" id="L188">                .useAllAvailableWidth();</span>
+
+<span class="nc" id="L190">        table.addHeaderCell(cell(&quot;Dátum&quot;, slovakFont));</span>
+<span class="nc" id="L191">        table.addHeaderCell(cell(&quot;Udalosť&quot;, slovakFont));</span>
+<span class="nc" id="L192">        table.addHeaderCell(cell(&quot;Kategória&quot;, slovakFont));</span>
+<span class="nc" id="L193">        table.addHeaderCell(cell(&quot;Hráč&quot;, slovakFont));</span>
+<span class="nc" id="L194">        table.addHeaderCell(cell(&quot;Stav&quot;, slovakFont));</span>
+<span class="nc" id="L195">        table.addHeaderCell(cell(&quot;Poznámky&quot;, slovakFont));</span>
+<span class="nc" id="L196">        table.addHeaderCell(cell(&quot;Zaznamenal&quot;, slovakFont));</span>
+
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        for (Attendance attendance : attendanceRecords) {</span>
+<span class="nc" id="L199">            Map&lt;String, Object&gt; attendanceMap = attendanceService.toAttendanceMap(attendance);</span>
+<span class="nc" id="L200">            Long attEventId = attendance.getEventId();</span>
+<span class="nc" id="L201">            Long attCategoryId = eventRepository.findById(attEventId)</span>
+<span class="nc" id="L202">                    .map(e -&gt; e.getCategoryId())</span>
+<span class="nc" id="L203">                    .orElse(null);</span>
+
+<span class="nc bnc" id="L205" title="All 2 branches missed.">            table.addCell(cell(attendanceMap.get(&quot;eventDate&quot;) != null ?</span>
+<span class="nc" id="L206">                    attendanceMap.get(&quot;eventDate&quot;).toString() : &quot;&quot;, slovakFont));</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            table.addCell(cell(attendanceMap.get(&quot;eventName&quot;) != null ?</span>
+<span class="nc" id="L208">                    attendanceMap.get(&quot;eventName&quot;).toString() : &quot;&quot;, slovakFont));</span>
+<span class="nc" id="L209">            table.addCell(cell(getCategoryName(attCategoryId), slovakFont));</span>
+<span class="nc" id="L210">            table.addCell(cell(formatPlayerNameForExport(attendanceMap.get(&quot;playerName&quot;)), slovakFont));</span>
+<span class="nc" id="L211">            table.addCell(cell(translateStatus(attendance.getStatus()), slovakFont));</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">            table.addCell(cell(attendance.getNotes() != null ? attendance.getNotes() : &quot;&quot;, slovakFont));</span>
+<span class="nc" id="L213">            table.addCell(cell(getTrainerName(attendance.getTrainerId()), slovakFont));</span>
+<span class="nc" id="L214">        }</span>
+
+<span class="nc" id="L216">        document.add(table);</span>
+<span class="nc" id="L217">        document.close();</span>
+
+<span class="nc" id="L219">        return outputStream.toByteArray();</span>
+    }
+
+    private static Cell cell(String text, PdfFont font) {
+<span class="nc" id="L223">        Cell cell = new Cell().add(new Paragraph(text));</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        if (font != null) {</span>
+<span class="nc" id="L225">            cell.setFont(font);</span>
+        }
+<span class="nc" id="L227">        return cell;</span>
+    }
+
+    /**
+     * Get attendance records based on filters.
+
+     */
+    private List&lt;Attendance&gt; getAttendanceRecords(Long playerId, Long eventId, Long categoryId,
+                                                   LocalDate startDate, LocalDate endDate) {
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">        if (playerId != null) {</span>
+<span class="nc bnc" id="L237" title="All 4 branches missed.">            if (startDate != null &amp;&amp; endDate != null) {</span>
+<span class="nc" id="L238">                return attendanceService.findByPlayerAndDateRange(playerId, startDate, endDate);</span>
+            } else {
+<span class="nc" id="L240">                return attendanceService.findByPlayer(playerId);</span>
+            }
+        }
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">        if (eventId != null) {</span>
+<span class="nc" id="L244">            return attendanceService.findByEvent(eventId);</span>
+        }
+<span class="pc bpc" id="L246" title="1 of 2 branches missed.">        if (categoryId != null) {</span>
+<span class="nc" id="L247">            List&lt;Attendance&gt; byCategory = attendanceService.findByCategory(categoryId);</span>
+<span class="nc bnc" id="L248" title="All 4 branches missed.">            if (startDate != null &amp;&amp; endDate != null) {</span>
+<span class="nc" id="L249">                Set&lt;Long&gt; eventIdsInRange = eventRepository.findByCategoryIdAndDateBetween(categoryId, startDate, endDate)</span>
+<span class="nc" id="L250">                        .stream()</span>
+<span class="nc" id="L251">                        .map(e -&gt; e.getId())</span>
+<span class="nc" id="L252">                        .collect(Collectors.toSet());</span>
+<span class="nc" id="L253">                return byCategory.stream()</span>
+<span class="nc" id="L254">                        .filter(a -&gt; eventIdsInRange.contains(a.getEventId()))</span>
+<span class="nc" id="L255">                        .toList();</span>
+            }
+<span class="nc" id="L257">            return byCategory;</span>
+        }
+<span class="fc" id="L259">        LocalDate from = startDate;</span>
+<span class="fc" id="L260">        LocalDate to = endDate;</span>
+<span class="pc bpc" id="L261" title="2 of 4 branches missed.">        if (from == null || to == null) {</span>
+<span class="nc" id="L262">            YearMonth now = YearMonth.now();</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">            from = from != null ? from : now.atDay(1);</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">            to = to != null ? to : now.atEndOfMonth();</span>
+        }
+<span class="fc" id="L266">        return attendanceService.findByDateRange(from, to);</span>
+    }
+}
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

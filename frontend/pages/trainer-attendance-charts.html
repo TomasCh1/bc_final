@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Grafy a tabuľka účasti - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/coach-nav.css">
+    <link rel="stylesheet" href="/css/admin-layout.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #FFFFFF; color: #2C2C2C; }
+        .dashboard-content { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+        .section-card {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+        .section-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+        .section-icon img { width: 100%; height: 100%; object-fit: contain; }
+        .section-title { font-size: 1.25rem; font-weight: 700; color: #2C2C2C; }
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .chart-card {
+            background: #FFFFFF;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #E0E0E0;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+            min-width: 0;
+        }
+        .chart-card h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: #111827;
+            font-size: 1.1rem;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        .attendance-table-container {
+            -webkit-overflow-scrolling: touch;
+        }
+        .attendance-table-scroll {
+            max-height: 62vh;
+            min-height: 260px;
+            overflow: auto;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+        }
+        .attendance-table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        .attendance-table th {
+            background: #F3F4F6;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            color: #374151;
+            border: 1px solid #E5E7EB;
+            position: sticky;
+            left: 0;
+            z-index: 10;
+        }
+        .attendance-table th:first-child {
+            text-align: left;
+            padding-left: 1rem;
+            width: 160px;
+            min-width: 160px;
+            max-width: 160px;
+            background: #F3F4F6;
+            z-index: 20;
+            box-shadow: 2px 0 6px rgba(0,0,0,0.08);
+        }
+        .attendance-table td {
+            padding: 0.5rem;
+            text-align: center;
+            border: 1px solid #E5E7EB;
+            background: #FFFFFF;
+        }
+        .attendance-table td:first-child {
+            text-align: left;
+            padding-left: 1rem;
+            font-weight: 500;
+            position: sticky;
+            left: 0;
+            width: 160px;
+            min-width: 160px;
+            max-width: 160px;
+            background: #FFFFFF;
+            z-index: 5;
+            box-shadow: 2px 0 6px rgba(0,0,0,0.08);
+        }
+        .attendance-table tr:hover td:first-child {
+            background: #F9FAFB;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-badge.PRESENT { background: #D1FAE5; color: #065F46; }
+        .status-badge.ABSENT { background: #FEE2E2; color: #991B1B; }
+        .status-badge.LATE { background: #FEF3C7; color: #92400E; }
+        .status-badge.EXCUSED { background: #DBEAFE; color: #1E40AF; }
+        .status-badge.empty { background: #F3F4F6; color: #6B7280; }
+        .table-legend {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            background: #F9FAFB;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        .legend-item .status-badge {
+            margin: 0;
+        }
+        .table-month-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .table-month-nav button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background: #F9FAFB;
+            color: #374151;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .table-month-nav button:hover {
+            background: #E5E7EB;
+        }
+        .table-month-nav .month-label {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #111827;
+            min-width: 180px;
+            text-align: center;
+        }
+        .table-export-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: auto;
+        }
+        .btn-export {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid #E5E7EB;
+        }
+        .btn-export-excel {
+            background: #059669;
+            color: #fff;
+            border-color: #047857;
+        }
+        .btn-export-excel:hover { background: #047857; }
+        .btn-export-pdf {
+            background: #DC2626;
+            color: #fff;
+            border-color: #B91C1C;
+        }
+        .btn-export-pdf:hover { background: #B91C1C; }
+        .player-rate { font-size: 0.85rem; color: #6B7280; font-weight: 400; }
+        .loading { text-align: center; padding: 2rem; color: #6B7280; }
+        .no-data { text-align: center; padding: 2rem; color: #6B7280; }
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 1rem;
+            padding: 1rem 0;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .filter-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+        .filter-group select,
+        .filter-group input[type="date"],
+        .filter-group input[type="text"] {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            min-width: 140px;
+        }
+        .filter-group input[type="date"] {
+            min-width: 150px;
+        }
+        .filter-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+        .filter-actions button {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-apply {
+            background: #2563EB;
+            color: #fff;
+            border: none;
+        }
+        .btn-apply:hover { background: #1D4ED8; }
+        .btn-clear {
+            background: #fff;
+            color: #374151;
+            border: 1px solid #D1D5DB;
+        }
+        .btn-clear:hover { background: #F3F4F6; }
+        @media (max-width: 768px) {
+            .charts-container { grid-template-columns: 1fr; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+        }
+        @media (max-width: 767px) {
+            .dashboard-content { padding: 1rem; }
+            .section-card { padding: 1rem; margin-bottom: 1rem; }
+            .section-title { font-size: 1.1rem; }
+            .charts-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+            .chart-card {
+                padding: 1rem;
+                min-width: 0;
+            }
+            .chart-card h3 { font-size: 1rem; margin-bottom: 0.75rem; }
+            .chart-wrapper {
+                height: 260px;
+                min-height: 220px;
+                width: 100%;
+            }
+            .filter-bar { padding: 0.75rem 0; }
+            .filter-group select,
+            .filter-group input[type="date"],
+            .filter-group input[type="text"] {
+                min-width: 0;
+                width: 100%;
+            }
+            .table-month-nav {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+            .table-month-nav .month-label { min-width: 0; }
+            .table-export-actions {
+                margin-left: 0;
+                justify-content: stretch;
+                flex-wrap: wrap;
+            }
+            .table-export-actions .btn-export { flex: 1; min-width: 120px; }
+            .table-legend { gap: 0.75rem; padding: 0.5rem 0.75rem; }
+            .legend-item { font-size: 0.8rem; }
+            .attendance-table { font-size: 0.8rem; }
+            .attendance-table th,
+            .attendance-table td { padding: 0.35rem 0.25rem; }
+            .attendance-table-scroll {
+                max-height: 56vh;
+                min-height: 220px;
+            }
+            .attendance-table th:first-child {
+                width: 120px;
+                min-width: 120px;
+                max-width: 120px;
+                padding-left: 0.5rem;
+            }
+            .attendance-table td:first-child {
+                width: 120px;
+                min-width: 120px;
+                max-width: 120px;
+                padding-left: 0.5rem;
+            }
+            .status-badge { padding: 0.2rem 0.35rem; font-size: 0.7rem; }
+        }
+        @media (max-width: 480px) {
+            .dashboard-content { padding: 0.75rem; }
+            .chart-wrapper { height: 240px; min-height: 200px; }
+            .table-month-nav button { padding: 0.4rem 0.75rem; font-size: 0.875rem; }
+        }
+    </style>
+</head>
+<body id="bodyEl">
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav" id="headerNav">
+                <a href="/pages/trainer-dashboard.html" class="nav-pill" data-role="trainer">Hlavná obrazovka</a>
+                <a href="/pages/coach-matches.html" class="nav-pill" data-role="trainer">Zápasy</a>
+                <a href="/pages/trainer-trainings.html" class="nav-pill" data-role="trainer">Tréningy</a>
+                <a href="/pages/trainer-attendance-charts.html" class="nav-pill active" data-role="trainer">Grafy účasti</a>
+                <a href="/pages/trainer-training-stats.html" class="nav-pill" data-role="trainer">Záznam štatistík</a>
+                <a href="/pages/trainer-drill-mode.html" class="nav-pill" data-role="trainer">Režim cvičenia</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" data-initial="T" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">Tréner</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <div class="nav-menu-profile">
+            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">T</div>
+            <div class="nav-menu-profile-info">
+                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                <div class="nav-menu-profile-role" id="navMenuProfileRole">Tréner</div>
+            </div>
+        </div>
+        <div class="nav-menu-divider"></div>
+        <a href="/pages/trainer-dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/coach-matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>
+        <a href="/pages/trainer-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+        <a href="/pages/trainer-attendance-charts.html" class="nav-pill active" onclick="closeNavMenu()">Grafy účasti</a>
+        <a href="/pages/trainer-training-stats.html" class="nav-pill" onclick="closeNavMenu()">Záznam štatistík</a>
+        <a href="/pages/trainer-drill-mode.html" class="nav-pill" onclick="closeNavMenu()">Režim cvičenia</a>
+        <div class="nav-menu-divider"></div>
+        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>
+    </nav>
+
+    <div class="dashboard-content">
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-icon">
+                    <img src="/IMG/chart-line-svgrepo-com.svg" alt="Grafy">
+                </div>
+                <h2 class="section-title">Grafy účasti</h2>
+            </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label for="filterCategory">Kategória</label>
+                    <select id="filterCategory">
+                        <option value="">Všetky kategórie</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterPlayer">Hráč</label>
+                    <select id="filterPlayer">
+                        <option value="">Všetci hráči</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterStartDate">Dátum od</label>
+                    <input type="date" id="filterStartDate" placeholder="dd. mm. rrrr">
+                </div>
+                <div class="filter-group">
+                    <label for="filterEndDate">Dátum do</label>
+                    <input type="date" id="filterEndDate" placeholder="dd. mm. rrrr">
+                </div>
+                <div class="filter-actions">
+                    <button type="button" class="btn-apply" id="applyFiltersBtn">Použiť filtre</button>
+                    <button type="button" class="btn-clear" id="clearFiltersBtn">Vymazať</button>
+                </div>
+            </div>
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>Účast v čase</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="attendanceTimeChart"></canvas>
+                    </div>
+                    <div id="attendanceTimeLoading" class="loading" style="display: none;">Načítava sa...</div>
+                    <div id="attendanceTimeNoData" class="no-data" style="display: none;">Žiadne údaje</div>
+                </div>
+                <div class="chart-card">
+                    <h3>Rozdelenie účasti</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                    <div id="attendanceLoading" class="loading" style="display: none;">Načítava sa...</div>
+                    <div id="attendanceNoData" class="no-data" style="display: none;">Žiadne údaje</div>
+                </div>
+                <div class="chart-card" id="categoryRatesChartCard">
+                    <h3>Účast podľa kategórie (%)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="categoryRatesChart"></canvas>
+                    </div>
+                    <div id="categoryRatesLoading" class="loading" style="display: none;">Načítava sa...</div>
+                    <div id="categoryRatesNoData" class="no-data" style="display: none;">Žiadne údaje</div>
+                </div>
+                <div class="chart-card" id="statusCountsChartCard" style="display: none;">
+                    <h3 id="statusCountsChartTitle">Počty účasti (Prítomný / Neprítomný / Meškajúci / Ospravedlnený)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="statusCountsChart"></canvas>
+                    </div>
+                    <div id="statusCountsLoading" class="loading" style="display: none;">Načítava sa...</div>
+                    <div id="statusCountsNoData" class="no-data" style="display: none;">Žiadne údaje</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-icon">
+                    <img src="/IMG/percentage-svgrepo-com (1).svg" alt="Tabuľka">
+                </div>
+                <h2 class="section-title">Tabuľka účasti tímov</h2>
+            </div>
+            <div class="table-month-nav" id="tableMonthNav" style="display: none;">
+                <button type="button" onclick="changeTableMonth(-1)" aria-label="Predchádzajúci mesiac">← Predchádzajúci</button>
+                <span class="month-label" id="tableMonthLabel"></span>
+                <button type="button" onclick="changeTableMonth(1)" aria-label="Nasledujúci mesiac">Nasledujúci →</button>
+                <div class="table-export-actions" id="tableExportActions" style="display: none;">
+                    <button type="button" class="btn-export btn-export-excel" id="exportTableExcel">Export do Excel</button>
+                    <button type="button" class="btn-export btn-export-pdf" id="exportTablePdf">Export do PDF</button>
+                </div>
+            </div>
+            <div id="attendanceTableLoading" class="loading">Načítava sa...</div>
+            <div id="attendanceTableContainer" class="attendance-table-container" style="display: none;">
+                <div class="filter-bar" id="tableFilterBar" style="padding-top: 0; border-bottom: none; margin-bottom: 0.5rem;">
+                    <div class="filter-group">
+                        <label for="tableFilterCategory">Filtrovať kategóriu (tabuľka)</label>
+                        <select id="tableFilterCategory">
+                            <option value="">Všetky kategórie</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="tableFilterName">Filtrovať meno hráča</label>
+                        <input type="text" id="tableFilterName" placeholder="Zadajte meno hráča">
+                    </div>
+                </div>
+                <div class="table-legend">
+                    <div class="legend-item">
+                        <span class="status-badge PRESENT">P</span>
+                        <span>Prítomný</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="status-badge ABSENT">A</span>
+                        <span>Neprítomný</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="status-badge LATE">M</span>
+                        <span>Meškajúci</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="status-badge EXCUSED">O</span>
+                        <span>Ospravedlnený</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="status-badge empty">-</span>
+                        <span>Bez záznamu</span>
+                    </div>
+                </div>
+                <div class="attendance-table-scroll" id="attendanceTableScroll">
+                    <table class="attendance-table" id="attendanceTable">
+                        <thead id="attendanceTableHead"></thead>
+                        <tbody id="attendanceTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="attendanceTableNoData" class="no-data" style="display: none;">Žiadne údaje</div>
+        </div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/attendance.js"></script>
+    <script src="/js/events.js"></script>
+    <script src="/js/users.js"></script>
+    <script src="/js/categories.js"></script>
+    <script>
+        let attendanceTimeChart = null;
+        let attendanceChart = null;
+        let categoryRatesChart = null;
+        let statusCountsChart = null;
+        let trainerCategories = [];
+        let allPlayers = [];
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let cachedAllAttendance = [];
+        let cachedTrainingEvents = [];
+        let cachedAllPlayers = [];
+        const TABLE_ROWS_CHUNK_SIZE = 35;
+        let tableRenderState = null;
+
+        if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+            window.location.href = '/pages/login.html';
+        }
+        const user = getCurrentUser();
+        if (user && (user.role !== 'TRAINER' && user.role !== 'ADMIN')) {
+            window.location.href = '/pages/login.html';
+        }
+
+        function applyNavForRole(u) {
+            if (!u || u.role !== 'ADMIN') return;
+            document.body.classList.add('admin');
+            const headerNav = document.getElementById('headerNav');
+            if (headerNav) {
+                headerNav.innerHTML = [
+                    '<a href="/pages/admin-dashboard.html" class="nav-pill">Hlavná obrazovka</a>',
+                    '<a href="/pages/admin-matches.html" class="nav-pill">Zápasy</a>',
+                    '<a href="/pages/admin-trainings.html" class="nav-pill">Tréningy</a>',
+                    '<a href="/pages/admin-users.html" class="nav-pill">User Management</a>',
+                    '<a href="/pages/admin-categories.html" class="nav-pill">Kategórie</a>',
+                    '<a href="/pages/trainer-attendance-charts.html" class="nav-pill active">Grafy účasti</a>'
+                ].join('');
+            }
+            const slideMenu = document.getElementById('navSlideMenu');
+            if (slideMenu) {
+                const displayName = (u.name || 'Admin').replace(/\s*\([^)]*\)\s*$/, '').trim();
+                const initial = (displayName.charAt(0) || 'A').toUpperCase();
+                slideMenu.innerHTML = [
+                    '<div class="nav-menu-profile">',
+                    '  <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">' + initial + '</div>',
+                    '  <div class="nav-menu-profile-info">',
+                    '    <div class="nav-menu-profile-name" id="navMenuProfileName">' + (displayName || 'Načítava sa...') + '</div>',
+                    '    <div class="nav-menu-profile-role" id="navMenuProfileRole">Admin</div>',
+                    '  </div>',
+                    '</div>',
+                    '<div class="nav-menu-divider"></div>',
+                    '<a href="/pages/admin-dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>',
+                    '<a href="/pages/admin-matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>',
+                    '<a href="/pages/admin-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>',
+                    '<a href="/pages/admin-users.html" class="nav-pill" onclick="closeNavMenu()">User Management</a>',
+                    '<a href="/pages/admin-categories.html" class="nav-pill" onclick="closeNavMenu()">Kategórie</a>',
+                    '<a href="/pages/trainer-attendance-charts.html" class="nav-pill active" onclick="closeNavMenu()">Grafy účasti</a>',
+                    '<div class="nav-menu-divider"></div>',
+                    '<button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>'
+                ].join('');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            applyNavForRole(user);
+            initNavUser(user);
+            await loadUserCategories();
+            await loadCache();
+            populateFilterDropdowns();
+            populateTableFilterDropdowns();
+            document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
+            document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
+            document.getElementById('exportTableExcel').addEventListener('click', exportTableToExcel);
+            document.getElementById('exportTablePdf').addEventListener('click', exportTableToPdf);
+            const tableCatSelect = document.getElementById('tableFilterCategory');
+            const tableNameInput = document.getElementById('tableFilterName');
+            if (tableCatSelect) {
+                tableCatSelect.addEventListener('change', () => {
+                    loadAttendanceTable();
+                });
+            }
+            if (tableNameInput) {
+                tableNameInput.addEventListener('input', () => {
+                    loadAttendanceTable();
+                });
+            }
+            await loadAllData();
+            var resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    var narrow = window.innerWidth <= 767;
+                    if (attendanceChart && attendanceChart.options.plugins.legend) {
+                        attendanceChart.options.plugins.legend.position = narrow ? 'bottom' : 'right';
+                        attendanceChart.update();
+                    }
+                }, 150);
+            });
+        });
+
+        function getTableDateRange() {
+            const year = currentYear;
+            const month = currentMonth + 1;
+            const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+            const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+            return { startDate, endDate };
+        }
+
+        function getExportParamsFromVisibleTable() {
+            const { categoryId, playerId } = getFilterParams();
+            const { tableCategoryId, tableName } = getTableFilterParams();
+            const { startDate, endDate } = getTableDateRange();
+            const params = { startDate, endDate };
+
+            const effectiveCategoryId = tableCategoryId != null ? String(tableCategoryId) : (categoryId || '');
+            if (effectiveCategoryId) params.categoryId = effectiveCategoryId;
+
+            let effectivePlayerId = playerId || '';
+            if (!effectivePlayerId && tableName) {
+                const visible = Array.isArray(allPlayers) ? allPlayers : [];
+                if (visible.length === 1 && visible[0] && visible[0].id != null) {
+                    effectivePlayerId = String(visible[0].id);
+                }
+            }
+            if (effectivePlayerId) params.playerId = effectivePlayerId;
+
+            return params;
+        }
+
+        async function exportTableToExcel() {
+            try {
+                const params = getExportParamsFromVisibleTable();
+                await exportAttendanceToExcel(params);
+            } catch (e) {
+                console.error('Export Excel failed:', e);
+                showAppAlert('Export do Excel zlyhal.', { type: 'error' });
+            }
+        }
+
+        async function exportTableToPdf() {
+            try {
+                const params = getExportParamsFromVisibleTable();
+                await exportAttendanceToPdf(params);
+            } catch (e) {
+                console.error('Export PDF failed:', e);
+                showAppAlert('Export do PDF zlyhal.', { type: 'error' });
+            }
+        }
+
+        async function loadUserCategories() {
+            try {
+                if (user && user.role === 'TRAINER') {
+                    trainerCategories = await getCategories({ coachId: user.id });
+                } else if (user && user.role === 'ADMIN') {
+                    trainerCategories = await getCategories();
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        async function loadCache() {
+            try {
+                const allEvents = await getEvents();
+                cachedTrainingEvents = (allEvents || []).filter(e => e.type === 'TRAINING' && !e.cancelled);
+                cachedAllAttendance = [];
+
+                if (cachedTrainingEvents.length > 0 && typeof getAttendanceByDateRange === 'function') {
+                    let minDate = null;
+                    let maxDate = null;
+                    cachedTrainingEvents.forEach(e => {
+                        const dStr = (e.date || '').substring(0, 10);
+                        if (!dStr) return;
+                        if (!minDate || dStr < minDate) minDate = dStr;
+                        if (!maxDate || dStr > maxDate) maxDate = dStr;
+                    });
+
+                    if (minDate && maxDate) {
+                        try {
+                            const rangeAttendance = await getAttendanceByDateRange(minDate, maxDate);
+                            const trainingEventIds = new Set(cachedTrainingEvents.map(e => e.id));
+                            const eventIdToCategoryId = new Map(
+                                cachedTrainingEvents.map(e => [e.id, e.categoryId])
+                            );
+                            const allowedCategoryIds = new Set(trainerCategories.map(c => c.id));
+
+                            cachedAllAttendance = (rangeAttendance || []).filter(att => {
+                                const evtId = att.eventId;
+                                if (!trainingEventIds.has(evtId)) return false;
+                                if (!allowedCategoryIds.size) return true;
+                                const catId = eventIdToCategoryId.get(evtId);
+                                return allowedCategoryIds.has(catId);
+                            });
+                        } catch (e) {
+                            console.error('Error loading attendance range for cache:', e);
+                            cachedAllAttendance = [];
+                        }
+                    }
+                }
+                const categoryIds = trainerCategories.map(c => c.id);
+                const allUsers = await getAllUsers();
+                cachedAllPlayers = (allUsers || []).filter(u =>
+                    u.role === 'PLAYER' &&
+                    (categoryIds.includes(u.categoryId) ||
+                     (u.categoryIds && u.categoryIds.some(id => categoryIds.includes(id))) ||
+                     (u.categories && u.categories.some(c => categoryIds.includes(c.id))))
+                );
+                allPlayers = cachedAllPlayers;
+            } catch (error) {
+                console.error('Error loading cache:', error);
+            }
+        }
+
+        function getFilterParams() {
+            const cat = document.getElementById('filterCategory');
+            const player = document.getElementById('filterPlayer');
+            const start = document.getElementById('filterStartDate');
+            const end = document.getElementById('filterEndDate');
+            return {
+                categoryId: (cat && cat.value) ? cat.value : '',
+                playerId: (player && player.value) ? player.value : '',
+                startDate: (start && start.value) ? start.value : '',
+                endDate: (end && end.value) ? end.value : ''
+            };
+        }
+
+        function getFilteredData() {
+            const { categoryId, playerId, startDate, endDate } = getFilterParams();
+            let events = cachedTrainingEvents.slice();
+            if (categoryId) {
+                const cid = Number(categoryId);
+                events = events.filter(e => Number(e.categoryId) === cid);
+            }
+            if (startDate) {
+                events = events.filter(e => (e.date || '').substring(0, 10) >= startDate);
+            }
+            if (endDate) {
+                events = events.filter(e => (e.date || '').substring(0, 10) <= endDate);
+            }
+            const eventIds = new Set(events.map(e => e.id));
+            let attendance = cachedAllAttendance.filter(att => eventIds.has(att.eventId));
+            if (playerId) {
+                const pid = Number(playerId);
+                attendance = attendance.filter(att => Number(att.playerId) === pid);
+            }
+            return { attendance, events };
+        }
+
+        function populateFilterDropdowns() {
+            const catSelect = document.getElementById('filterCategory');
+            const playerSelect = document.getElementById('filterPlayer');
+            if (!catSelect || !playerSelect) return;
+            catSelect.innerHTML = '<option value="">Všetky kategórie</option>' +
+                trainerCategories.map(c => `<option value="${c.id}">${escapeHtml(c.name || '')}</option>`).join('');
+            playerSelect.innerHTML = '<option value="">Všetci hráči</option>' +
+                cachedAllPlayers.map(p => `<option value="${p.id}">${escapeHtml(userListLabel(p) || '')}</option>`).join('');
+        }
+
+        function populateTableFilterDropdowns() {
+            const tableCatSelect = document.getElementById('tableFilterCategory');
+            if (!tableCatSelect) return;
+            tableCatSelect.innerHTML = '<option value="">Všetky kategórie</option>' +
+                trainerCategories.map(c => `<option value="${c.id}">${escapeHtml(c.name || '')}</option>`).join('');
+        }
+
+        function getTableFilterParams() {
+            const cat = document.getElementById('tableFilterCategory');
+            const nameInput = document.getElementById('tableFilterName');
+            return {
+                tableCategoryId: cat && cat.value ? Number(cat.value) : null,
+                tableName: nameInput && nameInput.value ? nameInput.value.trim().toLowerCase() : ''
+            };
+        }
+
+        function getPlayerCategoryIds(player) {
+            const ids = [];
+            if (player && player.categoryId != null) ids.push(Number(player.categoryId));
+            if (player && Array.isArray(player.categoryIds)) {
+                ids.push(...player.categoryIds.map(id => Number(id)));
+            }
+            if (player && Array.isArray(player.categories)) {
+                ids.push(...player.categories.map(c => Number(c && c.id)));
+            }
+            return [...new Set(ids.filter(Number.isFinite))];
+        }
+
+        function renderAttendanceTableRowsChunk() {
+            if (!tableRenderState) return;
+            const { tbody, tablePlayers, uniqueDates, attendanceMap } = tableRenderState;
+            if (!tbody || tableRenderState.nextIndex >= tablePlayers.length) return;
+
+            const start = tableRenderState.nextIndex;
+            const end = Math.min(start + TABLE_ROWS_CHUNK_SIZE, tablePlayers.length);
+
+            const html = [];
+            for (let i = start; i < end; i++) {
+                const player = tablePlayers[i];
+                const playerAtt = attendanceMap.get(player.id) || new Map();
+                const recordedCount = playerAtt.size;
+                let rate = null;
+                if (recordedCount > 0) {
+                    let presentOrLate = 0;
+                    playerAtt.forEach(status => {
+                        if (status === 'PRESENT' || status === 'LATE') presentOrLate++;
+                    });
+                    rate = Math.round((presentOrLate / recordedCount) * 100);
+                }
+                const rateText = rate !== null ? ` <span class="player-rate">(${rate}%)</span>` : '';
+                const cells = uniqueDates.map(dateStr => {
+                    const status = getStatusForPlayerOnDate(player.id, dateStr, attendanceMap, tableRenderState.eventsByDate);
+                    if (status == null) return '<td><span class="status-badge empty">-</span></td>';
+                    return `<td><span class="status-badge ${status}">${statusLabel(status)}</span></td>`;
+                }).join('');
+                html.push(`<tr><td>${escapeHtml(userListLabel(player))}${rateText}</td>${cells}</tr>`);
+            }
+
+            tbody.insertAdjacentHTML('beforeend', html.join(''));
+            tableRenderState.nextIndex = end;
+        }
+
+        function getStatusForPlayerOnDate(pid, dateStr, attendanceMap, eventsByDate) {
+            const eventsOnDay = eventsByDate.get(dateStr) || [];
+            const playerAtt = attendanceMap.get(pid) || new Map();
+            for (const e of eventsOnDay) {
+                const status = playerAtt.get(e.id);
+                if (status != null) return status;
+            }
+            return null;
+        }
+
+        function applyFilters() {
+            loadAllData();
+        }
+
+        function clearFilters() {
+            const cat = document.getElementById('filterCategory');
+            const player = document.getElementById('filterPlayer');
+            const start = document.getElementById('filterStartDate');
+            const end = document.getElementById('filterEndDate');
+            if (cat) cat.value = '';
+            if (player) player.value = '';
+            if (start) start.value = '';
+            if (end) end.value = '';
+            loadAllData();
+        }
+
+        async function loadAllData() {
+            const { playerId, categoryId } = getFilterParams();
+            const showStatusCounts = !!(playerId || categoryId);
+            const categoryCard = document.getElementById('categoryRatesChartCard');
+            const statusCard = document.getElementById('statusCountsChartCard');
+            if (categoryCard) categoryCard.style.display = showStatusCounts ? 'none' : 'block';
+            if (statusCard) statusCard.style.display = showStatusCounts ? 'block' : 'none';
+
+            await Promise.all([
+                loadAttendanceTimeChart(),
+                loadAttendanceChart(),
+                loadCategoryRatesChart(),
+                loadStatusCountsChart(),
+                loadAttendanceTable()
+            ]);
+        }
+
+        async function loadAttendanceTimeChart() {
+            const loadingEl = document.getElementById('attendanceTimeLoading');
+            const noDataEl = document.getElementById('attendanceTimeNoData');
+            const canvas = document.getElementById('attendanceTimeChart');
+            
+            try {
+                loadingEl.style.display = 'block';
+                noDataEl.style.display = 'none';
+                
+                const { attendance: attendanceData, events } = getFilteredData();
+                const eventMap = new Map((events || []).map(e => [e.id, e]));
+                
+                if (!attendanceData || attendanceData.length === 0) {
+                    if (attendanceTimeChart) {
+                        attendanceTimeChart.destroy();
+                        attendanceTimeChart = null;
+                    }
+                    loadingEl.style.display = 'none';
+                    noDataEl.style.display = 'block';
+                    return;
+                }
+                
+                const dateAttendance = new Map();
+                attendanceData.forEach(att => {
+                    const event = eventMap.get(att.eventId);
+                    if (!event) return;
+                    const dateStr = (event.date || '').substring(0, 10);
+                    if (!dateStr) return;
+                    if (!dateAttendance.has(dateStr)) {
+                        dateAttendance.set(dateStr, { PRESENT: 0, NOT_PRESENT: 0 });
+                    }
+                    const status = att.status || 'ABSENT';
+                    if (status === 'PRESENT' || status === 'LATE') {
+                        dateAttendance.get(dateStr).PRESENT++;
+                    } else {
+                        dateAttendance.get(dateStr).NOT_PRESENT++;
+                    }
+                });
+                
+                const sortedDates = Array.from(dateAttendance.keys()).sort();
+                const presentCounts = sortedDates.map(d => dateAttendance.get(d).PRESENT);
+                const absentCounts = sortedDates.map(d => dateAttendance.get(d).NOT_PRESENT);
+                
+                if (attendanceTimeChart) {
+                    attendanceTimeChart.destroy();
+                }
+                
+                attendanceTimeChart = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: sortedDates,
+                        datasets: [{
+                            label: 'Prítomný',
+                            data: presentCounts,
+                            borderColor: 'rgb(40, 167, 69)',
+                            backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                            tension: 0.1,
+                            fill: true
+                        }, {
+                            label: 'Neprítomný',
+                            data: absentCounts,
+                            borderColor: 'rgb(220, 53, 69)',
+                            backgroundColor: 'rgba(220, 53, 69, 0.2)',
+                            tension: 0.1,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top' },
+                            title: { display: true, text: 'Účast v čase' }
+                        },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    maxRotation: window.innerWidth <= 767 ? 45 : 0,
+                                    minRotation: window.innerWidth <= 767 ? 45 : 0,
+                                    maxTicksLimit: window.innerWidth <= 767 ? 8 : 12,
+                                    font: { size: window.innerWidth <= 767 ? 9 : 11 }
+                                }
+                            },
+                            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }
+                        }
+                    }
+                });
+                
+                loadingEl.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading attendance time chart:', error);
+                loadingEl.style.display = 'none';
+                noDataEl.style.display = 'block';
+            }
+        }
+
+        async function loadAttendanceChart() {
+            const loadingEl = document.getElementById('attendanceLoading');
+            const noDataEl = document.getElementById('attendanceNoData');
+            const canvas = document.getElementById('attendanceChart');
+            
+            try {
+                loadingEl.style.display = 'block';
+                noDataEl.style.display = 'none';
+                
+                const { attendance: attendanceData } = getFilteredData();
+                
+                if (!attendanceData || attendanceData.length === 0) {
+                    if (attendanceChart) {
+                        attendanceChart.destroy();
+                        attendanceChart = null;
+                    }
+                    loadingEl.style.display = 'none';
+                    noDataEl.style.display = 'block';
+                    return;
+                }
+                
+                const statusCounts = { PRESENT: 0, ABSENT: 0, LATE: 0, EXCUSED: 0 };
+                attendanceData.forEach(att => {
+                    const status = att.status || 'ABSENT';
+                    if (statusCounts.hasOwnProperty(status)) {
+                        statusCounts[status]++;
+                    }
+                });
+                
+                const labels = ['Prítomný', 'Neprítomný', 'Meškajúci', 'Ospravedlnený'];
+                const values = [statusCounts.PRESENT, statusCounts.ABSENT, statusCounts.LATE, statusCounts.EXCUSED];
+                
+                if (attendanceChart) {
+                    attendanceChart.destroy();
+                }
+                
+                attendanceChart = new Chart(canvas, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Účast',
+                            data: values,
+                            backgroundColor: [
+                                'rgba(40, 167, 69, 0.8)',
+                                'rgba(220, 53, 69, 0.8)',
+                                'rgba(255, 193, 7, 0.8)',
+                                'rgba(23, 162, 184, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgba(40, 167, 69, 1)',
+                                'rgba(220, 53, 69, 1)',
+                                'rgba(255, 193, 7, 1)',
+                                'rgba(23, 162, 184, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: window.innerWidth <= 767 ? 'bottom' : 'right' },
+                            title: { display: true, text: 'Rozdelenie účasti' }
+                        }
+                    }
+                });
+                
+                loadingEl.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading attendance chart:', error);
+                loadingEl.style.display = 'none';
+                noDataEl.style.display = 'block';
+            }
+        }
+
+        async function loadCategoryRatesChart() {
+            const loadingEl = document.getElementById('categoryRatesLoading');
+            const noDataEl = document.getElementById('categoryRatesNoData');
+            const canvas = document.getElementById('categoryRatesChart');
+            
+            try {
+                loadingEl.style.display = 'block';
+                noDataEl.style.display = 'none';
+                
+                const { attendance: attendanceData, events } = getFilteredData();
+                const eventMap = new Map((events || []).map(e => [e.id, e]));
+                
+                if (!attendanceData || attendanceData.length === 0 || !events || events.length === 0) {
+                    if (categoryRatesChart) {
+                        categoryRatesChart.destroy();
+                        categoryRatesChart = null;
+                    }
+                    loadingEl.style.display = 'none';
+                    noDataEl.style.display = 'block';
+                    return;
+                }
+                
+                const nameById = new Map(trainerCategories.map(c => [c.id, c.name || '']));
+                
+                const byCategory = new Map();
+                attendanceData.forEach(att => {
+                    const event = eventMap.get(att.eventId);
+                    if (!event || !event.categoryId) return;
+                    const cid = Number(event.categoryId);
+                    if (!byCategory.has(cid)) {
+                        byCategory.set(cid, { present: 0, total: 0 });
+                    }
+                    const rec = byCategory.get(cid);
+                    rec.total++;
+                    if (att.status === 'PRESENT' || att.status === 'LATE') rec.present++;
+                });
+                
+                const labels = [];
+                const values = [];
+                byCategory.forEach((rec, cid) => {
+                    labels.push(nameById.get(cid) || 'Kategória ' + cid);
+                    values.push(rec.total > 0 ? Math.round((rec.present / rec.total) * 100) : 0);
+                });
+                
+                if (categoryRatesChart) {
+                    categoryRatesChart.destroy();
+                }
+                
+                categoryRatesChart = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Účast (%)',
+                            data: values,
+                            backgroundColor: 'rgba(124, 58, 237, 0.8)',
+                            borderColor: 'rgba(124, 58, 237, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top' },
+                            title: { display: true, text: 'Účast podľa kategórie (%)' }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { font: { size: window.innerWidth <= 767 ? 9 : 11 } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { stepSize: 10, font: { size: window.innerWidth <= 767 ? 9 : 11 } }
+                            }
+                        }
+                    }
+                });
+                
+                loadingEl.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading category rates chart:', error);
+                loadingEl.style.display = 'none';
+                noDataEl.style.display = 'block';
+            }
+        }
+
+        async function loadStatusCountsChart() {
+            const loadingEl = document.getElementById('statusCountsLoading');
+            const noDataEl = document.getElementById('statusCountsNoData');
+            const titleEl = document.getElementById('statusCountsChartTitle');
+            const canvas = document.getElementById('statusCountsChart');
+            
+            try {
+                loadingEl.style.display = 'block';
+                noDataEl.style.display = 'none';
+                
+                const { attendance: attendanceData } = getFilteredData();
+                const { playerId, categoryId } = getFilterParams();
+                
+                let chartTitle = 'Počty účasti (Prítomný / Neprítomný / Meškajúci / Ospravedlnený)';
+                if (playerId) {
+                    const player = cachedAllPlayers.find(p => Number(p.id) === Number(playerId));
+                    chartTitle = 'Účast hráča: ' + (player ? (userListLabel(player) || '') : '');
+                } else if (categoryId) {
+                    const cat = trainerCategories.find(c => Number(c.id) === Number(categoryId));
+                    chartTitle = 'Účast kategórie: ' + (cat ? (cat.name || '') : '');
+                }
+                if (titleEl) titleEl.textContent = chartTitle;
+                
+                const statusCounts = { PRESENT: 0, ABSENT: 0, LATE: 0, EXCUSED: 0 };
+                (attendanceData || []).forEach(att => {
+                    const status = att.status || 'ABSENT';
+                    if (statusCounts.hasOwnProperty(status)) statusCounts[status]++;
+                });
+                
+                const labels = ['Prítomný', 'Neprítomný', 'Meškajúci', 'Ospravedlnený'];
+                const values = [statusCounts.PRESENT, statusCounts.ABSENT, statusCounts.LATE, statusCounts.EXCUSED];
+                
+                if (statusCountsChart) {
+                    statusCountsChart.destroy();
+                    statusCountsChart = null;
+                }
+                
+                if (!attendanceData || attendanceData.length === 0) {
+                    loadingEl.style.display = 'none';
+                    noDataEl.style.display = 'block';
+                    return;
+                }
+                
+                noDataEl.style.display = 'none';
+                statusCountsChart = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Počet',
+                            data: values,
+                            backgroundColor: [
+                                'rgba(40, 167, 69, 0.8)',
+                                'rgba(220, 53, 69, 0.8)',
+                                'rgba(255, 193, 7, 0.8)',
+                                'rgba(23, 162, 184, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgba(40, 167, 69, 1)',
+                                'rgba(220, 53, 69, 1)',
+                                'rgba(255, 193, 7, 1)',
+                                'rgba(23, 162, 184, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top' },
+                            title: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { font: { size: window.innerWidth <= 767 ? 9 : 11 } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, precision: 0, font: { size: window.innerWidth <= 767 ? 9 : 11 } },
+                                title: { display: true, text: 'Počet' }
+                            }
+                        }
+                    }
+                });
+                
+                loadingEl.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading status counts chart:', error);
+                loadingEl.style.display = 'none';
+                noDataEl.style.display = 'block';
+            }
+        }
+
+        async function loadAttendanceTable() {
+            const loadingEl = document.getElementById('attendanceTableLoading');
+            const container = document.getElementById('attendanceTableContainer');
+            const noDataEl = document.getElementById('attendanceTableNoData');
+            const thead = document.getElementById('attendanceTableHead');
+            const tbody = document.getElementById('attendanceTableBody');
+            const scrollEl = document.getElementById('attendanceTableScroll');
+            
+            try {
+                loadingEl.style.display = 'block';
+                container.style.display = 'none';
+                noDataEl.style.display = 'none';
+                
+                const { playerId } = getFilterParams();
+                const { tableCategoryId, tableName } = getTableFilterParams();
+                let tablePlayers = playerId ? cachedAllPlayers.filter(p => Number(p.id) === Number(playerId)) : cachedAllPlayers;
+
+                if (tableCategoryId) {
+                    tablePlayers = tablePlayers.filter(p => {
+                        const ids = getPlayerCategoryIds(p);
+                        return ids.includes(tableCategoryId);
+                    });
+                }
+
+                if (tableName) {
+                    const search = tableName;
+                    tablePlayers = tablePlayers.filter(p => (userListLabel(p) || '').toLowerCase().includes(search));
+                }
+                allPlayers = tablePlayers;
+                
+                if (tablePlayers.length === 0) {
+                    loadingEl.style.display = 'none';
+                    noDataEl.style.display = 'block';
+                    return;
+                }
+                
+                const firstDay = new Date(currentYear, currentMonth, 1);
+                const lastDay = new Date(currentYear, currentMonth + 1, 0);
+                let monthEvents = cachedTrainingEvents.filter(e => {
+                    const eventDate = new Date((e.date || '').substring(0, 10));
+                    return eventDate >= firstDay && eventDate <= lastDay;
+                });
+                const catId = getFilterParams().categoryId;
+                if (catId) {
+                    const cid = Number(catId);
+                    monthEvents = monthEvents.filter(e => Number(e.categoryId) === cid);
+                }
+
+                const relevantCategoryIds = new Set();
+                tablePlayers.forEach(player => {
+                    getPlayerCategoryIds(player).forEach(cid => relevantCategoryIds.add(cid));
+                });
+                if (relevantCategoryIds.size > 0) {
+                    monthEvents = monthEvents.filter(e => relevantCategoryIds.has(Number(e.categoryId)));
+                }
+
+                monthEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                const eventIds = new Set(monthEvents.map(e => e.id));
+                let tableAttendance = cachedAllAttendance.filter(att => eventIds.has(att.eventId));
+                if (playerId) {
+                    const pid = Number(playerId);
+                    tableAttendance = tableAttendance.filter(att => Number(att.playerId) === pid);
+                }
+                const tablePlayerIds = new Set(tablePlayers.map(p => Number(p.id)));
+                tableAttendance = tableAttendance.filter(att => tablePlayerIds.has(Number(att.playerId)));
+                
+                const attendanceMap = new Map();
+                tableAttendance.forEach(att => {
+                    if (!attendanceMap.has(att.playerId)) {
+                        attendanceMap.set(att.playerId, new Map());
+                    }
+                    attendanceMap.get(att.playerId).set(att.eventId, att.status);
+                });
+
+                const eventsWithFilledAttendance = monthEvents;
+                const uniqueDates = [...new Set(
+                    eventsWithFilledAttendance.map(e => (e.date || '').substring(0, 10))
+                )].filter(Boolean).sort();
+
+                const eventsByDate = new Map();
+                eventsWithFilledAttendance.forEach(e => {
+                    const d = (e.date || '').substring(0, 10);
+                    if (!d) return;
+                    if (!eventsByDate.has(d)) eventsByDate.set(d, []);
+                    eventsByDate.get(d).push(e);
+                });
+                uniqueDates.forEach(d => {
+                    const list = eventsByDate.get(d) || [];
+                    list.sort((a, b) => new Date(a.date) - new Date(b.date));
+                });
+
+                if (uniqueDates.length === 0) {
+                    loadingEl.style.display = 'none';
+                    noDataEl.style.display = 'block';
+                    container.style.display = 'none';
+                    document.getElementById('tableMonthNav').style.display = 'none';
+                    return;
+                }
+
+                thead.innerHTML = '<tr><th>Hráč</th>' + 
+                    uniqueDates.map(dateStr => {
+                        const d = new Date(dateStr + 'T12:00:00');
+                        return `<th>${d.getDate()}.${d.getMonth() + 1}</th>`;
+                    }).join('') + '</tr>';
+
+                tbody.innerHTML = '';
+                tableRenderState = {
+                    tbody,
+                    tablePlayers,
+                    uniqueDates,
+                    attendanceMap,
+                    eventsByDate,
+                    nextIndex: 0
+                };
+                renderAttendanceTableRowsChunk();
+                if (scrollEl) {
+                    scrollEl.scrollTop = 0;
+                    scrollEl.onscroll = function() {
+                        if (!tableRenderState) return;
+                        const nearBottom = (scrollEl.scrollTop + scrollEl.clientHeight) >= (scrollEl.scrollHeight - 80);
+                        if (nearBottom) renderAttendanceTableRowsChunk();
+                    };
+                }
+                
+                loadingEl.style.display = 'none';
+                container.style.display = 'block';
+                document.getElementById('tableMonthNav').style.display = 'flex';
+                document.getElementById('tableMonthLabel').textContent = getMonthYearLabel(currentMonth, currentYear);
+                const exportActions = document.getElementById('tableExportActions');
+                if (exportActions) exportActions.style.display = 'flex';
+            } catch (error) {
+                console.error('Error loading attendance table:', error);
+                loadingEl.style.display = 'none';
+                noDataEl.style.display = 'block';
+            }
+        }
+
+        function getMonthYearLabel(month, year) {
+            const months = ['Január', 'Február', 'Marec', 'Apríl', 'Máj', 'Jún', 'Júl', 'August', 'September', 'Október', 'November', 'December'];
+            return months[month] + ' ' + year;
+        }
+
+        function changeTableMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            loadAttendanceTable();
+        }
+
+        function statusLabel(status) {
+            const labels = { PRESENT: 'P', ABSENT: 'A', LATE: 'M', EXCUSED: 'O' };
+            return labels[status] || status;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function initNavUser(user) {
+            if (!user) return;
+            const name = (formatUserDisplayName(user) || (user.role === 'ADMIN' ? 'Admin' : 'Tréner')).replace(/\s*\([^)]*\)\s*$/, '').trim();
+            const role = user.role === 'TRAINER' ? 'Tréner' : (user.role === 'ADMIN' ? 'Admin' : user.role);
+            document.getElementById('userName').textContent = name;
+            document.getElementById('userRole').textContent = role;
+            const initial = (name.charAt(0) || 'T').toUpperCase();
+            document.getElementById('userInfo').setAttribute('data-initial', initial);
+            const dn = document.getElementById('userDropdownName');
+            const dr = document.getElementById('userDropdownRole');
+            const av = document.getElementById('navMenuProfileAvatar');
+            if (dn) dn.textContent = name;
+            if (dr) dr.textContent = role;
+            if (av) av.textContent = initial;
+            document.getElementById('navMenuProfileName').textContent = name;
+            document.getElementById('navMenuProfileRole').textContent = role;
+        }
+        function toggleNavMenu() {
+            document.getElementById('hamburgerBtn').classList.toggle('open');
+            document.getElementById('navOverlay').classList.toggle('open');
+            document.getElementById('navSlideMenu').classList.toggle('open');
+            document.body.style.overflow = document.getElementById('navSlideMenu').classList.contains('open') ? 'hidden' : '';
+        }
+        function closeNavMenu() {
+            document.getElementById('hamburgerBtn').classList.remove('open');
+            document.getElementById('navOverlay').classList.remove('open');
+            document.getElementById('navSlideMenu').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function toggleUserDropdown(e) { e.stopPropagation(); document.getElementById('userInfo').classList.toggle('open'); }
+        document.addEventListener('click', function(e) { if (!e.target.closest('.user-info')) document.getElementById('userInfo').classList.remove('open'); });
+        async function handleSignOut() {
+            if (typeof logout === 'function') await logout();
+            window.location.href = '/pages/login.html';
+        }
+        function handleSignOutFromMenu() { closeNavMenu(); handleSignOut(); }
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

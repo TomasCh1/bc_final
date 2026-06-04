@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Režim cvičenia - streľba | MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/coach-nav.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: #2C2C2C;
+        }
+
+        .dashboard-content {
+            padding: 0;
+            max-width: 1240px;
+            margin: 0 auto;
+            min-height: calc(100vh - 60px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Drill panel - light theme, matches page */
+        .drill-panel {
+            flex: 1;
+            background: #FFFFFF;
+            color: #2C2C2C;
+            padding: 1rem;
+            padding-bottom: env(safe-area-inset-bottom, 1rem);
+            border-radius: 16px 16px 0 0;
+            margin-top: 0.5rem;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .drill-layout {
+            display: grid;
+            grid-template-columns: minmax(420px, 1.05fr) minmax(380px, 0.95fr);
+            gap: 1rem;
+            align-items: start;
+        }
+        .drill-left,
+        .drill-right {
+            min-width: 0;
+        }
+        .drill-right {
+            display: flex;
+            flex-direction: column;
+        }
+        .drill-right .save-bar {
+            margin-top: auto;
+        }
+        @media (max-width: 980px) {
+            .dashboard-content {
+                max-width: 680px;
+            }
+            .drill-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .drill-panel .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .drill-panel .settings-btn {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(107, 44, 145, 0.12);
+            color: #6B2C91;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .drill-panel .settings-btn:hover {
+            background: rgba(107, 44, 145, 0.2);
+        }
+
+        /* Court map */
+        .court-wrap {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .court-map-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #e5ddd2;
+            border: 4px solid #334155;
+        }
+        .court-map-container svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .court-map {
+            width: 100%;
+            display: block;
+            border-radius: 8px;
+            overflow: visible;
+        }
+        .court-map .court-bg {
+            fill: #e5ddd2;
+        }
+        .court-map .zone {
+            fill: #e0d8cc;
+            stroke: #2e354f;
+            stroke-width: 3;
+            cursor: pointer;
+            transition: fill 0.2s, stroke 0.2s, filter 0.2s;
+        }
+        .court-map .zone:hover {
+            filter: brightness(1.08);
+            stroke: #c4b5fd;
+        }
+        .court-map .zone.active {
+            fill: rgba(107, 44, 145, 0.4);
+            stroke: #6B2C91;
+            stroke-width: 3;
+        }
+        .court-map .court-line {
+            fill: none;
+            stroke: #2e354f;
+            stroke-width: 3;
+            pointer-events: none;
+        }
+        .court-map .court-line-dashed {
+            fill: none;
+            stroke: #2e354f;
+            stroke-width: 3;
+            stroke-dasharray: 8 8;
+            pointer-events: none;
+        }
+        .court-map .zone-stat {
+            font-size: 11px;
+            font-weight: 700;
+            fill: #1e293b;
+            pointer-events: none;
+            text-anchor: middle;
+        }
+        .court-map .zone-pct {
+            font-size: 9px;
+            font-weight: 600;
+            fill: #475569;
+            pointer-events: none;
+            text-anchor: middle;
+        }
+        .court-map .zone.active .zone-stat,
+        .court-map .zone.active .zone-pct {
+            fill: #6B2C91;
+        }
+        .court-legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: baseline;
+            gap: 0.35rem 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            color: #6B7280;
+        }
+        .court-legend-title {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 0.15rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        .court-legend span:not(.court-legend-title) { white-space: nowrap; }
+
+        /* Player carousel */
+        .player-section .section-title { margin-bottom: 0.5rem; }
+        #searchInput {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 0.5rem;
+            min-height: 42px;
+            border: 1px solid #D1D5DB;
+            border-radius: 10px;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.9rem;
+            background: #FFFFFF;
+            color: #1F2937;
+        }
+        #searchInput::placeholder { color: #9CA3AF; }
+        .drill-filters {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 0.85rem;
+            margin-bottom: 0.85rem;
+        }
+        .drill-filters-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .drill-filters-row + .drill-filters-row {
+            margin-top: 0.6rem;
+            padding-top: 0.6rem;
+            border-top: 1px solid #E5E7EB;
+        }
+        .drill-filter-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #374151;
+            min-width: 72px;
+        }
+        .drill-filter-select {
+            flex: 1;
+            min-height: 42px;
+            border: 1px solid #D1D5DB;
+            border-radius: 10px;
+            padding: 0.6rem 0.75rem;
+            background: #FFFFFF;
+            color: #1F2937;
+            font-size: 0.9rem;
+        }
+        .drill-filter-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #374151;
+            cursor: pointer;
+        }
+        .drill-filter-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #6B2C91;
+            cursor: pointer;
+        }
+        .drill-filter-hint {
+            width: 100%;
+            font-size: 0.76rem;
+            color: #6B7280;
+            line-height: 1.3;
+        }
+        .player-count-badge {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #6B7280;
+            background: #F3F4F6;
+            border: 1px solid #E5E7EB;
+            border-radius: 999px;
+            padding: 0.2rem 0.55rem;
+        }
+        .player-carousel {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding: 0.5rem 0;
+            margin-bottom: 1rem;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+        .player-carousel::-webkit-scrollbar { height: 6px; }
+        .player-carousel::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+        .player-chip {
+            flex: 0 0 auto;
+            min-width: 100px;
+            padding: 0.6rem 1rem;
+            border-radius: 12px;
+            background: #F9FAFB;
+            border: 2px solid #E5E7EB;
+            color: #374151;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .player-chip:hover {
+            border-color: #6B2C91;
+            background: #F3F4F6;
+        }
+        .player-chip.selected {
+            border-color: #6B2C91;
+            background: rgba(107, 44, 145, 0.12);
+            color: #6B2C91;
+        }
+        .player-chip.present {
+            border-color: #0EA5A4;
+            background: #ECFDF5;
+        }
+        .player-chip.absent {
+            opacity: 0.82;
+        }
+
+        .records-wrap {
+            margin: 0.25rem 0 1rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            max-height: 310px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: #FFFFFF;
+        }
+        .records-wrap::-webkit-scrollbar { width: 8px; }
+        .records-wrap::-webkit-scrollbar-thumb {
+            background: #D1D5DB;
+            border-radius: 999px;
+        }
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.83rem;
+        }
+        .records-table th {
+            text-align: left;
+            background: #F9FAFB;
+            color: #374151;
+            font-weight: 700;
+            padding: 0.6rem 0.55rem;
+            border-bottom: 1px solid #E5E7EB;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .records-table td {
+            padding: 0.58rem 0.55rem;
+            border-bottom: 1px solid #F3F4F6;
+            color: #1F2937;
+            vertical-align: middle;
+        }
+        .records-table tr:last-child td { border-bottom: none; }
+        .records-table tbody tr.player-row {
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .records-table tbody tr.player-row:hover {
+            background: #F9FAFB;
+        }
+        .records-table tbody tr.player-row.active {
+            background: rgba(107, 44, 145, 0.1);
+        }
+        .records-status {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 0.12rem 0.55rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .records-status.complete {
+            background: #DCFCE7;
+            color: #166534;
+        }
+        .records-status.partial {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+        .records-status.empty {
+            background: #E5E7EB;
+            color: #4B5563;
+        }
+        .records-status.attend {
+            background: #E0F2FE;
+            color: #075985;
+        }
+        .records-status.missing {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+        .records-empty {
+            text-align: center;
+            color: #6B7280;
+            font-size: 0.84rem;
+            padding: 1rem 0.75rem;
+        }
+
+        /* Zone slots for selected player */
+        .zone-slots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            justify-content: center;
+        }
+        .zone-slot {
+            width: 52px;
+            min-width: 52px;
+            padding: 0.5rem;
+            border-radius: 10px;
+            background: #F9FAFB;
+            border: 2px solid #E5E7EB;
+            text-align: center;
+            transition: border-color 0.2s, background 0.2s;
+            cursor: pointer;
+        }
+        .zone-slot.current {
+            border-color: #6B2C91;
+            background: rgba(107, 44, 145, 0.12);
+            box-shadow: 0 0 0 2px rgba(107, 44, 145, 0.2);
+        }
+        .zone-slot .zone-slot-label {
+            font-size: 0.7rem;
+            color: #6B7280;
+            margin-bottom: 0.25rem;
+        }
+        .zone-slot .zone-slot-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2C2C2C;
+            min-height: 1.5rem;
+        }
+        .zone-slot .zone-slot-value.empty {
+            color: #9CA3AF;
+        }
+
+        /* Live total */
+        .live-total {
+            text-align: center;
+            padding: 0.75rem;
+            background: #F3F4F6;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            border: 1px solid #E5E7EB;
+        }
+        .live-total .live-player-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.2rem;
+        }
+        .live-total .total-numbers {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #6B2C91;
+        }
+        .live-total .total-pct {
+            font-size: 0.95rem;
+            color: #6B7280;
+            margin-top: 0.25rem;
+        }
+
+        /* Custom number pad - thumb-friendly, min 44px */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            max-width: 260px;
+            margin: 0 auto 1rem;
+        }
+        .numpad-btn {
+            min-height: 52px;
+            min-width: 52px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.35rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .numpad-btn:active {
+            transform: scale(0.96);
+        }
+        .numpad-btn.digit {
+            background: #F9FAFB;
+            color: #2C2C2C;
+            border: 2px solid #E5E7EB;
+        }
+        .numpad-btn.digit:hover {
+            background: #F3F4F6;
+            border-color: #6B2C91;
+        }
+        .numpad-btn.backspace {
+            background: #E5E7EB;
+            color: #374151;
+        }
+        .numpad-btn.backspace:hover {
+            background: #D1D5DB;
+        }
+        .numpad-btn.confirm {
+            background: #10B981;
+            color: #fff;
+            font-size: 1.25rem;
+        }
+        .numpad-btn.confirm:hover {
+            background: #059669;
+        }
+        .numpad-btn.next-player {
+            grid-column: span 3;
+            background: #6B2C91;
+            color: #fff;
+            font-size: 1rem;
+        }
+        .numpad-btn.next-player:hover {
+            background: #5a2473;
+        }
+
+        /* Save bar */
+        .save-bar {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.75rem 0;
+            border-top: 1px solid #E5E7EB;
+        }
+        .save-bar .btn-save {
+            flex: 1;
+            min-height: 48px;
+            border: none;
+            border-radius: 12px;
+            background: #10B981;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .save-bar .btn-save:hover {
+            background: #059669;
+        }
+        .save-bar .btn-save:disabled {
+            background: #D1D5DB;
+            color: #9CA3AF;
+            cursor: not-allowed;
+        }
+
+        /* Empty state */
+        .drill-empty {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #6B7280;
+        }
+        .drill-empty p { margin-bottom: 0.5rem; }
+
+        /* Settings modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-content {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 1.5rem;
+            max-width: 320px;
+            width: 100%;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .modal-content h3 {
+            color: #2C2C2C;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        .modal-content label {
+            display: block;
+            color: #374151;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #2C2C2C;
+            font-size: 1rem;
+        }
+        .modal-content .modal-actions {
+            margin-top: 1.25rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .modal-content .modal-actions button {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .modal-content .modal-actions .btn-confirm {
+            background: #6B2C91;
+            color: #fff;
+        }
+        .modal-content .modal-actions .btn-cancel {
+            background: #E5E7EB;
+            color: #374151;
+        }
+        .modal-save-result {
+            text-align: center;
+        }
+        .result-modal-title {
+            font-size: 1.08rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+            color: #1F2937;
+        }
+        .result-modal-message {
+            font-size: 0.92rem;
+            color: #374151;
+            line-height: 1.45;
+            margin-bottom: 0.25rem;
+            white-space: pre-line;
+        }
+        .modal-content.result-success {
+            border-color: #86EFAC;
+            box-shadow: 0 10px 25px rgba(22, 163, 74, 0.18);
+        }
+        .modal-content.result-error {
+            border-color: #FCA5A5;
+            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.16);
+        }
+        .result-modal-ok {
+            width: 100%;
+            margin-top: 1rem;
+            min-height: 46px;
+            border: none;
+            border-radius: 10px;
+            background: #6B2C91;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .modal-content.result-error .result-modal-ok {
+            background: #DC2626;
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo-small">
+                <img src="/IMG/Slavia_Trnava_logo_color_stroke-1.webp" alt="Logo">
+            </div>
+            <div class="team-name">MBK AŠK Slávia Trnava</div>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="header-nav">
+                <a href="/pages/trainer-dashboard.html" class="nav-pill">Hlavná obrazovka</a>
+                <a href="/pages/coach-matches.html" class="nav-pill">Zápasy</a>
+                <a href="/pages/trainer-trainings.html" class="nav-pill">Tréningy</a>
+                <a href="/pages/trainer-attendance-charts.html" class="nav-pill">Grafy účasti</a>
+                <a href="/pages/trainer-training-stats.html" class="nav-pill">Záznam štatistík tréningu</a>
+                <a href="/pages/trainer-drill-mode.html" class="nav-pill active">Režim cvičenia</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-info" id="userInfo" data-initial="T" onclick="toggleUserDropdown(event)">
+                <div class="user-info-header">
+                    <div>
+                        <div class="user-name" id="userName">Načítava sa...</div>
+                        <div class="user-role" id="userRole">Tréner</div>
+                    </div>
+                    <span class="user-dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-profile">
+                        <div class="user-dropdown-name" id="userDropdownName"></div>
+                        <div class="user-dropdown-role" id="userDropdownRole"></div>
+                    </div>
+                    <div class="user-dropdown-item" onclick="handleSignOut()">Odhlásiť sa</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-slide-overlay" id="navOverlay" onclick="closeNavMenu()"></div>
+    <nav class="nav-slide-menu" id="navSlideMenu">
+        <div class="nav-menu-profile">
+            <div class="nav-menu-profile-avatar" id="navMenuProfileAvatar">T</div>
+            <div class="nav-menu-profile-info">
+                <div class="nav-menu-profile-name" id="navMenuProfileName">Načítava sa...</div>
+                <div class="nav-menu-profile-role" id="navMenuProfileRole">Tréner</div>
+            </div>
+        </div>
+        <div class="nav-menu-divider"></div>
+        <a href="/pages/trainer-dashboard.html" class="nav-pill" onclick="closeNavMenu()">Hlavná obrazovka</a>
+        <a href="/pages/coach-matches.html" class="nav-pill" onclick="closeNavMenu()">Zápasy</a>
+        <a href="/pages/trainer-trainings.html" class="nav-pill" onclick="closeNavMenu()">Tréningy</a>
+        <a href="/pages/trainer-attendance-charts.html" class="nav-pill" onclick="closeNavMenu()">Grafy účasti</a>
+        <a href="/pages/trainer-training-stats.html" class="nav-pill" onclick="closeNavMenu()">Záznam štatistík tréningu</a>
+        <a href="/pages/trainer-drill-mode.html" class="nav-pill active" onclick="closeNavMenu()">Režim cvičenia</a>
+        <div class="nav-menu-divider"></div>
+        <button type="button" class="nav-pill" onclick="handleSignOutFromMenu()">Odhlásiť sa</button>
+    </nav>
+
+    <div class="dashboard-content">
+        <div class="drill-panel">
+            <div class="drill-layout">
+                <div class="drill-left">
+                    <div class="section-title">
+                        <span>Mapa zón - vyberte zóny cvičenia</span>
+                        <button type="button" class="settings-btn" id="settingsBtn" title="Pokusy na zónu" aria-label="Nastavenia">⚙</button>
+                    </div>
+                    <div class="court-wrap">
+                        <div id="courtMapContainer" class="court-map-container">
+                            <svg id="court-svg" class="court-map" viewBox="0 0 500 520" xmlns="http://www.w3.org/2000/svg" aria-label="Polovica ihriska so 14 zónami">
+                        <rect class="court-bg" x="0" y="0" width="500" height="520" fill="transparent"/>
+                        <g>
+                            <rect id="zone-0" class="zone" data-zone="0" x="0" y="0" width="60" height="100"/>
+                            <text id="zone-stat-0" class="zone-stat" x="30" y="52">0/0</text>
+                            <text id="zone-pct-0" class="zone-pct" x="30" y="63">0%</text>
+                        </g>
+                        <g>
+                            <rect id="zone-1" class="zone" data-zone="1" x="60" y="0" width="125" height="100"/>
+                            <text id="zone-stat-1" class="zone-stat" x="122.5" y="52">0/0</text>
+                            <text id="zone-pct-1" class="zone-pct" x="122.5" y="63">0%</text>
+                        </g>
+                        <g>
+                            <rect id="zone-2" class="zone" data-zone="2" x="185" y="0" width="65" height="100"/>
+                            <text id="zone-stat-2" class="zone-stat" x="217.5" y="52">0/0</text>
+                            <text id="zone-pct-2" class="zone-pct" x="217.5" y="63">0%</text>
+                        </g>
+                        <g>
+                            <rect id="zone-3" class="zone" data-zone="3" x="250" y="0" width="65" height="100"/>
+                            <text id="zone-stat-3" class="zone-stat" x="282.5" y="52">0/0</text>
+                            <text id="zone-pct-3" class="zone-pct" x="282.5" y="63">0%</text>
+                        </g>
+                        <g>
+                            <rect id="zone-4" class="zone" data-zone="4" x="315" y="0" width="125" height="100"/>
+                            <text id="zone-stat-4" class="zone-stat" x="377.5" y="52">0/0</text>
+                            <text id="zone-pct-4" class="zone-pct" x="377.5" y="63">0%</text>
+                        </g>
+                        <g>
+                            <rect id="zone-5" class="zone" data-zone="5" x="440" y="0" width="60" height="100"/>
+                            <text id="zone-stat-5" class="zone-stat" x="470" y="52">0/0</text>
+                            <text id="zone-pct-5" class="zone-pct" x="470" y="63">0%</text>
+                        </g>
+                        <g>
+                            <path id="zone-6" class="zone" data-zone="6" d="M 60 100 A 210 260 0 0 0 185 242 L 185 100 Z"/>
+                            <text id="zone-stat-6" class="zone-stat" x="122.5" y="145">0/0</text>
+                            <text id="zone-pct-6" class="zone-pct" x="122.5" y="156">0%</text>
+                        </g>
+                        <g>
+                            <path id="zone-7" class="zone" data-zone="7" d="M 185 100 L 185 242 A 210 260 0 0 0 315 242 L 315 100 Z"/>
+                            <text id="zone-stat-7" class="zone-stat" x="250" y="215">0/0</text>
+                            <text id="zone-pct-7" class="zone-pct" x="250" y="226">0%</text>
+                        </g>
+                        <g>
+                            <rect id="zone-8" class="zone" data-zone="8" x="185" y="100" width="130" height="70"/>
+                            <text id="zone-stat-8" class="zone-stat" x="250" y="130">0/0</text>
+                            <text id="zone-pct-8" class="zone-pct" x="250" y="141">0%</text>
+                        </g>
+                        <g>
+                            <path id="zone-9" class="zone" data-zone="9" d="M 315 100 L 315 242 A 210 260 0 0 0 440 100 Z"/>
+                            <text id="zone-stat-9" class="zone-stat" x="377.5" y="145">0/0</text>
+                            <text id="zone-pct-9" class="zone-pct" x="377.5" y="156">0%</text>
+                        </g>
+                        <g>
+                            <path id="zone-10" class="zone" data-zone="10" d="M 0 100 L 60 100 A 210 260 0 0 0 185 242 L 185 400 L 0 400 Z"/>
+                            <text id="zone-stat-10" class="zone-stat" x="90" y="265">0/0</text>
+                            <text id="zone-pct-10" class="zone-pct" x="90" y="276">0%</text>
+                        </g>
+                        <g>
+                            <path id="zone-11" class="zone" data-zone="11" d="M 185 242 A 210 260 0 0 0 315 242 L 315 400 L 185 400 Z"/>
+                            <text id="zone-stat-11" class="zone-stat" x="250" y="315">0/0</text>
+                            <text id="zone-pct-11" class="zone-pct" x="250" y="326">0%</text>
+                        </g>
+                        <g>
+                            <path id="zone-12" class="zone" data-zone="12" d="M 440 100 L 500 100 L 500 400 L 315 400 L 315 242 A 210 260 0 0 0 440 100 Z"/>
+                            <text id="zone-stat-12" class="zone-stat" x="410" y="265">0/0</text>
+                            <text id="zone-pct-12" class="zone-pct" x="410" y="276">0%</text>
+                        </g>
+                        <g>
+                            <rect id="zone-13" class="zone" data-zone="13" x="0" y="400" width="500" height="120"/>
+                            <text id="zone-stat-13" class="zone-stat" x="250" y="455">0/0</text>
+                            <text id="zone-pct-13" class="zone-pct" x="250" y="466">0%</text>
+                        </g>
+                        <line class="court-line" x1="60" y1="0" x2="60" y2="100"/>
+                        <line class="court-line" x1="440" y1="0" x2="440" y2="100"/>
+                        <line class="court-line" x1="185" y1="0" x2="185" y2="170"/>
+                        <line class="court-line" x1="315" y1="0" x2="315" y2="170"/>
+                        <path class="court-line" d="M 185 170 A 65 65 0 0 0 315 170"/>
+                        <line x1="220" y1="15" x2="280" y2="15" stroke="#cbd5e1" stroke-width="2" pointer-events="none"/>
+                        <circle cx="250" cy="27" r="9" fill="none" stroke="#ea580c" stroke-width="2" pointer-events="none"/>
+                        <line x1="250" y1="15" x2="250" y2="18" stroke="#cbd5e1" stroke-width="2" pointer-events="none"/>
+                            </svg>
+                        </div>
+                        <div class="court-legend">
+                            <span class="court-legend-title">Legenda:</span>
+                            <span>LC3 = 3pt left corner</span>
+                            <span>45° L3 = 3pt 45° left</span>
+                            <span>3PT MID = 3pt middle</span>
+                            <span>45° R3 = 3pt 45° right</span> 
+                            <span>RC3 = 3pt right corner</span>
+
+                            <span>MRLC = midrange left corner</span>
+                            <span>LCS = left close shot</span>
+                            <span>RCS = right close shot</span>
+                            <span>MRRC = midrange right corner</span>
+                            <span>MLW = midrange left wing</span>
+                            <span>FT = free throw line</span>
+                            <span>P = paint</span>
+                            <span>MRW = midrange right wing</span>
+                            <span>HC = halfcourt</span>
+                        </div>
+                    </div>
+                    <div class="drill-filters">
+                        <div class="drill-filters-row">
+                            <span class="drill-filter-label">Kategória</span>
+                            <select id="categoryFilterSelect" class="drill-filter-select" aria-label="Filtrovať podľa kategórie"></select>
+                        </div>
+                        <div class="drill-filters-row" id="attendanceFilterRow" style="display: none;">
+                            <label class="drill-filter-toggle">
+                                <input type="checkbox" id="presentOnlyToggle" checked>
+                                <span>Zobraziť iba prítomných hráčov</span>
+                            </label>
+                            <div class="drill-filter-hint" id="attendanceFilterHint"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="drill-right">
+                    <div class="player-section">
+                        
+                        <div class="section-title">
+                            <span>Hráč</span>
+                        </div>
+                        <input type="search" id="searchInput" placeholder="Hľadať hráča podľa mena" autocomplete="off" aria-label="Hľadať hráča podľa mena">
+                        <div class="player-carousel" id="playerCarousel"></div>
+                    </div>
+                    <div class="section-title">Prehľad zadaných štatistík</div>
+                    <div class="records-wrap">
+                        <table class="records-table" aria-label="Prehľad hráčov so štatistikami">
+                            <thead>
+                                <tr>
+                                    <th>Hráč</th>
+                                    <th>Účasť</th>
+                                    <th>Zóny</th>
+                                    <th>Stav</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordsTableBody">
+                                <tr>
+                                    <td colspan="4" class="records-empty">Načítavam hráčov...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="entryArea">
+                        <div id="zoneSlotsWrap" class="zone-slots" style="display: none;"></div>
+                        <div id="liveTotalWrap" class="live-total" style="display: none;">
+                        <div class="live-player-name" id="livePlayerName">-</div>
+                            <div class="total-numbers" id="liveTotalText">0/0</div>
+                            <div class="total-pct" id="liveTotalPct">- %</div>
+                        </div>
+                        <div id="numpadWrap" style="display: none;">
+                            <div class="numpad" id="numpad">
+                                <button type="button" class="numpad-btn digit" data-key="7">7</button>
+                                <button type="button" class="numpad-btn digit" data-key="8">8</button>
+                                <button type="button" class="numpad-btn digit" data-key="9">9</button>
+                                <button type="button" class="numpad-btn digit" data-key="4">4</button>
+                                <button type="button" class="numpad-btn digit" data-key="5">5</button>
+                                <button type="button" class="numpad-btn digit" data-key="6">6</button>
+                                <button type="button" class="numpad-btn digit" data-key="1">1</button>
+                                <button type="button" class="numpad-btn digit" data-key="2">2</button>
+                                <button type="button" class="numpad-btn digit" data-key="3">3</button>
+                                <button type="button" class="numpad-btn backspace" id="btnBackspace" aria-label="Vymazať">⌫</button>
+                                <button type="button" class="numpad-btn digit" data-key="0">0</button>
+                                <button type="button" class="numpad-btn confirm" id="btnConfirm" aria-label="Potvrdiť">✓</button>
+                                <button type="button" class="numpad-btn next-player" id="btnNextPlayer">Ďalší hráč →</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="emptyState" class="drill-empty">
+                        <p>Vyberte aspoň jednu zónu na mape a potom hráča.</p>
+                    </div>
+                    <div class="save-bar" id="saveBar" style="display: none;">
+                        <button type="button" class="btn-save" id="btnSave" disabled>Uložiť do databázy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+            <h3>Nastavenia cvičenia</h3>
+            <label for="attemptsPerZone">Počet pokusov na zónu</label>
+            <input type="number" id="attemptsPerZone" min="1" max="99" value="10">
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="settingsCancel">Zrušiť</button>
+                <button type="button" class="btn-confirm" id="settingsConfirm">OK</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-save-result">
+        <div class="modal-overlay" id="saveResultModal">
+            <div class="modal-content" id="saveResultContent">
+                <div class="result-modal-title" id="saveResultTitle">Výsledok ukladania</div>
+                <div class="result-modal-message" id="saveResultMessage"></div>
+                <button type="button" class="result-modal-ok" id="saveResultOk">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script>
+        if (typeof API_CONFIG !== 'undefined' && API_CONFIG.BASE_URL) { window.API_BASE = API_CONFIG.BASE_URL; }
+        function toggleNavMenu() {
+            var overlay = document.getElementById('navOverlay');
+            var menu = document.getElementById('navSlideMenu');
+            var btn = document.getElementById('hamburgerBtn');
+            if (overlay) overlay.classList.toggle('open');
+            if (menu) {
+                menu.classList.toggle('open');
+                document.body.style.overflow = menu.classList.contains('open') ? 'hidden' : '';
+            }
+            if (btn) btn.classList.toggle('open');
+        }
+        function closeNavMenu() {
+            var overlay = document.getElementById('navOverlay');
+            var menu = document.getElementById('navSlideMenu');
+            var btn = document.getElementById('hamburgerBtn');
+            if (overlay) overlay.classList.remove('open');
+            if (menu) menu.classList.remove('open');
+            if (btn) btn.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function handleSignOutFromMenu() {
+            closeNavMenu();
+            if (typeof handleSignOut === 'function') handleSignOut();
+        }
+    </script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/users.js"></script>
+    <script src="/js/categories.js"></script>
+    <script src="/js/events.js"></script>
+    <script src="/js/attendance.js"></script>
+    <script src="/js/training-statistics.js"></script>
+    <script>
+        (function () {
+            const ZONE_ORDER = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'];
+            const ZONE_LABELS = { '0': 'LC3', '1': 'MRLC', '2': 'LCS', '3': 'RCS', '4': 'MRRC', '5': 'RC3', '6': 'MLW', '7': 'FT', '8': 'P', '9': 'MRW', '10': '45° L3', '11': '3PT MID', '12': '45° R3', '13': 'HC' };
+            const ZONE_LEGEND = { '0': '3pt left corner', '1': 'midrange left corner', '2': 'left close shot', '3': 'right close shot', '4': 'midrange right corner', '5': '3pt right corner', '6': 'midrange left wing', '7': 'free throw line', '8': 'paint', '9': 'midrange right wing', '10': '3pt 45° left', '11': '3pt middle', '12': '3pt 45° right', '13': 'halfcourt' };
+
+            let allPlayers = [];
+            let visiblePlayers = [];
+            let playerSearchQuery = '';
+            let trainerCategories = [];
+            let selectedCategoryId = '';
+            let attendanceRecords = [];
+            let presentPlayerIds = new Set();
+            let currentAttendanceEvent = null;
+            let attendanceFilterAvailable = false;
+            let showPresentOnly = true;
+            let restrictToCoachCategories = false;
+            let activeZones = [];      // ['LC', 'T', 'RW'] etc.
+            let attemptsPerZone = 10;
+            let selectedPlayerId = null;
+            let currentZoneIndex = 0; // index in activeZones
+            let sessionData = [];     // [{ playerId, zone, made, attempts }, ...]
+            let perPlayerMade = {};   // { playerId: { zone: made } }
+            let numpadInputBuffer = ''; // digits being typed for current zone (allows 11, 12, etc.)
+
+            const courtMapContainer = document.getElementById('courtMapContainer');
+            const playerCarousel = document.getElementById('playerCarousel');
+            const searchInput = document.getElementById('searchInput');
+            const zoneSlotsWrap = document.getElementById('zoneSlotsWrap');
+            const liveTotalWrap = document.getElementById('liveTotalWrap');
+            const livePlayerName = document.getElementById('livePlayerName');
+            const liveTotalText = document.getElementById('liveTotalText');
+            const liveTotalPct = document.getElementById('liveTotalPct');
+            const categoryFilterSelect = document.getElementById('categoryFilterSelect');
+            const attendanceFilterRow = document.getElementById('attendanceFilterRow');
+            const attendanceFilterHint = document.getElementById('attendanceFilterHint');
+            const presentOnlyToggle = document.getElementById('presentOnlyToggle');
+            const playerCountBadge = document.getElementById('playerCountBadge');
+            const recordsTableBody = document.getElementById('recordsTableBody');
+            const numpadWrap = document.getElementById('numpadWrap');
+            const navSlideMenu = document.getElementById('navSlideMenu');
+            const emptyState = document.getElementById('emptyState');
+            const saveBar = document.getElementById('saveBar');
+            const btnSave = document.getElementById('btnSave');
+            const settingsModal = document.getElementById('settingsModal');
+            const attemptsPerZoneInput = document.getElementById('attemptsPerZone');
+            const saveResultModal = document.getElementById('saveResultModal');
+            const saveResultContent = document.getElementById('saveResultContent');
+            const saveResultTitle = document.getElementById('saveResultTitle');
+            const saveResultMessage = document.getElementById('saveResultMessage');
+            const saveResultOk = document.getElementById('saveResultOk');
+
+            const DRILL_SESSION_KEY = 'trainer-drill-session';
+            let saveResultOnClose = null;
+
+            function normalizePlayerSearchQuery(q) {
+                return String(q || '').trim().toLowerCase();
+            }
+
+            /** Players shown in carousel + records after category/attendance filters and name search. */
+            function getPlayersForDisplay() {
+                if (!visiblePlayers.length) return [];
+                const q = normalizePlayerSearchQuery(playerSearchQuery);
+                if (!q) return visiblePlayers.slice();
+                return visiblePlayers.filter(function (p) {
+                    const label = String(userListLabel(p) || ('Hráč #' + p.id)).toLowerCase();
+                    return label.indexOf(q) !== -1;
+                });
+            }
+
+            function closeSaveResultModal() {
+                if (saveResultModal) saveResultModal.classList.remove('open');
+                if (typeof saveResultOnClose === 'function') {
+                    const cb = saveResultOnClose;
+                    saveResultOnClose = null;
+                    cb();
+                } else {
+                    saveResultOnClose = null;
+                }
+            }
+
+            function showSaveResultModal(type, title, message, onClose) {
+                if (!saveResultModal || !saveResultContent || !saveResultTitle || !saveResultMessage) return;
+                saveResultOnClose = typeof onClose === 'function' ? onClose : null;
+                saveResultTitle.textContent = title || 'Výsledok ukladania';
+                saveResultMessage.textContent = message || '';
+                saveResultContent.classList.remove('result-success', 'result-error');
+                saveResultContent.classList.add(type === 'success' ? 'result-success' : 'result-error');
+                saveResultModal.classList.add('open');
+            }
+
+            function saveDrillSession() {
+                try {
+                    const data = {
+                        activeZones: activeZones.slice(),
+                        selectedPlayerId: selectedPlayerId,
+                        currentZoneIndex: Math.max(0, Math.min(currentZoneIndex, activeZones.length - 1)),
+                        attemptsPerZone: attemptsPerZone,
+                        perPlayerMade: JSON.parse(JSON.stringify(perPlayerMade))
+                    };
+                    sessionStorage.setItem(DRILL_SESSION_KEY, JSON.stringify(data));
+                } catch (e) { /* ignore */ }
+            }
+
+            function loadDrillSession() {
+                try {
+                    const raw = sessionStorage.getItem(DRILL_SESSION_KEY);
+                    if (!raw) return null;
+                    return JSON.parse(raw);
+                } catch (e) { return null; }
+            }
+
+            function applyCourtZoneSelection() {
+                courtMapContainer.querySelectorAll('.zone').forEach(el => {
+                    const id = el.getAttribute('data-zone');
+                    el.classList.toggle('active', activeZones.includes(id));
+                });
+            }
+
+            function getPerPlayer(playerId) {
+                if (!perPlayerMade[playerId]) perPlayerMade[playerId] = {};
+                return perPlayerMade[playerId];
+            }
+
+            /** Drop all entered stats for this zone for every player (session + in-memory cache). */
+            function clearZoneDataFromAllPlayers(zoneId) {
+                Object.keys(perPlayerMade).forEach(function (pid) {
+                    const data = perPlayerMade[pid];
+                    if (!data || typeof data !== 'object') return;
+                    if (Object.prototype.hasOwnProperty.call(data, zoneId)) {
+                        delete data[zoneId];
+                    }
+                });
+            }
+
+            /** Remove stray zone keys from saved session (zones no longer selected). */
+            function sanitizePerPlayerMadeToActiveZones() {
+                if (!activeZones.length) {
+                    perPlayerMade = {};
+                    return;
+                }
+                const allowed = new Set(activeZones);
+                Object.keys(perPlayerMade).forEach(function (pid) {
+                    const data = perPlayerMade[pid];
+                    if (!data || typeof data !== 'object') return;
+                    Object.keys(data).forEach(function (zk) {
+                        if (!allowed.has(zk)) delete data[zk];
+                    });
+                });
+            }
+
+            function toggleZone(zoneId) {
+                const idx = activeZones.indexOf(zoneId);
+                if (idx === -1) {
+                    activeZones.push(zoneId);
+                } else {
+                    clearZoneDataFromAllPlayers(zoneId);
+                    const removedIdx = idx;
+                    activeZones.splice(removedIdx, 1);
+                    numpadInputBuffer = '';
+                    if (activeZones.length === 0) {
+                        currentZoneIndex = 0;
+                    } else if (currentZoneIndex > removedIdx) {
+                        currentZoneIndex--;
+                    } else if (currentZoneIndex === removedIdx) {
+                        currentZoneIndex = Math.min(currentZoneIndex, activeZones.length - 1);
+                    }
+                }
+                applyCourtZoneSelection();
+                updateEntryVisibility();
+                buildSessionData();
+                if (btnSave) btnSave.disabled = sessionData.length === 0;
+                renderZoneSlots();
+                saveDrillSession();
+            }
+
+            function updateEntryVisibility() {
+                const hasZones = activeZones.length > 0;
+                emptyState.style.display = hasZones ? 'none' : 'block';
+                zoneSlotsWrap.style.display = hasZones && selectedPlayerId ? 'flex' : 'none';
+                liveTotalWrap.style.display = hasZones && selectedPlayerId ? 'block' : 'none';
+                numpadWrap.style.display = hasZones && selectedPlayerId ? 'block' : 'none';
+                saveBar.style.display = hasZones ? 'flex' : 'none';
+            }
+
+            function normalizeDateOnly(value) {
+                if (!value) return '';
+                if (/^\d{4}-\d{2}-\d{2}$/.test(String(value))) return String(value);
+                const d = new Date(value);
+                if (isNaN(d.getTime())) return '';
+                return d.toISOString().slice(0, 10);
+            }
+
+            function parseEventDateTime(eventObj) {
+                if (!eventObj || !eventObj.date) return null;
+                const baseDate = normalizeDateOnly(eventObj.date);
+                if (!baseDate) return null;
+                const timeCandidate = eventObj.startTime || eventObj.time || eventObj.start_time || '';
+                let hhmm = '12:00';
+                if (/^\d{1,2}:\d{2}/.test(String(timeCandidate))) {
+                    const parts = String(timeCandidate).split(':');
+                    hhmm = String(parts[0]).padStart(2, '0') + ':' + String(parts[1]).slice(0, 2);
+                }
+                const dt = new Date(baseDate + 'T' + hhmm + ':00');
+                if (isNaN(dt.getTime())) return null;
+                return dt;
+            }
+
+            function getCategoryLabelById(categoryId) {
+                if (!categoryId) return 'Všetky kategórie';
+                const match = (trainerCategories || []).find(c => String(c.id) === String(categoryId));
+                if (match && match.name) return match.name;
+                return 'Kategória #' + categoryId;
+            }
+
+            function playerBelongsToCategory(player, categoryId) {
+                if (!player || !categoryId) return true;
+                if (player.categoryId != null && String(player.categoryId) === String(categoryId)) return true;
+                if (Array.isArray(player.categoryIds)) {
+                    return player.categoryIds.some(function (id) { return String(id) === String(categoryId); });
+                }
+                return false;
+            }
+
+            function getCurrentVisiblePlayers() {
+                let base = Array.isArray(allPlayers) ? allPlayers.slice() : [];
+                if (selectedCategoryId) {
+                    base = base.filter(function (p) { return playerBelongsToCategory(p, selectedCategoryId); });
+                } else if (restrictToCoachCategories && trainerCategories.length > 0) {
+                    const allowed = trainerCategories.map(function (cat) { return String(cat.id); });
+                    base = base.filter(function (p) {
+                        if (p.categoryId != null) return allowed.indexOf(String(p.categoryId)) >= 0;
+                        if (Array.isArray(p.categoryIds)) return p.categoryIds.some(function (id) { return allowed.indexOf(String(id)) >= 0; });
+                        return false;
+                    });
+                }
+                if (attendanceFilterAvailable && showPresentOnly) {
+                    base = base.filter(function (p) { return presentPlayerIds.has(Number(p.id)); });
+                }
+                base.sort(function (a, b) {
+                    return String(a.name || '').localeCompare(String(b.name || ''), 'sk', { sensitivity: 'base' });
+                });
+                return base;
+            }
+
+            function getPlayerRecordRowState(playerId) {
+                const data = getPerPlayer(playerId);
+                const entered = activeZones.reduce(function (sum, zone) {
+                    return sum + (data[zone] !== undefined && data[zone] !== '' ? 1 : 0);
+                }, 0);
+                const required = activeZones.length;
+                const hasAny = entered > 0;
+                const isComplete = required > 0 && entered === required;
+                let totalMade = 0;
+                activeZones.forEach(function (zone) {
+                    if (data[zone] !== undefined && data[zone] !== '') totalMade += Number(data[zone] || 0);
+                });
+                return { entered: entered, required: required, hasAny: hasAny, isComplete: isComplete, totalMade: totalMade };
+            }
+
+            function renderRecordsTable() {
+                if (!recordsTableBody) return;
+                recordsTableBody.innerHTML = '';
+                if (!visiblePlayers.length) {
+                    recordsTableBody.innerHTML = '<tr><td colspan="4" class="records-empty">Žiadni hráči pre zvolený filter.</td></tr>';
+                    return;
+                }
+                const displayed = getPlayersForDisplay();
+                if (!displayed.length) {
+                    recordsTableBody.innerHTML = '<tr><td colspan="4" class="records-empty">Žiadna zhoda s hľadaným menom.</td></tr>';
+                    return;
+                }
+                displayed.forEach(function (player) {
+                    const row = document.createElement('tr');
+                    row.className = 'player-row' + (Number(player.id) === Number(selectedPlayerId) ? ' active' : '');
+                    row.setAttribute('role', 'button');
+                    row.setAttribute('tabindex', '0');
+                    row.setAttribute('aria-label', 'Vybrať hráča ' + (userListLabel(player) || ('Hráč #' + player.id)));
+                    const progress = getPlayerRecordRowState(player.id);
+                    const attendanceText = attendanceFilterAvailable
+                        ? (presentPlayerIds.has(Number(player.id))
+                            ? '<span class="records-status attend">Prítomný</span>'
+                            : '<span class="records-status missing">Neprítomný</span>')
+                        : '<span class="records-status empty">Bez dochádzky</span>';
+                    let statusHtml = '<span class="records-status empty">Nezadané</span>';
+                    if (progress.isComplete) statusHtml = '<span class="records-status complete">Hotovo</span>';
+                    else if (progress.hasAny) statusHtml = '<span class="records-status partial">Rozpracované</span>';
+                    row.innerHTML =
+                        '<td>' + (userListLabel(player) || ('Hráč #' + player.id)) + '</td>' +
+                        '<td>' + attendanceText + '</td>' +
+                        '<td>' + progress.entered + '/' + progress.required + ' (spolu: ' + progress.totalMade + ')</td>' +
+                        '<td>' + statusHtml + '</td>';
+                    row.addEventListener('click', function () { selectPlayer(Number(player.id)); });
+                    row.addEventListener('keydown', function (e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            selectPlayer(Number(player.id));
+                        }
+                    });
+                    recordsTableBody.appendChild(row);
+                });
+            }
+
+            function renderPlayerChips() {
+                playerCarousel.innerHTML = '';
+                if (!visiblePlayers.length) {
+                    playerCarousel.innerHTML = '<span class="drill-empty">Žiadni hráči pre zvolený filter.</span>';
+                    if (playerCountBadge) playerCountBadge.textContent = '0 hráčov';
+                    selectedPlayerId = null;
+                    updateEntryVisibility();
+                    renderZoneSlots();
+                    renderRecordsTable();
+                    return;
+                }
+                const displayed = getPlayersForDisplay();
+                if (!displayed.length) {
+                    playerCarousel.innerHTML = '<span class="drill-empty">Žiadna zhoda s hľadaným menom.</span>';
+                    if (playerCountBadge) playerCountBadge.textContent = '0 hráčov';
+                    selectedPlayerId = null;
+                    updateEntryVisibility();
+                    renderZoneSlots();
+                    renderRecordsTable();
+                    return;
+                }
+                displayed.forEach(function (p) {
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'player-chip';
+                    if (attendanceFilterAvailable) {
+                        chip.classList.add(presentPlayerIds.has(Number(p.id)) ? 'present' : 'absent');
+                    }
+                    chip.dataset.playerId = p.id;
+                    chip.textContent = userListLabel(p) || ('Hráč #' + p.id);
+                    chip.addEventListener('click', function () { selectPlayer(p.id); });
+                    playerCarousel.appendChild(chip);
+                });
+                if (!displayed.some(function (p) { return Number(p.id) === Number(selectedPlayerId); })) {
+                    selectedPlayerId = Number(displayed[0].id);
+                }
+                if (playerCountBadge) {
+                    const n = displayed.length;
+                    playerCountBadge.textContent = n + (n === 1 ? ' hráč' : (n >= 2 && n <= 4 ? ' hráči' : ' hráčov'));
+                }
+                playerCarousel.querySelectorAll('.player-chip').forEach(function (el) {
+                    el.classList.toggle('selected', Number(el.dataset.playerId) === Number(selectedPlayerId));
+                });
+                updateEntryVisibility();
+                renderZoneSlots();
+                renderRecordsTable();
+            }
+
+            async function loadClosestAttendanceForSelectedCategory() {
+                attendanceRecords = [];
+                presentPlayerIds = new Set();
+                currentAttendanceEvent = null;
+                attendanceFilterAvailable = false;
+                showPresentOnly = false;
+                if (attendanceFilterRow) attendanceFilterRow.style.display = 'none';
+                if (attendanceFilterHint) attendanceFilterHint.textContent = '';
+                if (!presentOnlyToggle) return;
+                presentOnlyToggle.checked = false;
+                if (typeof getEvents !== 'function' || typeof getAttendanceByEvent !== 'function') return;
+                try {
+                    const now = new Date();
+                    const start = new Date(now);
+                    const end = new Date(now);
+                    start.setDate(start.getDate() - 21);
+                    end.setDate(end.getDate() + 21);
+                    const trainings = await getEvents({
+                        type: 'TRAINING',
+                        startDate: start.toISOString().slice(0, 10),
+                        endDate: end.toISOString().slice(0, 10),
+                        enrich: false
+                    });
+                    let candidates = Array.isArray(trainings) ? trainings : [];
+                    if (selectedCategoryId) {
+                        candidates = candidates.filter(function (ev) { return String(ev.categoryId || '') === String(selectedCategoryId); });
+                    } else if (restrictToCoachCategories && trainerCategories.length > 0) {
+                        const allowed = trainerCategories.map(function (c) { return String(c.id); });
+                        candidates = candidates.filter(function (ev) { return allowed.indexOf(String(ev.categoryId || '')) >= 0; });
+                    }
+                    let best = null;
+                    let bestDiff = Number.POSITIVE_INFINITY;
+                    candidates.forEach(function (ev) {
+                        const dt = parseEventDateTime(ev);
+                        if (!dt) return;
+                        const diff = Math.abs(dt.getTime() - now.getTime());
+                        if (diff < bestDiff) {
+                            best = ev;
+                            bestDiff = diff;
+                        }
+                    });
+                    if (!best || !(best.id || best.eventId)) return;
+                    const eventId = best.id || best.eventId;
+                    const attendance = await getAttendanceByEvent(eventId);
+                    if (!Array.isArray(attendance) || attendance.length === 0) return;
+                    attendanceRecords = attendance;
+                    currentAttendanceEvent = best;
+                    attendanceFilterAvailable = true;
+                    attendance.forEach(function (row) {
+                        const status = String(row.status || '').toUpperCase();
+                        if (status === 'PRESENT' || status === 'LATE') {
+                            const pid = row.playerId != null ? row.playerId : row.player_id;
+                            if (pid != null) presentPlayerIds.add(Number(pid));
+                        }
+                    });
+                    showPresentOnly = presentPlayerIds.size > 0;
+                    presentOnlyToggle.checked = showPresentOnly;
+                    if (attendanceFilterRow) attendanceFilterRow.style.display = 'flex';
+                    if (attendanceFilterHint) {
+                        const when = normalizeDateOnly(best.date);
+                        const categoryLabel = getCategoryLabelById(best.categoryId || selectedCategoryId);
+                        attendanceFilterHint.textContent = 'Dochádzka z tréningu ' + when + ' (' + categoryLabel + '). Prítomní: ' + presentPlayerIds.size + '.';
+                    }
+                } catch (err) {
+                    attendanceFilterAvailable = false;
+                    showPresentOnly = false;
+                    if (attendanceFilterRow) attendanceFilterRow.style.display = 'none';
+                }
+            }
+
+            async function applyCategoryAndAttendanceFilters() {
+                await loadClosestAttendanceForSelectedCategory();
+                visiblePlayers = getCurrentVisiblePlayers();
+                renderPlayerChips();
+                buildSessionData();
+                btnSave.disabled = sessionData.length === 0;
+            }
+
+            function populateCategorySelect() {
+                if (!categoryFilterSelect) return;
+                categoryFilterSelect.innerHTML = '';
+                const allOpt = document.createElement('option');
+                allOpt.value = '';
+                allOpt.textContent = 'Všetky kategórie';
+                categoryFilterSelect.appendChild(allOpt);
+                trainerCategories.forEach(function (cat) {
+                    const opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name || ('Kategória #' + cat.id);
+                    categoryFilterSelect.appendChild(opt);
+                });
+                categoryFilterSelect.value = selectedCategoryId ? String(selectedCategoryId) : '';
+            }
+
+            async function pickClosestCategoryByCurrentTime() {
+                if (!trainerCategories.length || typeof getEvents !== 'function') return;
+                try {
+                    const now = new Date();
+                    const start = new Date(now);
+                    const end = new Date(now);
+                    start.setDate(start.getDate() - 21);
+                    end.setDate(end.getDate() + 21);
+                    const trainings = await getEvents({
+                        type: 'TRAINING',
+                        startDate: start.toISOString().slice(0, 10),
+                        endDate: end.toISOString().slice(0, 10),
+                        enrich: false
+                    });
+                    const allowed = trainerCategories.map(function (cat) { return String(cat.id); });
+                    const candidates = (Array.isArray(trainings) ? trainings : []).filter(function (ev) {
+                        return allowed.indexOf(String(ev.categoryId || '')) >= 0;
+                    });
+                    let best = null;
+                    let bestDiff = Number.POSITIVE_INFINITY;
+                    candidates.forEach(function (ev) {
+                        const dt = parseEventDateTime(ev);
+                        if (!dt) return;
+                        const diff = Math.abs(dt.getTime() - now.getTime());
+                        if (diff < bestDiff) {
+                            best = ev;
+                            bestDiff = diff;
+                        }
+                    });
+                    if (best && best.categoryId) {
+                        selectedCategoryId = String(best.categoryId);
+                    } else if (trainerCategories.length === 1) {
+                        selectedCategoryId = String(trainerCategories[0].id);
+                    }
+                } catch (e) {
+                    if (trainerCategories.length === 1) selectedCategoryId = String(trainerCategories[0].id);
+                }
+            }
+
+            function updateCourtZoneStats() {
+                ZONE_ORDER.forEach((zoneId) => {
+                    const statEl = document.getElementById('zone-stat-' + zoneId);
+                    const pctEl = document.getElementById('zone-pct-' + zoneId);
+                    if (!statEl || !pctEl) return;
+                    if (!activeZones.includes(zoneId)) {
+                        statEl.textContent = '';
+                        pctEl.textContent = '';
+                        return;
+                    }
+                    if (!selectedPlayerId) {
+                        statEl.textContent = '0/' + attemptsPerZone;
+                        pctEl.textContent = '0%';
+                        return;
+                    }
+                    const zoneIdx = activeZones.indexOf(zoneId);
+                    const m = getDisplayMadeForZone(zoneId, zoneIdx);
+                    statEl.textContent = m + '/' + attemptsPerZone;
+                    const pct = attemptsPerZone > 0 ? Math.round((m / attemptsPerZone) * 100) : 0;
+                    pctEl.textContent = pct + '%';
+                });
+            }
+
+            function getDisplayMadeForZone(zone, zoneIdx) {
+                const data = getPerPlayer(selectedPlayerId);
+                const stored = data[zone];
+                const isCurrent = zoneIdx === currentZoneIndex;
+                if (isCurrent && numpadInputBuffer !== '') {
+                    const bufVal = parseInt(numpadInputBuffer, 10);
+                    return isNaN(bufVal) ? 0 : Math.min(Math.max(0, bufVal), attemptsPerZone);
+                }
+                if (stored !== undefined && stored !== '') return Number(stored);
+                return 0;
+            }
+
+            function renderZoneSlots() {
+                zoneSlotsWrap.innerHTML = '';
+                if (!selectedPlayerId || activeZones.length === 0) {
+                    updateCourtZoneStats();
+                    renderRecordsTable();
+                    return;
+                }
+                activeZones.forEach((zone, i) => {
+                    const n = getDisplayMadeForZone(zone, i);
+                    const displayVal = n;
+                    const div = document.createElement('div');
+                    div.className = 'zone-slot' + (i === currentZoneIndex ? ' current' : '');
+                    div.dataset.zoneIndex = String(i);
+                    div.setAttribute('role', 'button');
+                    div.setAttribute('tabindex', '0');
+                    div.setAttribute('aria-label', 'Zadaj štatistiky pre ' + ZONE_LABELS[zone]);
+                    div.innerHTML = '<div class="zone-slot-label">' + ZONE_LABELS[zone] + '</div>' +
+                        '<div class="zone-slot-value">' + displayVal + '</div>';
+                    div.addEventListener('click', function () { selectZoneSlot(i); });
+                    div.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectZoneSlot(i); } });
+                    zoneSlotsWrap.appendChild(div);
+                });
+                updateLiveTotal();
+                updateCourtZoneStats();
+                renderRecordsTable();
+            }
+
+            function updateLiveTotal() {
+                if (!selectedPlayerId) {
+                    if (livePlayerName) livePlayerName.textContent = '—';
+                    return;
+                }
+                if (livePlayerName) {
+                    const selected = (visiblePlayers || []).find(function (p) { return Number(p.id) === Number(selectedPlayerId); })
+                        || (allPlayers || []).find(function (p) { return Number(p.id) === Number(selectedPlayerId); });
+                    livePlayerName.textContent = selected ? (selected.name || ('Hráč #' + selected.id)) : ('Hráč #' + selectedPlayerId);
+                }
+                let totalMade = 0;
+                const totalAttempts = activeZones.length * attemptsPerZone;
+                activeZones.forEach((zone, i) => {
+                    totalMade += getDisplayMadeForZone(zone, i);
+                });
+                liveTotalText.textContent = totalMade + '/' + totalAttempts;
+                liveTotalPct.textContent = totalAttempts ? Math.round((totalMade / totalAttempts) * 100) + ' %' : '— %';
+            }
+
+            function setMadeForCurrentZone(value) {
+                if (!selectedPlayerId || activeZones.length === 0) return;
+                const zone = activeZones[currentZoneIndex];
+                const data = getPerPlayer(selectedPlayerId);
+                data[zone] = Math.min(Math.max(0, value), attemptsPerZone);
+               
+                numpadInputBuffer = '';
+                renderZoneSlots();
+                renderRecordsTable();
+                buildSessionData();
+                btnSave.disabled = sessionData.length === 0;
+                saveDrillSession();
+            }
+
+            function selectZoneSlot(slotIndex) {
+                if (slotIndex < 0 || slotIndex >= activeZones.length) return;
+                if (numpadInputBuffer !== '' && selectedPlayerId && activeZones.length > 0) {
+                    const value = Math.min(Math.max(0, parseInt(numpadInputBuffer, 10)), attemptsPerZone);
+                    const zone = activeZones[currentZoneIndex];
+                    const data = getPerPlayer(selectedPlayerId);
+                    data[zone] = value;
+                    buildSessionData();
+                    renderRecordsTable();
+                    btnSave.disabled = sessionData.length === 0;
+                }
+                currentZoneIndex = slotIndex;
+                numpadInputBuffer = '';
+                renderZoneSlots();
+                updateCourtZoneStats();
+                saveDrillSession();
+            }
+
+            function appendNumpadDigit(key) {
+                if (!selectedPlayerId || activeZones.length === 0) return;
+                const maxLen = String(attemptsPerZone).length;
+                const newBuffer = numpadInputBuffer.length < maxLen ? numpadInputBuffer + key : key;
+                const newVal = parseInt(newBuffer, 10);
+                if (newVal <= attemptsPerZone) {
+                    numpadInputBuffer = newBuffer;
+                    renderZoneSlots();
+                } else {
+                    numpadInputBuffer = key;
+                    renderZoneSlots();
+                }
+            }
+
+            function confirmNumpadInput() {
+                if (!selectedPlayerId || activeZones.length === 0) return;
+                const zone = activeZones[currentZoneIndex];
+                const data = getPerPlayer(selectedPlayerId);
+                let value;
+                if (numpadInputBuffer !== '') {
+                    const parsed = parseInt(numpadInputBuffer, 10);
+                    value = Math.min(Math.max(0, isNaN(parsed) ? 0 : parsed), attemptsPerZone);
+                } else {
+                    const stored = data[zone];
+                    if (stored !== undefined && stored !== '') {
+                        const n = Number(stored);
+                        value = Math.min(Math.max(0, isNaN(n) ? 0 : n), attemptsPerZone);
+                    } else {
+                        value = 0;
+                    }
+                }
+                const wasLastZone = currentZoneIndex >= activeZones.length - 1;
+                setMadeForCurrentZone(value);
+                if (wasLastZone) {
+                    nextPlayer();
+                    return;
+                }
+                currentZoneIndex = currentZoneIndex + 1;
+                numpadInputBuffer = '';
+                renderZoneSlots();
+                updateCourtZoneStats();
+                saveDrillSession();
+            }
+
+            function backspace() {
+                if (!selectedPlayerId || activeZones.length === 0) return;
+                if (numpadInputBuffer.length > 0) {
+                    numpadInputBuffer = numpadInputBuffer.slice(0, -1);
+                    renderZoneSlots();
+                    return;
+                }
+                const zone = activeZones[currentZoneIndex];
+                const data = getPerPlayer(selectedPlayerId);
+                if (data[zone] !== undefined && data[zone] !== '') {
+                    data[zone] = '';
+                    renderZoneSlots();
+                    renderRecordsTable();
+                    buildSessionData();
+                    btnSave.disabled = sessionData.length === 0;
+                    saveDrillSession();
+                }
+            }
+
+            function buildSessionData() {
+                sessionData = [];
+                Object.keys(perPlayerMade).forEach(pid => {
+                    const p = getPerPlayer(Number(pid));
+                    activeZones.forEach(zone => {
+                        const made = p[zone];
+                        if (made !== undefined && made !== '') {
+                            sessionData.push({
+                                playerId: Number(pid),
+                                zone: zone,
+                                made: Number(made),
+                                attempts: attemptsPerZone
+                            });
+                        }
+                    });
+                });
+            }
+
+            function nextPlayer() {
+                const list = getPlayersForDisplay();
+                if (!list.length) return;
+                if (selectedPlayerId && activeZones.length > 0 && numpadInputBuffer !== '') {
+                    const parsed = parseInt(numpadInputBuffer, 10);
+                    const value = Math.min(Math.max(0, isNaN(parsed) ? 0 : parsed), attemptsPerZone);
+                    setMadeForCurrentZone(value);
+                }
+                const idx = list.findIndex(function (p) { return Number(p.id) === Number(selectedPlayerId); });
+                const nextIdx = idx < 0 ? 0 : (idx + 1) % list.length;
+                selectPlayer(Number(list[nextIdx].id));
+            }
+
+            function selectPlayer(id) {
+                selectedPlayerId = id;
+                currentZoneIndex = 0;
+                numpadInputBuffer = '';
+                playerCarousel.querySelectorAll('.player-chip').forEach(el => {
+                    el.classList.toggle('selected', Number(el.dataset.playerId) === id);
+                });
+                updateEntryVisibility();
+                renderZoneSlots();
+                buildSessionData();
+                btnSave.disabled = sessionData.length === 0;
+                renderRecordsTable();
+                saveDrillSession();
+            }
+
+            document.getElementById('courtMapContainer').addEventListener('click', function (e) {
+                const zone = e.target.closest('.zone');
+                if (zone) toggleZone(zone.getAttribute('data-zone'));
+            });
+
+            document.getElementById('numpad').addEventListener('click', function (e) {
+                const btn = e.target.closest('.numpad-btn');
+                if (!btn) return;
+                if (btn.classList.contains('confirm')) {
+                    confirmNumpadInput();
+                    return;
+                }
+                const key = btn.dataset.key;
+                if (key !== undefined) {
+                    appendNumpadDigit(key);
+                }
+            });
+
+            function isDrillNumpadKeyboardActive() {
+                if (!numpadWrap || numpadWrap.style.display === 'none') return false;
+                if (!selectedPlayerId || !activeZones.length) return false;
+                if (navSlideMenu && navSlideMenu.classList.contains('open')) return false;
+                if (settingsModal && settingsModal.classList.contains('open')) return false;
+                if (saveResultModal && saveResultModal.classList.contains('open')) return false;
+                return true;
+            }
+
+            function drillKeyTargetIsEditable(target) {
+                if (!target) return false;
+                if (target.isContentEditable) return true;
+                var tag = (target.tagName || '').toLowerCase();
+                if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+                if (typeof target.closest === 'function' && target.closest('input, textarea, select, [contenteditable="true"]')) {
+                    return true;
+                }
+                return false;
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (!isDrillNumpadKeyboardActive()) return;
+                if (drillKeyTargetIsEditable(e.target)) return;
+
+                var digit = null;
+                if (/^Numpad[0-9]$/.test(e.code)) {
+                    digit = e.code.slice(-1);
+                } else if (/^Digit[0-9]$/.test(e.code)) {
+                    digit = e.code.slice(-1);
+                }
+                if (digit !== null) {
+                    e.preventDefault();
+                    appendNumpadDigit(digit);
+                    return;
+                }
+                if (e.key === 'Enter' || e.code === 'NumpadEnter') {
+                    e.preventDefault();
+                    confirmNumpadInput();
+                    return;
+                }
+                if (e.key === 'Backspace') {
+                    e.preventDefault();
+                    backspace();
+                    return;
+                }
+            });
+
+            document.getElementById('btnBackspace').addEventListener('click', backspace);
+            document.getElementById('btnNextPlayer').addEventListener('click', nextPlayer);
+            if (presentOnlyToggle) {
+                presentOnlyToggle.addEventListener('change', function () {
+                    showPresentOnly = !!presentOnlyToggle.checked;
+                    visiblePlayers = getCurrentVisiblePlayers();
+                    renderPlayerChips();
+                });
+            }
+            if (categoryFilterSelect) {
+                categoryFilterSelect.addEventListener('change', async function () {
+                    selectedCategoryId = categoryFilterSelect.value || '';
+                    await applyCategoryAndAttendanceFilters();
+                });
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    playerSearchQuery = searchInput.value;
+                    renderPlayerChips();
+                });
+            }
+
+            document.getElementById('settingsBtn').addEventListener('click', function () {
+                attemptsPerZoneInput.value = attemptsPerZone;
+                settingsModal.classList.add('open');
+            });
+            document.getElementById('settingsCancel').addEventListener('click', function () {
+                settingsModal.classList.remove('open');
+            });
+            document.getElementById('settingsConfirm').addEventListener('click', function () {
+                const v = parseInt(attemptsPerZoneInput.value, 10);
+                if (v >= 1 && v <= 99) {
+                    attemptsPerZone = v;
+                    settingsModal.classList.remove('open');
+                    if (selectedPlayerId) renderZoneSlots();
+                    saveDrillSession();
+                }
+            });
+            if (saveResultOk) {
+                saveResultOk.addEventListener('click', closeSaveResultModal);
+            }
+            if (saveResultModal) {
+                saveResultModal.addEventListener('click', function (e) {
+                    if (e.target === saveResultModal) closeSaveResultModal();
+                });
+            }
+
+            btnSave.addEventListener('click', async function () {
+                buildSessionData();
+                if (sessionData.length === 0) return;
+                if (typeof createTrainingStatistics !== 'function') {
+                    showSaveResultModal('error', 'Ukladanie zlyhalo', 'API pre štatistiky nie je k dispozícii.');
+                    return;
+                }
+                var byPlayer = {};
+                sessionData.forEach(function (row) {
+                    var pid = row.playerId;
+                    if (!byPlayer[pid]) {
+                        byPlayer[pid] = { playerId: pid, totalMade: 0, totalAttempts: 0, labels: [] };
+                    }
+                    byPlayer[pid].totalMade += row.made;
+                    byPlayer[pid].totalAttempts += row.attempts;
+                    var label = ZONE_LEGEND[row.zone] || ZONE_LABELS[row.zone] || row.zone;
+                    if (byPlayer[pid].labels.indexOf(label) === -1) {
+                        byPlayer[pid].labels.push(label);
+                    }
+                });
+                var playersToSave = Object.keys(byPlayer).map(function (pid) { return byPlayer[pid]; });
+                const today = new Date().toISOString().slice(0, 10);
+                const btnText = btnSave.textContent;
+                btnSave.disabled = true;
+                btnSave.textContent = 'Ukladá sa...';
+                try {
+                    for (var i = 0; i < playersToSave.length; i++) {
+                        var agg = playersToSave[i];
+                        var courtSpot = agg.labels.length === 1
+                            ? agg.labels[0]
+                            : agg.labels.join(', ');
+                        var formData = {
+                            userId: agg.playerId,
+                            workoutDate: today,
+                            exerciseName: 'Streľba - režim cvičenia',
+                            category: 'STRELBA',
+                            shotsAttempted: agg.totalAttempts,
+                            shotsMade: agg.totalMade,
+                            courtSpot: courtSpot,
+                            note: null
+                        };
+                        await createTrainingStatistics(formData);
+                    }
+                    sessionStorage.removeItem(DRILL_SESSION_KEY);
+                    showSaveResultModal(
+                        'success',
+                        'Uložené úspešne',
+                        'Štatistiky boli úspešne uložené.\n\nPočet záznamov: ' + playersToSave.length,
+                        function () { window.location.href = '/pages/trainer-trainings.html'; }
+                    );
+                } catch (err) {
+                    showSaveResultModal('error', 'Ukladanie zlyhalo', 'Chyba pri ukladaní: ' + (err.message || 'Nepodarilo sa uložiť štatistiky.'));
+                } finally {
+                    btnSave.textContent = btnText;
+                    btnSave.disabled = sessionData.length === 0;
+                }
+            });
+
+            document.addEventListener('DOMContentLoaded', async function () {
+
+                if (typeof isAuthenticated === 'undefined') {
+                    setTimeout(arguments.callee, 100);
+                    return;
+                }
+                if (!isAuthenticated()) {
+                    window.location.href = '/pages/login.html';
+                    return;
+                }
+                const currentUser = getCurrentUser();
+                if (!currentUser) {
+                    window.location.href = '/pages/login.html';
+                    return;
+                }
+                const role = (currentUser.role || '').toUpperCase();
+                if (role !== 'TRAINER' && role !== 'ADMIN') {
+                    window.location.href = '/pages/trainer-dashboard.html';
+                    return;
+                }
+                restrictToCoachCategories = role === 'TRAINER';
+
+                var savedSelectedPlayerId = null;
+                const session = loadDrillSession();
+                if (session && session.activeZones && Array.isArray(session.activeZones)) {
+                    activeZones = session.activeZones;
+                    if (session.perPlayerMade && typeof session.perPlayerMade === 'object') {
+                        perPlayerMade = session.perPlayerMade;
+                    }
+                    sanitizePerPlayerMadeToActiveZones();
+                    if (typeof session.attemptsPerZone === 'number' && session.attemptsPerZone >= 1 && session.attemptsPerZone <= 99) {
+                        attemptsPerZone = session.attemptsPerZone;
+                    }
+                    if (typeof session.currentZoneIndex === 'number' && session.currentZoneIndex >= 0) {
+                        currentZoneIndex = Math.min(session.currentZoneIndex, Math.max(0, activeZones.length - 1));
+                    }
+                    if (session.selectedPlayerId != null) {
+                        savedSelectedPlayerId = session.selectedPlayerId;
+                    }
+                    applyCourtZoneSelection();
+                    updateEntryVisibility();
+                    if (attemptsPerZoneInput) attemptsPerZoneInput.value = attemptsPerZone;
+                    updateCourtZoneStats();
+                }
+
+                const userNameEl = document.getElementById('userName');
+                const userRoleEl = document.getElementById('userRole');
+                const userInfo = document.getElementById('userInfo');
+                let displayName = (formatUserDisplayName(currentUser) || 'Používateľ').replace(/\s*\([^)]*\)\s*$/, '').trim();
+                const roleMap = { ADMIN: 'Administrátor', TRAINER: 'Tréner', PLAYER: 'Hráč', GUEST: 'Hosť' };
+                const displayRole = roleMap[currentUser.role] || currentUser.role;
+                if (userNameEl) userNameEl.textContent = displayName;
+                if (userRoleEl) userRoleEl.textContent = displayRole;
+                ['userDropdownName', 'userDropdownRole', 'navMenuProfileName', 'navMenuProfileRole'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = id.indexOf('Name') >= 0 ? displayName : displayRole;
+                });
+                if (document.getElementById('navMenuProfileAvatar')) {
+                    document.getElementById('navMenuProfileAvatar').textContent = (displayName.charAt(0) || 'T').toUpperCase();
+                }
+                if (userInfo) userInfo.setAttribute('data-initial', (displayName.charAt(0) || 'T').toUpperCase());
+
+                try {
+                    if (typeof getCategories === 'function') {
+                        try {
+                            if (role === 'TRAINER' && typeof getCurrentUserProfile === 'function') {
+                                const profile = await getCurrentUserProfile();
+                                if (profile && profile.id) {
+                                    trainerCategories = await getCategories({ coachId: profile.id });
+                                }
+                            } else {
+                                trainerCategories = await getCategories();
+                            }
+                            if (!Array.isArray(trainerCategories)) trainerCategories = [];
+                        } catch (e) {
+                            trainerCategories = [];
+                        }
+                    }
+                    await pickClosestCategoryByCurrentTime();
+                    populateCategorySelect();
+                    const users = await getUsers({ role: 'PLAYER' });
+                    allPlayers = Array.isArray(users) ? users : [];
+                    if (savedSelectedPlayerId != null) selectedPlayerId = Number(savedSelectedPlayerId);
+                    await applyCategoryAndAttendanceFilters();
+                } catch (err) {
+                    playerCarousel.innerHTML = '<span class="drill-empty">Chyba načítania hráčov.</span>';
+                    if (recordsTableBody) {
+                        recordsTableBody.innerHTML = '<tr><td colspan="4" class="records-empty">Chyba načítania hráčov.</td></tr>';
+                    }
+                }
+            });
+        })();
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

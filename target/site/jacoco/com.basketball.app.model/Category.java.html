@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Category.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.model</a> &gt; <span class="el_source">Category.java</span></div><h1>Category.java</h1><pre class="source lang-java linenums">package com.basketball.app.model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = &quot;categories&quot;)
+<span class="pc bpc" id="L13" title="48 of 54 branches missed.">@Data</span>
+<span class="fc" id="L14">@NoArgsConstructor</span>
+<span class="nc" id="L15">@AllArgsConstructor</span>
+public class Category {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+<span class="fc" id="L19">    private Long id;</span>
+
+    @Column(nullable = false, unique = true)
+<span class="fc" id="L22">    private String name;</span>
+
+    @Column(nullable = false)
+<span class="fc" id="L25">    private String season;</span>
+
+    @Column(name = &quot;coach_id&quot;)
+<span class="fc" id="L28">    private Long coachId;</span>
+
+<span class="pc" id="L30">    @EqualsAndHashCode.Exclude</span>
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+        name = &quot;category_coaches&quot;,
+        joinColumns = @JoinColumn(name = &quot;category_id&quot;),
+        inverseJoinColumns = @JoinColumn(name = &quot;coach_id&quot;)
+    )
+<span class="fc" id="L37">    private java.util.Set&lt;User&gt; coaches = new java.util.HashSet&lt;&gt;();</span>
+
+    @Column(name = &quot;created_at&quot;)
+<span class="fc" id="L40">    private LocalDateTime createdAt;</span>
+
+    @Column(name = &quot;updated_at&quot;)
+<span class="fc" id="L43">    private LocalDateTime updatedAt;</span>
+
+    @PrePersist
+    protected void onCreate() {
+<span class="fc" id="L47">        createdAt = LocalDateTime.now();</span>
+<span class="fc" id="L48">        updatedAt = LocalDateTime.now();</span>
+<span class="fc" id="L49">    }</span>
+
+    @PreUpdate
+    protected void onUpdate() {
+<span class="fc" id="L53">        updatedAt = LocalDateTime.now();</span>
+<span class="fc" id="L54">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

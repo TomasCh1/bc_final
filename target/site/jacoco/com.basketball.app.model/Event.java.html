@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Event.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.model</a> &gt; <span class="el_source">Event.java</span></div><h1>Event.java</h1><pre class="source lang-java linenums">package com.basketball.app.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.DiscriminatorType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
+@Entity
+@Table(
+    name = &quot;events&quot;,
+    indexes = {
+        @Index(name = &quot;idx_events_date&quot;, columnList = &quot;date&quot;),
+        @Index(name = &quot;idx_events_category_date&quot;, columnList = &quot;category_id,date&quot;)
+    }
+)
+<span class="pc bnc" id="L34" title="All 142 branches missed.">@Data</span>
+<span class="fc" id="L35">@NoArgsConstructor</span>
+<span class="nc" id="L36">@AllArgsConstructor</span>
+public class Event {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+<span class="fc" id="L40">    private Long id;</span>
+
+    @Column(nullable = false, columnDefinition = &quot;VARCHAR(255)&quot;)
+<span class="fc" id="L43">    private String name;</span>
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+<span class="fc" id="L47">    private EventType type;</span>
+
+    @Column(nullable = false)
+<span class="fc" id="L50">    private LocalDate date;</span>
+
+    /** Start time (required for TRAINING when coach/admin records it) */
+<span class="fc" id="L53">    private LocalTime time;</span>
+
+    /** End time for training time window (optional) */
+    @Column(name = &quot;end_time&quot;)
+<span class="fc" id="L57">    private LocalTime endTime;</span>
+
+    @Column(columnDefinition = &quot;VARCHAR(255)&quot;)
+<span class="fc" id="L60">    private String location;</span>
+
+    @Column(name = &quot;category_id&quot;)
+<span class="fc" id="L63">    private Long categoryId;</span>
+
+    // @ManyToOne(fetch = FetchType.LAZY)
+    // @JoinColumn(name = &quot;category_id&quot;)
+
+    @Column(columnDefinition = &quot;VARCHAR(255)&quot;)
+<span class="fc" id="L69">    private String opponent;</span>
+
+    @Column(columnDefinition = &quot;TEXT&quot;)
+<span class="fc" id="L72">    private String notes;</span>
+
+    /** True if match is at home (location in Trnava), false if away, null if not applicable */
+    @Column(name = &quot;is_home_match&quot;)
+<span class="fc" id="L76">    private Boolean isHomeMatch;</span>
+
+    /** True if match was won, false if lost, null if not yet played or not applicable */
+    @Column(name = &quot;match_won&quot;)
+<span class="fc" id="L80">    private Boolean matchWon;</span>
+
+    /** Our team's score (match only). Null if not yet played or not recorded. */
+    @Column(name = &quot;our_score&quot;)
+<span class="fc" id="L84">    private Integer ourScore;</span>
+
+    /** Opponent's score (match only). Null if not yet played or not recorded. */
+    @Column(name = &quot;opponent_score&quot;)
+<span class="fc" id="L88">    private Integer opponentScore;</span>
+
+    /** True if coach/admin cancelled this training (display as strikethrough + &quot;Zrušené&quot;) */
+    @Column(name = &quot;cancelled&quot;)
+<span class="fc" id="L92">    private Boolean cancelled;</span>
+
+    @Column(name = &quot;created_at&quot;)
+<span class="fc" id="L95">    private LocalDateTime createdAt;</span>
+
+    @Column(name = &quot;updated_at&quot;)
+<span class="fc" id="L98">    private LocalDateTime updatedAt;</span>
+
+    @PrePersist
+    protected void onCreate() {
+<span class="fc" id="L102">        createdAt = LocalDateTime.now();</span>
+<span class="fc" id="L103">        updatedAt = LocalDateTime.now();</span>
+<span class="fc" id="L104">    }</span>
+
+    @PreUpdate
+    protected void onUpdate() {
+<span class="fc" id="L108">        updatedAt = LocalDateTime.now();</span>
+<span class="fc" id="L109">    }</span>
+
+<span class="fc" id="L111">    public enum EventType {</span>
+<span class="fc" id="L112">        TRAINING, MATCH</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

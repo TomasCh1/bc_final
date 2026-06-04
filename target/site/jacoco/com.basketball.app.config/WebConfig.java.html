@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WebConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.config</a> &gt; <span class="el_source">WebConfig.java</span></div><h1>WebConfig.java</h1><pre class="source lang-java linenums">package com.basketball.app.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.nio.file.Paths;
+
+@Configuration
+<span class="fc" id="L11">public class WebConfig implements WebMvcConfigurer {</span>
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+<span class="fc" id="L15">        String projectRoot = Paths.get(&quot;&quot;).toAbsolutePath().toString();</span>
+<span class="fc" id="L16">        String frontendPath = projectRoot + &quot;/frontend&quot;;</span>
+        
+<span class="fc" id="L18">        registry.addResourceHandler(&quot;/css/**&quot;)</span>
+<span class="fc" id="L19">                .addResourceLocations(&quot;file:&quot; + frontendPath + &quot;/css/&quot;);</span>
+        
+<span class="fc" id="L21">        registry.addResourceHandler(&quot;/js/**&quot;)</span>
+<span class="fc" id="L22">                .addResourceLocations(&quot;file:&quot; + frontendPath + &quot;/js/&quot;);</span>
+        
+<span class="fc" id="L24">        registry.addResourceHandler(&quot;/pages/**&quot;)</span>
+<span class="fc" id="L25">                .addResourceLocations(&quot;file:&quot; + frontendPath + &quot;/pages/&quot;);</span>
+        
+        
+<span class="fc" id="L28">        registry.addResourceHandler(&quot;/IMG/**&quot;)</span>
+<span class="fc" id="L29">                .addResourceLocations(&quot;classpath:/static/IMG/&quot;);</span>
+        
+        
+<span class="fc" id="L32">        registry.addResourceHandler(&quot;/*.html&quot;)</span>
+<span class="fc" id="L33">                .addResourceLocations(&quot;file:&quot; + frontendPath + &quot;/&quot;);</span>
+<span class="fc" id="L34">    }</span>
+
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+<span class="fc" id="L38">        registry.addViewController(&quot;/&quot;).setViewName(&quot;forward:/pages/login.html&quot;);</span>
+<span class="fc" id="L39">        registry.addViewController(&quot;/login&quot;).setViewName(&quot;forward:/pages/login.html&quot;);</span>
+<span class="fc" id="L40">        registry.addViewController(&quot;/forgot-password&quot;).setViewName(&quot;forward:/pages/forgot-password.html&quot;);</span>
+<span class="fc" id="L41">        registry.addViewController(&quot;/dashboard&quot;).setViewName(&quot;forward:/pages/dashboard.html&quot;);</span>
+<span class="fc" id="L42">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

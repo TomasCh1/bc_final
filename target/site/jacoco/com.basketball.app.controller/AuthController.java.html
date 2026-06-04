@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.controller</a> &gt; <span class="el_source">AuthController.java</span></div><h1>AuthController.java</h1><pre class="source lang-java linenums">package com.basketball.app.controller;
+
+import com.basketball.app.dto.ForgotPasswordRequest;
+import com.basketball.app.dto.ResetPasswordRequest;
+import com.basketball.app.service.AuthService;
+import com.basketball.app.service.PasswordResetService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/api/auth&quot;)
+public class AuthController {
+
+    private static final String FORGOT_PASSWORD_SUCCESS_MESSAGE =
+            &quot;Ak účet s týmto e-mailom existuje, poslali sme inštrukcie na obnovenie hesla.&quot;;
+
+    private final AuthService authService;
+    private final PasswordResetService passwordResetService;
+
+<span class="fc" id="L23">    public AuthController(AuthService authService, PasswordResetService passwordResetService) {</span>
+<span class="fc" id="L24">        this.authService = authService;</span>
+<span class="fc" id="L25">        this.passwordResetService = passwordResetService;</span>
+<span class="fc" id="L26">    }</span>
+
+    @PostMapping(&quot;/login&quot;)
+    public ResponseEntity&lt;?&gt; login(@Valid @RequestBody LoginRequest request) {
+        try {
+<span class="fc" id="L31">            Map&lt;String, Object&gt; response = authService.authenticate(request.getEmail(), request.getPassword());</span>
+<span class="fc" id="L32">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L33">        } catch (Exception e) {</span>
+<span class="nc" id="L34">            return ResponseEntity.status(401).body(Map.of(</span>
+                    &quot;error&quot;, &quot;Invalid credentials&quot;,
+<span class="nc" id="L36">                    &quot;message&quot;, e.getMessage()</span>
+            ));
+        }
+    }
+
+    @PostMapping(&quot;/logout&quot;)
+    public ResponseEntity&lt;?&gt; logout() {
+
+<span class="nc" id="L44">        return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Logged out successfully&quot;));</span>
+    }
+
+    @PostMapping(&quot;/forgot-password&quot;)
+    public ResponseEntity&lt;?&gt; forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+<span class="nc" id="L49">        passwordResetService.requestPasswordReset(request.getEmail());</span>
+<span class="nc" id="L50">        return ResponseEntity.ok(Map.of(&quot;message&quot;, FORGOT_PASSWORD_SUCCESS_MESSAGE));</span>
+    }
+
+    @PostMapping(&quot;/reset-password&quot;)
+    public ResponseEntity&lt;?&gt; resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+<span class="pc" id="L56">            passwordResetService.resetPassword(</span>
+<span class="fc" id="L57">                    request.getToken(),</span>
+<span class="fc" id="L58">                    request.getNewPassword(),</span>
+<span class="fc" id="L59">                    request.getConfirmPassword());</span>
+<span class="nc" id="L60">            return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Heslo bolo úspešne zmenené. Môžete sa prihlásiť.&quot;));</span>
+<span class="fc" id="L61">        } catch (Exception e) {</span>
+<span class="fc" id="L62">            return ResponseEntity.badRequest().body(Map.of(</span>
+                    &quot;error&quot;, &quot;Reset failed&quot;,
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">                    &quot;message&quot;, e.getMessage() != null ? e.getMessage() : &quot;Neplatný alebo expirovaný odkaz.&quot;</span>
+            ));
+        }
+    }
+
+    // DTOs
+<span class="fc" id="L70">    public static class LoginRequest {</span>
+        private String email;
+        private String password;
+
+        public String getEmail() {
+<span class="fc" id="L75">            return email;</span>
+        }
+
+        public void setEmail(String email) {
+<span class="fc" id="L79">            this.email = email;</span>
+<span class="fc" id="L80">        }</span>
+
+        public String getPassword() {
+<span class="fc" id="L83">            return password;</span>
+        }
+
+        public void setPassword(String password) {
+<span class="fc" id="L87">            this.password = password;</span>
+<span class="fc" id="L88">        }</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

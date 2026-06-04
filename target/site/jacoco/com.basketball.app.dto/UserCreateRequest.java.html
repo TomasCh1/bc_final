@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserCreateRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.dto</a> &gt; <span class="el_source">UserCreateRequest.java</span></div><h1>UserCreateRequest.java</h1><pre class="source lang-java linenums">package com.basketball.app.dto;
+
+import com.basketball.app.model.User;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+<span class="pc bnc" id="L9" title="All 86 branches missed.">@Data</span>
+public class UserCreateRequest {
+    @NotBlank(message = &quot;Name is required&quot;)
+<span class="fc" id="L12">    private String name;</span>
+
+    @NotBlank(message = &quot;Surname is required&quot;)
+<span class="fc" id="L15">    private String surname;</span>
+
+    @NotBlank(message = &quot;Email is required&quot;)
+    @Email(message = &quot;Email must be valid&quot;)
+<span class="fc" id="L19">    private String email;</span>
+
+    @NotNull(message = &quot;Role is required&quot;)
+<span class="fc" id="L22">    private User.Role role;</span>
+
+<span class="fc" id="L24">    private Long categoryId;</span>
+<span class="fc" id="L25">    private java.time.LocalDate dateOfBirth; </span>
+<span class="fc" id="L26">    private java.util.List&lt;Long&gt; categoryIds;</span>
+<span class="fc" id="L27">    private Boolean isActive = true;</span>
+<span class="fc" id="L28">    private Boolean mustChangePassword = true;</span>
+    
+<span class="fc" id="L30">    private String password;</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

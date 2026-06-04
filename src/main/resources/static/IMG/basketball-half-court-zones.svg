@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- International (FIBA) half court - matches ihalfcourt_black_designer style. Black lines on white. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -155 380 375" aria-label="International half court with zones">
+  <defs>
+    <!-- Key: 5.8m long from baseline, 3.6m wide. FT line at y=55, baseline at y=200 -->
+    <path id="fibaLane" d="M 145 55 L 235 55 L 235 200 L 145 200 Z"/>
+    <!-- FT circle: center (190, 55), radius 1.8m = 45 -->
+    <path id="fibaLaneCircle" d="M 235 55 A 45 45 0 0 1 145 55"/>
+    <!-- 3pt: arc radius 6.75m = 168.75 from basket (190,20). Straights at 6.6m; arc meets at y=55.4 -->
+    <path id="fiba3ptLeft" d="M 25 55.4 L 25 200"/>
+    <path id="fiba3ptRight" d="M 355 55.4 L 355 200"/>
+    <path id="fiba3ptArc" d="M 25 55.4 A 168.75 168.75 0 0 1 355 55.4"/>
+  </defs>
+  <!-- White background (like ihalfcourt_black_designer.pdf) - extended up so full 3pt arc is visible -->
+  <rect x="0" y="-155" width="380" height="375" fill="#ffffff"/>
+  <!-- Outer rectangle (court boundary, wider for corner 3pt areas) -->
+  <rect x="5" y="-155" width="370" height="355" fill="none" stroke="#000000" stroke-width="3"/>
+  <!-- Baseline -->
+  <path d="M 25 200 L 355 200" fill="none" stroke="#000000" stroke-width="2"/>
+  <!-- Three-point line: two straights + arc -->
+  <use href="#fiba3ptLeft" fill="none" stroke="#000000" stroke-width="2"/>
+  <use href="#fiba3ptRight" fill="none" stroke="#000000" stroke-width="2"/>
+  <use href="#fiba3ptArc" fill="none" stroke="#000000" stroke-width="2"/>
+  <!-- Key (paint) rectangle -->
+  <use href="#fibaLane" fill="none" stroke="#000000" stroke-width="2"/>
+  <!-- Free-throw circle (top of key) -->
+  <path d="M 235 55 A 45 45 0 0 1 145 55 A 45 45 0 0 1 235 55" fill="none" stroke="#000000" stroke-width="2"/>
+  <!-- Basket (near baseline) -->
+  <circle cx="190" cy="192" r="8" fill="none" stroke="#000000" stroke-width="2"/>
+  <text x="190" y="182" text-anchor="middle" font-size="8" fill="#333" font-family="sans-serif">Basket</text>
+  <text x="190" y="214" text-anchor="middle" font-size="8" fill="#333" font-family="sans-serif">Baseline</text>
+
+  <!-- Clickable zones (match ihalfcourt layout; app toggles .active for selection) -->
+  <!-- T = Top: above FT line, inside 3pt arc (sweep 0 = upper arc toward basket) -->
+  <path id="zone-T" class="zone" data-zone="T" d="M 25 55.4 L 25 55 L 355 55 L 355 55.4 A 168.75 168.75 0 0 0 25 55.4 Z" fill="rgba(0,0,0,0.06)" stroke="transparent" stroke-width="0"/>
+  <text class="zone-label" x="190" y="48" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">T</text>
+  <!-- P = Paint (key) -->
+  <path id="zone-P" class="zone" data-zone="P" d="M 145 55 L 235 55 L 235 200 L 145 200 Z" fill="rgba(0,0,0,0.06)" stroke="transparent" stroke-width="0"/>
+  <text class="zone-label" x="190" y="130" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">P</text>
+  <!-- LW = Left wing (includes strip between 3pt and rectangle) -->
+  <path id="zone-LW" class="zone" data-zone="LW" d="M 5 55.4 L 5 165 L 25 165 L 145 165 L 145 55 L 25 55.4 Z" fill="rgba(0,0,0,0.06)" stroke="transparent" stroke-width="0"/>
+  <text class="zone-label" x="70" y="110" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">LW</text>
+  <!-- LC = Left corner (includes strip between 3pt and rectangle) -->
+  <path id="zone-LC" class="zone" data-zone="LC" d="M 5 165 L 5 200 L 25 200 L 145 200 L 145 165 L 25 165 Z" fill="rgba(0,0,0,0.06)" stroke="transparent" stroke-width="0"/>
+  <text class="zone-label" x="85" y="185" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">LC</text>
+  <!-- RW = Right wing (includes strip between 3pt and rectangle) -->
+  <path id="zone-RW" class="zone" data-zone="RW" d="M 375 55.4 L 375 165 L 355 165 L 235 165 L 235 55 L 355 55 L 355 55.4 Z" fill="rgba(0,0,0,0.06)" stroke="transparent" stroke-width="0"/>
+  <text class="zone-label" x="310" y="110" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">RW</text>
+  <!-- RC = Right corner (includes strip between 3pt and rectangle) -->
+  <path id="zone-RC" class="zone" data-zone="RC" d="M 375 165 L 375 200 L 355 200 L 235 200 L 235 165 L 355 165 Z" fill="rgba(0,0,0,0.06)" stroke="transparent" stroke-width="0"/>
+  <text class="zone-label" x="295" y="185" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">RC</text>
+</svg>

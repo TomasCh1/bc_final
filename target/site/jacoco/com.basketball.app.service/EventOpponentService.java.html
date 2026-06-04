@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventOpponentService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.service</a> &gt; <span class="el_source">EventOpponentService.java</span></div><h1>EventOpponentService.java</h1><pre class="source lang-java linenums">package com.basketball.app.service;
+
+import com.basketball.app.model.Event;
+import com.basketball.app.model.EventLiveAction;
+import com.basketball.app.model.EventOpponentPlayer;
+import com.basketball.app.repository.EventLiveActionRepository;
+import com.basketball.app.repository.EventOpponentPlayerRepository;
+import com.basketball.app.repository.EventRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Service
+public class EventOpponentService {
+
+    private static final int MAX_OPPONENTS = 12;
+
+    private final EventRepository eventRepository;
+    private final EventOpponentPlayerRepository eventOpponentPlayerRepository;
+    private final EventLiveActionRepository eventLiveActionRepository;
+
+    public EventOpponentService(EventRepository eventRepository,
+                                EventOpponentPlayerRepository eventOpponentPlayerRepository,
+<span class="fc" id="L30">                                EventLiveActionRepository eventLiveActionRepository) {</span>
+<span class="fc" id="L31">        this.eventRepository = eventRepository;</span>
+<span class="fc" id="L32">        this.eventOpponentPlayerRepository = eventOpponentPlayerRepository;</span>
+<span class="fc" id="L33">        this.eventLiveActionRepository = eventLiveActionRepository;</span>
+<span class="fc" id="L34">    }</span>
+
+    public Map&lt;String, Object&gt; getOpponentsForEvent(Long eventId) {
+<span class="fc" id="L37">        Event event = requireMatchEvent(eventId);</span>
+<span class="fc" id="L38">        List&lt;EventOpponentPlayer&gt; rows = eventOpponentPlayerRepository.findByEventIdOrderByJerseyNumberAsc(event.getId());</span>
+<span class="fc" id="L39">        Set&lt;Integer&gt; unique = new LinkedHashSet&lt;&gt;(rows.stream()</span>
+<span class="fc" id="L40">                .map(EventOpponentPlayer::getJerseyNumber)</span>
+<span class="fc" id="L41">                .collect(Collectors.toList()));</span>
+
+<span class="fc" id="L43">        eventLiveActionRepository.findByEventIdOrderByCreatedAtAscIdAsc(event.getId()).forEach(action -&gt; {</span>
+<span class="fc" id="L44">            Integer jersey = action.getOpponentJerseyNumber();</span>
+<span class="pc bpc" id="L45" title="2 of 4 branches missed.">            if (jersey != null &amp;&amp; jersey &gt; 0) {</span>
+<span class="fc" id="L46">                unique.add(jersey);</span>
+            }
+<span class="fc" id="L48">        });</span>
+
+<span class="fc" id="L50">        List&lt;Integer&gt; jerseys = unique.stream().sorted().collect(Collectors.toList());</span>
+<span class="fc" id="L51">        return Map.of(</span>
+<span class="fc" id="L52">                &quot;eventId&quot;, event.getId(),</span>
+                &quot;jerseyNumbers&quot;, jerseys
+        );
+    }
+
+    @Transactional
+    public Map&lt;String, Object&gt; replaceOpponentsForEvent(Long eventId, List&lt;Integer&gt; jerseyNumbers) {
+<span class="fc" id="L59">        Event event = requireMatchEvent(eventId);</span>
+<span class="fc" id="L60">        List&lt;Integer&gt; normalized = normalizeJerseys(jerseyNumbers);</span>
+<span class="fc" id="L61">        Set&lt;Integer&gt; want = new LinkedHashSet&lt;&gt;(normalized);</span>
+
+<span class="fc" id="L63">        List&lt;EventOpponentPlayer&gt; existing = eventOpponentPlayerRepository.findByEventIdOrderByJerseyNumberAsc(event.getId());</span>
+<span class="fc" id="L64">        List&lt;Integer&gt; removedJerseys = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        for (EventOpponentPlayer row : new ArrayList&lt;&gt;(existing)) {</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            if (!want.contains(row.getJerseyNumber())) {</span>
+<span class="nc" id="L67">                removedJerseys.add(row.getJerseyNumber());</span>
+            }
+<span class="nc" id="L69">        }</span>
+
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (!removedJerseys.isEmpty()) {</span>
+<span class="nc" id="L72">            Set&lt;Integer&gt; locked = eventLiveActionRepository.findByEventIdAndOpponentJerseyNumberIn(event.getId(), removedJerseys)</span>
+<span class="nc" id="L73">                    .stream()</span>
+<span class="nc" id="L74">                    .map(EventLiveAction::getOpponentJerseyNumber)</span>
+<span class="nc bnc" id="L75" title="All 4 branches missed.">                    .filter(j -&gt; j != null &amp;&amp; j &gt; 0)</span>
+<span class="nc" id="L76">                    .collect(Collectors.toCollection(LinkedHashSet::new));</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            if (!locked.isEmpty()) {</span>
+<span class="nc" id="L78">                String blocked = locked.stream()</span>
+<span class="nc" id="L79">                        .sorted()</span>
+<span class="nc" id="L80">                        .map(j -&gt; &quot;#&quot; + j)</span>
+<span class="nc" id="L81">                        .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="nc" id="L82">                throw new RuntimeException(</span>
+                        &quot;Cannot update/delete opponents already used on court: &quot; + blocked + &quot;.&quot;
+                );
+            }
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            for (EventOpponentPlayer row : existing) {</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                if (removedJerseys.contains(row.getJerseyNumber())) {</span>
+<span class="nc" id="L88">                    eventOpponentPlayerRepository.delete(row);</span>
+                }
+<span class="nc" id="L90">            }</span>
+<span class="nc" id="L91">            eventOpponentPlayerRepository.flush();</span>
+        }
+
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        for (Integer jersey : want) {</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">            if (!eventOpponentPlayerRepository.existsByEventIdAndJerseyNumber(event.getId(), jersey)) {</span>
+<span class="fc" id="L96">                EventOpponentPlayer row = new EventOpponentPlayer();</span>
+<span class="fc" id="L97">                row.setEventId(event.getId());</span>
+<span class="fc" id="L98">                row.setJerseyNumber(jersey);</span>
+<span class="fc" id="L99">                eventOpponentPlayerRepository.save(row);</span>
+            }
+<span class="fc" id="L101">        }</span>
+<span class="fc" id="L102">        return getOpponentsForEvent(event.getId());</span>
+    }
+
+    private Event requireMatchEvent(Long eventId) {
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        if (eventId == null) {</span>
+<span class="nc" id="L107">            throw new RuntimeException(&quot;Event ID is required.&quot;);</span>
+        }
+<span class="fc" id="L109">        Event event = eventRepository.findById(eventId)</span>
+<span class="pc" id="L110">                .orElseThrow(() -&gt; new RuntimeException(&quot;Event not found: &quot; + eventId));</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        if (event.getType() != Event.EventType.MATCH) {</span>
+<span class="nc" id="L112">            throw new RuntimeException(&quot;Opponents can be set only for MATCH events.&quot;);</span>
+        }
+<span class="fc" id="L114">        return event;</span>
+    }
+
+    private List&lt;Integer&gt; normalizeJerseys(List&lt;Integer&gt; jerseyNumbers) {
+<span class="pc bpc" id="L118" title="2 of 4 branches missed.">        if (jerseyNumbers == null || jerseyNumbers.isEmpty()) {</span>
+<span class="nc" id="L119">            return List.of();</span>
+        }
+<span class="fc" id="L121">        Set&lt;Integer&gt; unique = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        for (Integer jersey : jerseyNumbers) {</span>
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">            if (jersey == null) continue;</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (jersey &lt;= 0) {</span>
+<span class="fc" id="L125">                throw new RuntimeException(&quot;Opponent jersey numbers must be positive.&quot;);</span>
+            }
+<span class="fc" id="L127">            unique.add(jersey);</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">            if (unique.size() &gt; MAX_OPPONENTS) {</span>
+<span class="nc" id="L129">                throw new RuntimeException(&quot;Maximum &quot; + MAX_OPPONENTS + &quot; opponent jersey numbers are allowed.&quot;);</span>
+            }
+<span class="fc" id="L131">        }</span>
+<span class="fc" id="L132">        return unique.stream().sorted().collect(Collectors.toList());</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

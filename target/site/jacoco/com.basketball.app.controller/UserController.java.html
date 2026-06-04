@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.controller</a> &gt; <span class="el_source">UserController.java</span></div><h1>UserController.java</h1><pre class="source lang-java linenums">package com.basketball.app.controller;
+
+import com.basketball.app.dto.PasswordChangeRequest;
+import com.basketball.app.dto.UserCreateRequest;
+import com.basketball.app.dto.UserUpdateRequest;
+import com.basketball.app.model.User;
+import com.basketball.app.service.UserService;
+import com.basketball.app.util.UserNames;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/api/users&quot;)
+public class UserController {
+
+    private final UserService userService;
+
+<span class="fc" id="L24">    public UserController(UserService userService) {</span>
+<span class="fc" id="L25">        this.userService = userService;</span>
+<span class="fc" id="L26">    }</span>
+
+    /**
+     * Create a new user
+     */
+    @PostMapping
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; createUser(@Valid @RequestBody UserCreateRequest request) {
+        try {
+<span class="fc" id="L35">            Map&lt;String, Object&gt; response = userService.createUser(request);</span>
+<span class="fc" id="L36">            return ResponseEntity.status(HttpStatus.CREATED).body(response);</span>
+<span class="fc" id="L37">        } catch (Exception e) {</span>
+<span class="fc" id="L38">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L39">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get all users.
+     */
+    @GetMapping
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; getAllUsers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false, defaultValue = &quot;false&quot;) boolean summary,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        
+<span class="fc" id="L56">        User currentUser = userService.getCurrentUser();</span>
+<span class="fc" id="L57">        boolean isAdmin = currentUser.getRole().equals(User.Role.ADMIN);</span>
+        
+        List&lt;User&gt; users;
+        
+<span class="pc bpc" id="L61" title="1 of 4 branches missed.">        if (search != null &amp;&amp; !search.trim().isEmpty()) {</span>
+<span class="fc" id="L62">            users = userService.searchUsers(search);</span>
+        } else {
+<span class="fc" id="L64">            users = userService.findAll();</span>
+        }
+        
+<span class="pc bpc" id="L67" title="1 of 4 branches missed.">        if (role != null &amp;&amp; !role.trim().isEmpty()) {</span>
+<span class="fc" id="L68">            users = users.stream()</span>
+<span class="fc" id="L69">                    .filter(u -&gt; u.getRole().name().equalsIgnoreCase(role.trim()))</span>
+<span class="fc" id="L70">                    .collect(java.util.stream.Collectors.toList());</span>
+        }
+        
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (categoryId != null) {</span>
+<span class="fc" id="L74">            List&lt;User&gt; categoryFilteredUsers = userService.findByCategory(categoryId);</span>
+<span class="fc" id="L75">            List&lt;Long&gt; currentUserIds = users.stream()</span>
+<span class="fc" id="L76">                    .map(User::getId)</span>
+<span class="fc" id="L77">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L78">            users = categoryFilteredUsers.stream()</span>
+<span class="fc" id="L79">                    .filter(u -&gt; currentUserIds.contains(u.getId()))</span>
+<span class="fc" id="L80">                    .collect(java.util.stream.Collectors.toList());</span>
+        }
+        
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (!isAdmin) {</span>
+<span class="nc" id="L84">            users = users.stream()</span>
+<span class="nc bnc" id="L85" title="All 4 branches missed.">                    .filter(u -&gt; !u.getRole().equals(User.Role.TRAINER) || u.getId().equals(currentUser.getId()))</span>
+<span class="nc" id="L86">                    .collect(java.util.stream.Collectors.toList());</span>
+        }
+        
+<span class="fc" id="L89">        final List&lt;User&gt; sorted = users.stream()</span>
+<span class="fc" id="L90">                .sorted(java.util.Comparator</span>
+<span class="fc" id="L91">                        .comparing((User u) -&gt; (userService.getPrimaryCategoryNameForSort(u) + &quot;\0&quot;).toLowerCase())</span>
+<span class="fc" id="L92">                        .thenComparing(u -&gt; UserNames.normalize(u.getSurname()).toLowerCase())</span>
+<span class="pc" id="L93">                        .thenComparing(u -&gt; UserNames.normalize(u.getName()).toLowerCase()))</span>
+<span class="fc" id="L94">                .collect(java.util.stream.Collectors.toList());</span>
+        
+<span class="pc bpc" id="L96" title="3 of 8 branches missed.">        if (page != null &amp;&amp; size != null &amp;&amp; page &gt;= 0 &amp;&amp; size &gt; 0) {</span>
+<span class="fc" id="L97">            int total = sorted.size();</span>
+<span class="fc" id="L98">            int from = Math.min(page * size, total);</span>
+<span class="fc" id="L99">            int to = Math.min(from + size, total);</span>
+<span class="fc" id="L100">            List&lt;Map&lt;String, Object&gt;&gt; content = sorted.subList(from, to).stream()</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">                    .map(u -&gt; summary ? userService.toUserSummaryMap(u) : userService.toUserMap(u))</span>
+<span class="fc" id="L102">                    .collect(java.util.stream.Collectors.toList());</span>
+<span class="pc bpc" id="L103" title="2 of 4 branches missed.">            int activePlayers = (int) sorted.stream().filter(u -&gt; u.getRole() == User.Role.PLAYER &amp;&amp; Boolean.TRUE.equals(u.getIsActive())).count();</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">            int trainers = (int) sorted.stream().filter(u -&gt; u.getRole() == User.Role.TRAINER).count();</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">            int admins = (int) sorted.stream().filter(u -&gt; u.getRole() == User.Role.ADMIN).count();</span>
+<span class="fc" id="L106">            int activeUsers = (int) sorted.stream().filter(u -&gt; Boolean.TRUE.equals(u.getIsActive())).count();</span>
+<span class="fc" id="L107">            return ResponseEntity.ok(java.util.Map.of(</span>
+                    &quot;content&quot;, content,
+<span class="fc" id="L109">                    &quot;totalElements&quot;, total,</span>
+<span class="fc" id="L110">                    &quot;stats&quot;, java.util.Map.of(</span>
+<span class="fc" id="L111">                            &quot;totalElements&quot;, total,</span>
+<span class="fc" id="L112">                            &quot;activePlayers&quot;, activePlayers,</span>
+<span class="fc" id="L113">                            &quot;trainers&quot;, trainers,</span>
+<span class="fc" id="L114">                            &quot;admins&quot;, admins,</span>
+<span class="fc" id="L115">                            &quot;activeUsers&quot;, activeUsers</span>
+                    )));
+        }
+        
+<span class="fc" id="L119">        List&lt;Map&lt;String, Object&gt;&gt; result = sorted.stream()</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">                .map(u -&gt; summary ? userService.toUserSummaryMap(u) : userService.toUserMap(u))</span>
+<span class="fc" id="L121">                .collect(java.util.stream.Collectors.toList());</span>
+        
+<span class="fc" id="L123">        return ResponseEntity.ok(result);</span>
+    }
+
+    /**
+     * Get age structure for all players in the club.
+     */
+    @GetMapping(&quot;/age-structure&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN', 'TRAINER')&quot;)
+    public ResponseEntity&lt;?&gt; getAgeStructure() {
+        try {
+<span class="fc" id="L133">            java.util.List&lt;java.util.Map&lt;String, Object&gt;&gt; ageStructure = userService.getAgeStructure();</span>
+<span class="fc" id="L134">            return ResponseEntity.ok(ageStructure);</span>
+<span class="nc" id="L135">        } catch (Exception e) {</span>
+<span class="nc" id="L136">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L137">                    .body(java.util.Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get user by ID
+     */
+    @GetMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; getUserById(@PathVariable Long id) {
+        try {
+<span class="fc" id="L148">            User user = userService.findById(id)</span>
+<span class="fc" id="L149">                    .orElseThrow(() -&gt; new RuntimeException(&quot;User not found: &quot; + id));</span>
+<span class="fc" id="L150">            return ResponseEntity.ok(userService.toUserMap(user));</span>
+<span class="fc" id="L151">        } catch (Exception e) {</span>
+<span class="fc" id="L152">            return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="fc" id="L153">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Update user
+     */
+    @PutMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; updateUser(@PathVariable Long id, 
+                                        @Valid @RequestBody UserUpdateRequest request) {
+        try {
+<span class="fc" id="L165">            User updatedUser = userService.updateUser(id, request);</span>
+<span class="fc" id="L166">            return ResponseEntity.ok(userService.toUserMap(updatedUser));</span>
+<span class="nc" id="L167">        } catch (Exception e) {</span>
+<span class="nc" id="L168">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L169">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Delete user
+     */
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; deleteUser(@PathVariable Long id) {
+        try {
+<span class="fc" id="L180">            userService.deleteUser(id);</span>
+<span class="fc" id="L181">            return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;User deleted successfully&quot;));</span>
+<span class="nc" id="L182">        } catch (Exception e) {</span>
+<span class="nc" id="L183">            return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="nc" id="L184">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Assign user to category
+     */
+    @PostMapping(&quot;/{id}/assign-category&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; assignToCategory(@PathVariable Long id, 
+                                               @RequestBody Map&lt;String, Long&gt; request) {
+        try {
+<span class="fc" id="L196">            Long categoryId = request.get(&quot;categoryId&quot;);</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">            if (categoryId == null) {</span>
+<span class="fc" id="L198">                return ResponseEntity.badRequest()</span>
+<span class="fc" id="L199">                        .body(Map.of(&quot;error&quot;, &quot;categoryId is required&quot;));</span>
+            }
+<span class="fc" id="L201">            User user = userService.assignToCategory(id, categoryId);</span>
+<span class="fc" id="L202">            return ResponseEntity.ok(userService.toUserMap(user));</span>
+<span class="nc" id="L203">        } catch (Exception e) {</span>
+<span class="nc" id="L204">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L205">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Change password
+     */
+    @PostMapping(&quot;/{id}/change-password&quot;)
+    public ResponseEntity&lt;?&gt; changePassword(@PathVariable Long id,
+                                           @Valid @RequestBody PasswordChangeRequest request) {
+        try {
+<span class="fc" id="L216">            User currentUser = userService.getCurrentUser();</span>
+            
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">            if (!userService.findById(id).isPresent()) {</span>
+<span class="nc" id="L219">                return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="nc" id="L220">                        .body(Map.of(&quot;error&quot;, &quot;User not found: &quot; + id));</span>
+            }
+            
+<span class="fc bfc" id="L223" title="All 2 branches covered.">            if (!currentUser.getRole().equals(User.Role.ADMIN) &amp;&amp; </span>
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">                !currentUser.getId().equals(id)) {</span>
+<span class="fc" id="L225">                return ResponseEntity.status(HttpStatus.FORBIDDEN)</span>
+<span class="fc" id="L226">                        .body(Map.of(&quot;error&quot;, &quot;You can only change your own password&quot;));</span>
+            }
+            
+<span class="fc" id="L229">            userService.changePassword(id, request);</span>
+<span class="fc" id="L230">            return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Password changed successfully&quot;));</span>
+<span class="nc" id="L231">        } catch (Exception e) {</span>
+<span class="nc" id="L232">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L233">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Get current user profile
+     */
+    @GetMapping(&quot;/me&quot;)
+    public ResponseEntity&lt;?&gt; getCurrentUser() {
+        try {
+<span class="fc" id="L243">            User currentUser = userService.getCurrentUser();</span>
+<span class="fc" id="L244">            return ResponseEntity.ok(userService.toUserMap(currentUser));</span>
+<span class="nc" id="L245">        } catch (Exception e) {</span>
+<span class="nc" id="L246">            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)</span>
+<span class="nc" id="L247">                    .body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Search users
+     */
+    @GetMapping(&quot;/search&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; searchUsers(@RequestParam String q) {
+<span class="fc" id="L257">        List&lt;User&gt; users = userService.searchUsers(q);</span>
+<span class="fc" id="L258">        List&lt;Map&lt;String, Object&gt;&gt; userMaps = users.stream()</span>
+<span class="fc" id="L259">                .map(userService::toUserMap)</span>
+<span class="fc" id="L260">                .collect(java.util.stream.Collectors.toList());</span>
+<span class="fc" id="L261">        return ResponseEntity.ok(userMaps);</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

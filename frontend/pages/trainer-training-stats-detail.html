@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/webp" href="/IMG/Slavia_Trnava_logo_color_stroke-1.webp">
+    <title>Detail štatistík tréningov - MBK AŠK Slávia Trnava</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/coach-nav.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #FFFFFF; color: #2C2C2C; }
+        .dashboard-content { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .section-card {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 2px 3px 8px 2px rgba(0,0,0,0.05);
+        }
+        .section-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+        .section-title { font-size: 1.25rem; font-weight: 700; color: #2C2C2C; }
+        .detail-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem; margin-bottom: 1.5rem; }
+        .detail-filters .form-group { margin-bottom: 0; }
+        .detail-filters label { display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.25rem; }
+        .detail-filters select {
+            padding: 0.5rem 0.75rem; border: 1px solid #E5E7EB; border-radius: 8px; font-size: 0.9rem; min-width: 160px;
+        }
+        .detail-filters .btn-apply { padding: 0.5rem 1rem; background: #6B2C91; color: #FFF; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; }
+        .detail-filters .btn-apply:hover { background: #5A2380; }
+        .court-wrap {
+            background: #fff;
+            border-radius: 12px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .court-map-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #e5ddd2;
+            border: 4px solid #334155;
+        }
+        .court-map-container svg { width: 100%; height: auto; display: block; }
+        .court-map .court-bg { fill: #e5ddd2; }
+        .court-map .zone {
+            stroke: #2e354f;
+            stroke-width: 2;
+            transition: fill 0.2s, filter 0.2s;
+        }
+        .court-map .zone-stat { font-size: 11px; font-weight: 700; fill: #1e293b; pointer-events: none; text-anchor: middle; }
+        .court-map .zone-pct { font-size: 9px; font-weight: 600; fill: #1e293b; pointer-events: none; text-anchor: middle; }
+        .court-map .court-line { fill: none; stroke: #2e354f; stroke-width: 3; pointer-events: none; }
+        .heat-legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+            color: #6B7280;
+        }
+        .heat-legend-item { display: flex; align-items: center; gap: 0.5rem; }
+        .heat-legend-swatch { width: 24px; height: 16px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); }
+        #detailChartsContainer { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+        .detail-chart-container {
+            background: #FFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .detail-chart-container h3 { font-size: 1.05rem; font-weight: 600; color: #374151; margin-bottom: 1rem; }
+        .detail-chart-wrapper { position: relative; height: 260px; }
+        .loading { text-align: center; padding: 2rem; color: #6B7280; }
+        .no-stats { text-align: center; padding: 2rem; color: #6B7280; }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-content">
+            <a href="/pages/trainer-dashboard.html" class="logo-link">
+                <img src="/IMG/logo.png" alt="Logo" class="logo">
+            </a>
+            <nav class="main-nav">
+                <a href="/pages/trainer-dashboard.html">Dashboard</a>
+                <a href="/pages/trainer-trainings.html">Tréningy</a>
+                <a href="/pages/trainer-training-stats-detail.html" class="active">Detail štatistík</a>
+                <a href="/pages/trainer-training-stats.html">Záznam štatistík</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="dashboard-content">
+        <div class="section-card">
+            <div class="section-header">
+                <h1 class="section-title">Detail štatistík tréningov</h1>
+                <a href="/pages/trainer-trainings.html" class="btn-secondary" style="padding:0.5rem 1rem;text-decoration:none;border-radius:8px;font-size:0.9rem;">← Späť na tréningy</a>
+            </div>
+            <div class="detail-filters">
+                <div class="form-group">
+                    <label for="detailFilterCategory">Kategória</label>
+                    <select id="detailFilterCategory">
+                        <option value="">Všetky kategórie</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="detailFilterPlayer">Hráč</label>
+                    <select id="detailFilterPlayer">
+                        <option value="">Celý tím</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="detailFilterType">Typ tréningu</label>
+                    <select id="detailFilterType">
+                        <option value="">Všetky</option>
+                        <option value="POSLNOVANIE">Posilňovanie</option>
+                        <option value="BEH">Beh</option>
+                        <option value="STRELBA">Streľba</option>
+                    </select>
+                </div>
+                <button type="button" class="btn-apply" id="detailFilterApply">Použiť</button>
+            </div>
+
+            <!-- Hot/cold zones court (streľba) -->
+            <div class="court-wrap">
+                <h2 style="font-size:1.1rem;margin-bottom:0.75rem;color:#374151;">Streľba - mapa zón (hot / cold)</h2>
+                <div id="courtMapContainer" class="court-map-container">
+                    <svg id="court-svg" class="court-map" viewBox="0 0 500 520" xmlns="http://www.w3.org/2000/svg" aria-label="Polovica ihriska so zónami">
+                        <rect class="court-bg" x="0" y="0" width="500" height="520" fill="transparent"/>
+                        <g><rect id="zone-0" class="zone" data-zone="0" x="0" y="0" width="60" height="100"/><text id="zone-stat-0" class="zone-stat" x="30" y="52">0/0</text><text id="zone-pct-0" class="zone-pct" x="30" y="63">0%</text></g>
+                        <g><rect id="zone-1" class="zone" data-zone="1" x="60" y="0" width="125" height="100"/><text id="zone-stat-1" class="zone-stat" x="122.5" y="52">0/0</text><text id="zone-pct-1" class="zone-pct" x="122.5" y="63">0%</text></g>
+                        <g><rect id="zone-2" class="zone" data-zone="2" x="185" y="0" width="65" height="100"/><text id="zone-stat-2" class="zone-stat" x="217.5" y="52">0/0</text><text id="zone-pct-2" class="zone-pct" x="217.5" y="63">0%</text></g>
+                        <g><rect id="zone-3" class="zone" data-zone="3" x="250" y="0" width="65" height="100"/><text id="zone-stat-3" class="zone-stat" x="282.5" y="52">0/0</text><text id="zone-pct-3" class="zone-pct" x="282.5" y="63">0%</text></g>
+                        <g><rect id="zone-4" class="zone" data-zone="4" x="315" y="0" width="125" height="100"/><text id="zone-stat-4" class="zone-stat" x="377.5" y="52">0/0</text><text id="zone-pct-4" class="zone-pct" x="377.5" y="63">0%</text></g>
+                        <g><rect id="zone-5" class="zone" data-zone="5" x="440" y="0" width="60" height="100"/><text id="zone-stat-5" class="zone-stat" x="470" y="52">0/0</text><text id="zone-pct-5" class="zone-pct" x="470" y="63">0%</text></g>
+                        <g><path id="zone-6" class="zone" data-zone="6" d="M 60 100 A 210 260 0 0 0 185 242 L 185 100 Z"/><text id="zone-stat-6" class="zone-stat" x="122.5" y="145">0/0</text><text id="zone-pct-6" class="zone-pct" x="122.5" y="156">0%</text></g>
+                        <g><path id="zone-7" class="zone" data-zone="7" d="M 185 100 L 185 242 A 210 260 0 0 0 315 242 L 315 100 Z"/><text id="zone-stat-7" class="zone-stat" x="250" y="215">0/0</text><text id="zone-pct-7" class="zone-pct" x="250" y="226">0%</text></g>
+                        <g><rect id="zone-8" class="zone" data-zone="8" x="185" y="100" width="130" height="70"/><text id="zone-stat-8" class="zone-stat" x="250" y="130">0/0</text><text id="zone-pct-8" class="zone-pct" x="250" y="141">0%</text></g>
+                        <g><path id="zone-9" class="zone" data-zone="9" d="M 315 100 L 315 242 A 210 260 0 0 0 440 100 Z"/><text id="zone-stat-9" class="zone-stat" x="377.5" y="145">0/0</text><text id="zone-pct-9" class="zone-pct" x="377.5" y="156">0%</text></g>
+                        <g><path id="zone-10" class="zone" data-zone="10" d="M 0 100 L 60 100 A 210 260 0 0 0 185 242 L 185 400 L 0 400 Z"/><text id="zone-stat-10" class="zone-stat" x="90" y="265">0/0</text><text id="zone-pct-10" class="zone-pct" x="90" y="276">0%</text></g>
+                        <g><path id="zone-11" class="zone" data-zone="11" d="M 185 242 A 210 260 0 0 0 315 242 L 315 400 L 185 400 Z"/><text id="zone-stat-11" class="zone-stat" x="250" y="315">0/0</text><text id="zone-pct-11" class="zone-pct" x="250" y="326">0%</text></g>
+                        <g><path id="zone-12" class="zone" data-zone="12" d="M 440 100 L 500 100 L 500 400 L 315 400 L 315 242 A 210 260 0 0 0 440 100 Z"/><text id="zone-stat-12" class="zone-stat" x="410" y="265">0/0</text><text id="zone-pct-12" class="zone-pct" x="410" y="276">0%</text></g>
+                        <g><rect id="zone-13" class="zone" data-zone="13" x="0" y="400" width="500" height="120"/><text id="zone-stat-13" class="zone-stat" x="250" y="455">0/0</text><text id="zone-pct-13" class="zone-pct" x="250" y="466">0%</text></g>
+                        <line class="court-line" x1="60" y1="0" x2="60" y2="100"/><line class="court-line" x1="440" y1="0" x2="440" y2="100"/>
+                        <line class="court-line" x1="185" y1="0" x2="185" y2="170"/><line class="court-line" x1="315" y1="0" x2="315" y2="170"/>
+                        <path class="court-line" d="M 185 170 A 65 65 0 0 0 315 170"/>
+                        <line x1="220" y1="15" x2="280" y2="15" stroke="#cbd5e1" stroke-width="2" pointer-events="none"/>
+                        <circle cx="250" cy="27" r="9" fill="none" stroke="#ea580c" stroke-width="2" pointer-events="none"/>
+                    </svg>
+                </div>
+                <div class="heat-legend">
+                    <span class="heat-legend-item"><span class="heat-legend-swatch" style="background:#dc2626;"></span> Hot (vysoká %)</span>
+                    <span class="heat-legend-item"><span class="heat-legend-swatch" style="background:#e5ddd2;"></span> Bez dát</span>
+                    <span class="heat-legend-item"><span class="heat-legend-swatch" style="background:#2563eb;"></span> Cold (nízka %)</span>
+                </div>
+            </div>
+
+            <!-- Charts (same as modal) -->
+            <h2 style="font-size:1.1rem;margin-bottom:0.75rem;color:#374151;">Grafy</h2>
+            <div id="detailChartsContainer" class="loading">Načítavanie...</div>
+        </div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/categories.js"></script>
+    <script src="/js/users.js"></script>
+    <script src="/js/training-statistics.js"></script>
+    <script>
+        const ZONE_LEGEND = { '0': '3pt left corner', '1': 'midrange left corner', '2': 'left close shot', '3': 'right close shot', '4': 'midrange right corner', '5': '3pt right corner', '6': 'midrange left wing', '7': 'free throw line', '8': 'paint', '9': 'midrange right wing', '10': '3pt 45° left', '11': '3pt middle', '12': '3pt 45° right', '13': 'halfcourt' };
+        const COURT_SPOT_TO_ZONE = {};
+        Object.keys(ZONE_LEGEND).forEach(function (k) { COURT_SPOT_TO_ZONE[ZONE_LEGEND[k].toLowerCase().trim()] = k; });
+
+        async function getDetailPlayerIds(categoryId, playerId) {
+            if (playerId) return [playerId];
+            try {
+                const filters = { role: 'PLAYER' };
+                if (categoryId) filters.categoryId = categoryId;
+                const users = await getUsers(filters);
+                const list = Array.isArray(users) ? users : [];
+                return list.map(u => u.id);
+            } catch (e) { return []; }
+        }
+
+        function heatColor(pct, attempts) {
+            if (pct == null || attempts === 0) return '#e5ddd2';
+            const t = Math.max(0, Math.min(1, pct / 100));
+            const coldR = 37, coldG = 99, coldB = 235;
+            const hotR = 220, hotG = 38, hotB = 38;
+            const r = Math.round(coldR + (hotR - coldR) * t);
+            const g = Math.round(coldG + (hotG - coldG) * t);
+            const b = Math.round(coldB + (hotB - coldB) * t);
+            const fade = Math.min(1, 0.35 + (attempts / 35) * 0.65);
+            const baseR = 229, baseG = 221, baseB = 234;
+            const fr = Math.round(baseR + (r - baseR) * fade);
+            const fg = Math.round(baseG + (g - baseG) * fade);
+            const fb = Math.round(baseB + (b - baseB) * fade);
+            return 'rgb(' + fr + ',' + fg + ',' + fb + ')';
+        }
+
+        function renderCourtHeatMap(zoneData) {
+            for (let z = 0; z <= 13; z++) {
+                const el = document.getElementById('zone-' + z);
+                const statEl = document.getElementById('zone-stat-' + z);
+                const pctEl = document.getElementById('zone-pct-' + z);
+                if (!el || !statEl || !pctEl) continue;
+                const d = zoneData[String(z)];
+                const made = d ? (d.made || 0) : 0;
+                const attempts = d ? (d.attempts || 0) : 0;
+                const pct = attempts > 0 ? Math.round((made / attempts) * 100) : null;
+                const fill = heatColor(pct, attempts);
+                el.style.fill = fill;
+                if (attempts > 0) {
+                    statEl.textContent = made + '/' + attempts;
+                    pctEl.textContent = (pct !== null ? pct : 0) + '%';
+                    statEl.setAttribute('fill', (pct !== null && pct >= 50) ? '#1e293b' : '#1e293b');
+                    pctEl.setAttribute('fill', '#1e293b');
+                } else {
+                    statEl.textContent = '0/0';
+                    pctEl.textContent = '0%';
+                }
+            }
+        }
+
+        function aggregateStrelbaByZone(strelbaStats) {
+            const byZone = {};
+            for (let z = 0; z <= 13; z++) byZone[String(z)] = { made: 0, attempts: 0 };
+            (strelbaStats || []).forEach(function (s) {
+                const spot = (s.courtSpot || '').trim();
+                if (!spot) return;
+                const single = spot.indexOf(',') === -1;
+                const labels = single ? [spot] : spot.split(',').map(function (x) { return x.trim(); });
+                const made = s.shotsMade != null ? s.shotsMade : 0;
+                const attempted = s.shotsAttempted != null ? s.shotsAttempted : 0;
+                const weight = 1 / labels.length;
+                labels.forEach(function (label) {
+                    const key = label.toLowerCase().trim();
+                    const zoneId = COURT_SPOT_TO_ZONE[key];
+                    if (zoneId == null) return;
+                    if (!byZone[zoneId]) byZone[zoneId] = { made: 0, attempts: 0 };
+                    byZone[zoneId].made += made * weight;
+                    byZone[zoneId].attempts += attempted * weight;
+                });
+            });
+            Object.keys(byZone).forEach(function (k) {
+                byZone[k].made = Math.round(byZone[k].made);
+                byZone[k].attempts = Math.round(byZone[k].attempts);
+            });
+            return byZone;
+        }
+
+        let detailChartInstances = {};
+
+        function renderDetailCharts(stats, container) {
+            if (!container) return;
+            if (!stats || stats.length === 0) {
+                container.innerHTML = '<div class="no-stats">Žiadne štatistiky pre zobrazenie grafov.</div>';
+                return;
+            }
+            const poslnovanieStats = stats.filter(s => s.category === 'POSLNOVANIE').sort((a, b) => (new Date(a.workoutDate || a.createdAt) - new Date(b.workoutDate || b.createdAt)));
+            const behStats = stats.filter(s => s.category === 'BEH').sort((a, b) => (new Date(a.workoutDate || a.createdAt) - new Date(b.workoutDate || b.createdAt)));
+            const strelbaStats = stats.filter(s => s.category === 'STRELBA').sort((a, b) => (new Date(a.workoutDate || a.createdAt) - new Date(b.workoutDate || b.createdAt)));
+            let html = '';
+            if (poslnovanieStats.length > 0) {
+                html += '<div class="detail-chart-container"><h3>Poslňovanie - Váha</h3><div class="detail-chart-wrapper"><canvas id="detailPoslnovanieWeightChart"></canvas></div></div>';
+                html += '<div class="detail-chart-container"><h3>Poslňovanie - Opakovania</h3><div class="detail-chart-wrapper"><canvas id="detailPoslnovanieRepsChart"></canvas></div></div>';
+            }
+            if (behStats.length > 0) {
+                html += '<div class="detail-chart-container"><h3>Beh - Vzdialenosť</h3><div class="detail-chart-wrapper"><canvas id="detailBehDistanceChart"></canvas></div></div>';
+                html += '<div class="detail-chart-container"><h3>Beh - Čas</h3><div class="detail-chart-wrapper"><canvas id="detailBehTimeChart"></canvas></div></div>';
+            }
+            if (strelbaStats.length > 0) {
+                html += '<div class="detail-chart-container"><h3>Streľba - Úspešnosť (%)</h3><div class="detail-chart-wrapper"><canvas id="detailStrelbaSuccessChart"></canvas></div></div>';
+                html += '<div class="detail-chart-container"><h3>Streľba - Počet strel</h3><div class="detail-chart-wrapper"><canvas id="detailStrelbaShotsChart"></canvas></div></div>';
+            }
+            if (!html) {
+                container.innerHTML = '<div class="no-stats">Žiadne štatistiky pre zvolený typ.</div>';
+                return;
+            }
+            container.innerHTML = html;
+            if (poslnovanieStats.length > 0) renderDetailPoslnovanieCharts(poslnovanieStats);
+            if (behStats.length > 0) renderDetailBehCharts(behStats);
+            if (strelbaStats.length > 0) renderDetailStrelbaCharts(strelbaStats);
+        }
+
+        function renderDetailPoslnovanieCharts(stats) {
+            const labels = stats.map(s => (s.workoutDate ? new Date(s.workoutDate) : new Date(s.createdAt)).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' }));
+            const weights = stats.map(s => parseFloat(s.weight) || 0);
+            const reps = stats.map(s => s.repetitions || 0);
+            const weightCtx = document.getElementById('detailPoslnovanieWeightChart');
+            if (weightCtx && window.Chart) {
+                if (detailChartInstances.poslnovanieWeight) detailChartInstances.poslnovanieWeight.destroy();
+                detailChartInstances.poslnovanieWeight = new Chart(weightCtx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Váha (kg)', data: weights, borderColor: '#6B2C91', backgroundColor: 'rgba(107, 44, 145, 0.1)', tension: 0.4, fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false } } }
+                });
+            }
+            const repsCtx = document.getElementById('detailPoslnovanieRepsChart');
+            if (repsCtx && window.Chart) {
+                if (detailChartInstances.poslnovanieReps) detailChartInstances.poslnovanieReps.destroy();
+                detailChartInstances.poslnovanieReps = new Chart(repsCtx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Opakovania', data: reps, borderColor: '#6B2C91', backgroundColor: 'rgba(107, 44, 145, 0.1)', tension: 0.4, fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                });
+            }
+        }
+
+        function renderDetailBehCharts(stats) {
+            const labels = stats.map(s => (s.workoutDate ? new Date(s.workoutDate) : new Date(s.createdAt)).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' }));
+            const distances = stats.map(s => parseFloat(s.distance) || 0);
+            const times = stats.map(s => {
+                if (!s.time) return 0;
+                const parts = String(s.time).split(':');
+                if (parts.length === 3) return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0) + (parseFloat(parts[2]) || 0) / 60;
+                if (parts.length === 2) return (parseInt(parts[0]) || 0) + (parseFloat(parts[1]) || 0) / 60;
+                return parseFloat(s.time) / 60 || 0;
+            });
+            const distanceCtx = document.getElementById('detailBehDistanceChart');
+            if (distanceCtx && window.Chart) {
+                if (detailChartInstances.behDistance) detailChartInstances.behDistance.destroy();
+                detailChartInstances.behDistance = new Chart(distanceCtx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Vzdialenosť (km)', data: distances, borderColor: '#6B2C91', backgroundColor: 'rgba(107, 44, 145, 0.1)', tension: 0.4, fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                });
+            }
+            const timeCtx = document.getElementById('detailBehTimeChart');
+            if (timeCtx && window.Chart) {
+                if (detailChartInstances.behTime) detailChartInstances.behTime.destroy();
+                detailChartInstances.behTime = new Chart(timeCtx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Čas (min)', data: times, borderColor: '#6B2C91', backgroundColor: 'rgba(107, 44, 145, 0.1)', tension: 0.4, fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                });
+            }
+        }
+
+        function renderDetailStrelbaCharts(stats) {
+            const labels = stats.map(s => (s.workoutDate ? new Date(s.workoutDate) : new Date(s.createdAt)).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit' }));
+            const successRates = stats.map(s => parseFloat(s.successRate) || 0);
+            const shotsAttempted = stats.map(s => s.shotsAttempted || 0);
+            const shotsMade = stats.map(s => s.shotsMade || 0);
+            const successCtx = document.getElementById('detailStrelbaSuccessChart');
+            if (successCtx && window.Chart) {
+                if (detailChartInstances.strelbaSuccess) detailChartInstances.strelbaSuccess.destroy();
+                detailChartInstances.strelbaSuccess = new Chart(successCtx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Úspešnosť (%)', data: successRates, borderColor: '#6B2C91', backgroundColor: 'rgba(107, 44, 145, 0.1)', tension: 0.4, fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+                });
+            }
+            const shotsCtx = document.getElementById('detailStrelbaShotsChart');
+            if (shotsCtx && window.Chart) {
+                if (detailChartInstances.strelbaShots) detailChartInstances.strelbaShots.destroy();
+                detailChartInstances.strelbaShots = new Chart(shotsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Počet strel', data: shotsAttempted, backgroundColor: 'rgba(107, 44, 145, 0.6)', borderColor: '#6B2C91', borderWidth: 1 },
+                            { label: 'Počet zásahov', data: shotsMade, backgroundColor: 'rgba(107, 44, 145, 0.3)', borderColor: '#6B2C91', borderWidth: 1 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                });
+            }
+        }
+
+        async function loadDetailPage() {
+            const container = document.getElementById('detailChartsContainer');
+            const categoryId = (document.getElementById('detailFilterCategory') || {}).value || '';
+            const playerId = (document.getElementById('detailFilterPlayer') || {}).value || '';
+            const typeFilter = (document.getElementById('detailFilterType') || {}).value || '';
+            if (container) container.innerHTML = '<div class="loading">Načítavanie...</div>';
+            try {
+                const playerIds = await getDetailPlayerIds(categoryId, playerId);
+                if (playerIds.length === 0) {
+                    if (container) container.innerHTML = '<div class="no-stats">Žiadni hráči pre zvolený filter.</div>';
+                    renderCourtHeatMap({});
+                    return;
+                }
+                const opts = pid => ({ userId: pid, startDate: undefined, endDate: undefined, category: typeFilter || undefined });
+                const results = await Promise.all(playerIds.map(pid => getTrainingStatisticsWithFilters(opts(pid))));
+                let stats = [];
+                results.forEach(arr => { if (Array.isArray(arr)) stats.push(...arr); });
+                const strelbaStats = stats.filter(s => s.category === 'STRELBA');
+                const zoneData = aggregateStrelbaByZone(strelbaStats);
+                renderCourtHeatMap(zoneData);
+                renderDetailCharts(stats, container);
+            } catch (e) {
+                console.error('Detail page load error:', e);
+                if (container) container.innerHTML = '<div class="no-stats">Chyba načítania.</div>';
+                renderCourtHeatMap({});
+            }
+        }
+
+        async function populateDetailFilters() {
+            const catSel = document.getElementById('detailFilterCategory');
+            const playerSel = document.getElementById('detailFilterPlayer');
+            if (!catSel || !playerSel) return;
+            const cats = (await getCategories().catch(() => [])) || [];
+            catSel.innerHTML = '<option value="">Všetky kategórie</option>';
+            (Array.isArray(cats) ? cats : []).forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name || ('Kategória ' + c.id);
+                catSel.appendChild(opt);
+            });
+            const params = new URLSearchParams(window.location.search);
+            const qCat = params.get('category');
+            const qPlayer = params.get('player');
+            const qType = params.get('type');
+            if (qCat) catSel.value = qCat;
+            if (qType && document.getElementById('detailFilterType')) document.getElementById('detailFilterType').value = qType;
+            await populateDetailPlayers(catSel.value);
+            if (qPlayer && playerSel) playerSel.value = qPlayer;
+        }
+
+        async function populateDetailPlayers(categoryId) {
+            const playerSel = document.getElementById('detailFilterPlayer');
+            if (!playerSel) return;
+            const current = playerSel.value;
+            playerSel.innerHTML = '<option value="">Celý tím</option>';
+            try {
+                const filters = { role: 'PLAYER' };
+                if (categoryId) filters.categoryId = categoryId;
+                const users = await getUsers(filters);
+                const list = Array.isArray(users) ? users : [];
+                list.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = userListLabel(p) || ('Hráč #' + p.id);
+                    playerSel.appendChild(opt);
+                });
+                if (current && list.some(p => String(p.id) === String(current))) playerSel.value = current;
+            } catch (e) {}
+        }
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            if (typeof checkAuth === 'function') checkAuth();
+            await populateDetailFilters();
+            document.getElementById('detailFilterCategory').addEventListener('change', function () { populateDetailPlayers(this.value); });
+            document.getElementById('detailFilterApply').addEventListener('click', loadDetailPage);
+            await loadDetailPage();
+        });
+    </script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

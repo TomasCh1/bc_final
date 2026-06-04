@@ -1,0 +1,82 @@
+/**
+ * Cancelled training display - strikethrough + "Zrušené" label (no line on label).
+ * Used on: dashboard, trainer-dashboard, trainer-trainings, trainings.
+ */
+
+/* Dashboard event cards (player & trainer) - line-through on time, name text, detail only (not on Zrušené) */
+.event-card.training.cancelled .event-time,
+.event-card.training.cancelled .event-team-name-text,
+.event-card.training.cancelled .event-detail {
+    text-decoration: line-through;
+    color: #9CA3AF;
+}
+.event-card.training .cancelled-label {
+    text-decoration: none !important;
+    font-weight: 600;
+    color: #B91C1C;
+    margin-left: 0.35rem;
+}
+
+/* Trainer trainings page: weekly chips - line-through on time, name text, meta only (not on Zrušené) */
+.training-chip.cancelled .training-chip-time,
+.training-chip.cancelled .training-chip-name-text,
+.training-chip.cancelled .training-chip-meta {
+    text-decoration: line-through;
+    color: #9CA3AF;
+}
+.training-chip .cancelled-label {
+    text-decoration: none !important;
+    font-weight: 600;
+    color: #B91C1C;
+    margin-left: 0.35rem;
+}
+
+/* Trainer trainings page: upcoming list rows */
+.training-row.cancelled .training-row-name,
+.training-row.cancelled .training-row-meta {
+    text-decoration: line-through;
+    color: #9CA3AF;
+}
+.training-row .cancelled-label {
+    text-decoration: none !important;
+    font-weight: 600;
+    color: #B91C1C;
+    margin-left: 0.35rem;
+}
+
+/* Player trainings page: weekly chips */
+.training-chip.cancelled .training-chip-time,
+.training-chip.cancelled .training-chip-name-text,
+.training-chip.cancelled .training-chip-meta {
+    text-decoration: line-through;
+    color: #9CA3AF;
+}
+
+/* Player trainings page: calendar tags */
+.training-tag.cancelled .training-tag-time,
+.training-tag.cancelled .training-tag-name,
+.training-tag.cancelled .training-tag-details,
+.training-tag.cancelled .training-tag-detail {
+    text-decoration: line-through;
+    color: #9CA3AF;
+}
+.training-tag .cancelled-label {
+    text-decoration: none !important;
+    font-weight: 600;
+    color: #B91C1C;
+    margin-left: 0.35rem;
+}
+
+/* Trainer trainings page: calendar cards (Najbližšie tréningy) - line-through on time, name text, location only (not on Zrušené) */
+.training-calendar-card.cancelled .training-time,
+.training-calendar-card.cancelled .training-name-text,
+.training-calendar-card.cancelled .training-location {
+    text-decoration: line-through;
+    color: #9CA3AF;
+}
+.training-calendar-card .cancelled-label {
+    text-decoration: none !important;
+    font-weight: 600;
+    color: #B91C1C;
+    margin-left: 0.35rem;
+}

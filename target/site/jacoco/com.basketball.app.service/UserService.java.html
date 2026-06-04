@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basketball Team Management App</a> &gt; <a href="index.source.html" class="el_package">com.basketball.app.service</a> &gt; <span class="el_source">UserService.java</span></div><h1>UserService.java</h1><pre class="source lang-java linenums">package com.basketball.app.service;
+
+import com.basketball.app.dto.PasswordChangeRequest;
+import com.basketball.app.dto.UserCreateRequest;
+import com.basketball.app.dto.UserUpdateRequest;
+import com.basketball.app.model.User;
+import com.basketball.app.repository.UserRepository;
+import com.basketball.app.util.PasswordGenerator;
+import com.basketball.app.util.UserNames;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.basketball.app.model.Category;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class UserService {
+<span class="fc" id="L31">    private static final Logger log = LoggerFactory.getLogger(UserService.class);</span>
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final CategoryService categoryService;
+
+    @Autowired(required = false)
+    private JavaMailSender mailSender;
+
+    @Value(&quot;${app.mail.from:noreply@localhost}&quot;)
+    private String mailFrom;
+
+    public UserService(UserRepository userRepository, 
+                      PasswordEncoder passwordEncoder,
+<span class="fc" id="L45">                      CategoryService categoryService) {</span>
+<span class="fc" id="L46">        this.userRepository = userRepository;</span>
+<span class="fc" id="L47">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L48">        this.categoryService = categoryService;</span>
+<span class="fc" id="L49">    }</span>
+
+    /**
+     * Create a new user with auto-generated password (if not provided)
+     * Returns the generated password in the response (for display/email)
+     */
+    @Transactional
+    public Map&lt;String, Object&gt; createUser(UserCreateRequest request) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (userRepository.existsByEmailAndDeletedFalse(request.getEmail())) {</span>
+<span class="fc" id="L58">            throw new RuntimeException(&quot;User with email &quot; + request.getEmail() + &quot; already exists&quot;);</span>
+        }
+
+<span class="fc" id="L61">        Set&lt;Category&gt; categories = new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">        if (request.getCategoryIds() != null &amp;&amp; !request.getCategoryIds().isEmpty()) {</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">            for (Long categoryId : request.getCategoryIds()) {</span>
+<span class="fc" id="L64">                Category category = categoryService.findById(categoryId)</span>
+<span class="fc" id="L65">                        .orElseThrow(() -&gt; new RuntimeException(&quot;Category not found: &quot; + categoryId));</span>
+<span class="fc" id="L66">                categories.add(category);</span>
+<span class="fc" id="L67">            }</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        } else if (request.getCategoryId() != null) {</span>
+<span class="nc" id="L69">            Category category = categoryService.findById(request.getCategoryId())</span>
+<span class="nc" id="L70">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Category not found: &quot; + request.getCategoryId()));</span>
+<span class="nc" id="L71">            categories.add(category);</span>
+        }
+
+<span class="fc" id="L74">        String generatedPassword = request.getPassword();</span>
+<span class="pc bpc" id="L75" title="3 of 4 branches missed.">        if (generatedPassword == null || generatedPassword.isBlank()) {</span>
+<span class="fc" id="L76">            generatedPassword = PasswordGenerator.generate();</span>
+        }
+
+<span class="fc" id="L79">        User user = new User();</span>
+<span class="fc" id="L80">        user.setName(UserNames.normalize(request.getName()));</span>
+<span class="fc" id="L81">        user.setSurname(UserNames.normalize(request.getSurname()));</span>
+<span class="fc" id="L82">        user.setEmail(request.getEmail());</span>
+<span class="fc" id="L83">        user.setRole(request.getRole());</span>
+<span class="fc" id="L84">        user.setCategoryId(request.getCategoryId());</span>
+<span class="fc" id="L85">        user.setCategories(categories);</span>
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        user.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        user.setMustChangePassword(request.getMustChangePassword() != null ? request.getMustChangePassword() : true);</span>
+<span class="fc" id="L88">        user.setDateOfBirth(request.getDateOfBirth());</span>
+<span class="fc" id="L89">        user.setPassword(passwordEncoder.encode(generatedPassword));</span>
+
+<span class="fc" id="L91">        User savedUser = userRepository.save(user);</span>
+<span class="fc" id="L92">        boolean credentialsEmailSent = sendCredentialsEmail(savedUser, generatedPassword);</span>
+
+<span class="fc" id="L94">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L95">        response.put(&quot;user&quot;, toUserMap(savedUser));</span>
+<span class="fc" id="L96">        response.put(&quot;generatedPassword&quot;, generatedPassword);</span>
+<span class="fc" id="L97">        response.put(&quot;message&quot;, &quot;User created successfully. Password: &quot; + generatedPassword);</span>
+<span class="fc" id="L98">        response.put(&quot;credentialsEmailSent&quot;, credentialsEmailSent);</span>
+
+<span class="fc" id="L100">        return response;</span>
+    }
+
+    private boolean sendCredentialsEmail(User user, String plainPassword) {
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if (mailSender == null) {</span>
+<span class="fc" id="L105">            log.warn(&quot;Cannot send credentials email to {}: JavaMailSender is not configured&quot;, user.getEmail());</span>
+<span class="fc" id="L106">            return false;</span>
+        }
+
+        try {
+<span class="nc" id="L110">            MimeMessage message = mailSender.createMimeMessage();</span>
+<span class="nc" id="L111">            MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());</span>
+<span class="nc" id="L112">            helper.setFrom(mailFrom);</span>
+<span class="nc" id="L113">            helper.setTo(user.getEmail());</span>
+<span class="nc" id="L114">            helper.setSubject(&quot;Prihlasovacie udaje - MBK Slavia Trnava&quot;);</span>
+<span class="nc" id="L115">            helper.setText(</span>
+                    &quot;Dobry den,\n\n&quot;
+                            + &quot;vas ucet bol vytvoreny administratorom.\n\n&quot;
+                            + &quot;Prihlasovacie udaje:\n&quot;
+<span class="nc" id="L119">                            + &quot;Email: &quot; + user.getEmail() + &quot;\n&quot;</span>
+                            + &quot;Heslo: &quot; + plainPassword + &quot;\n\n&quot;
+                            + &quot;Po prvom prihlaseni si prosim zmente heslo.\n\n&quot;
+                            + &quot;MBK Slavia Trnava&quot;,
+                    &quot;&lt;p&gt;Dobry den,&lt;/p&gt;&quot;
+                            + &quot;&lt;p&gt;vas ucet bol vytvoreny administratorom.&lt;/p&gt;&quot;
+                            + &quot;&lt;p&gt;&lt;strong&gt;Prihlasovacie udaje:&lt;/strong&gt;&lt;br/&gt;&quot;
+<span class="nc" id="L126">                            + &quot;Email: &quot; + user.getEmail() + &quot;&lt;br/&gt;&quot;</span>
+                            + &quot;Heslo: &quot; + plainPassword + &quot;&lt;/p&gt;&quot;
+                            + &quot;&lt;p&gt;Po prvom prihlaseni si prosim zmente heslo.&lt;/p&gt;&quot;
+                            + &quot;&lt;p&gt;MBK Slavia Trnava&lt;/p&gt;&quot;
+            );
+<span class="nc" id="L131">            mailSender.send(message);</span>
+<span class="nc" id="L132">            return true;</span>
+<span class="nc" id="L133">        } catch (MessagingException | RuntimeException e) {</span>
+<span class="nc" id="L134">            log.error(&quot;Failed to send credentials email to {}&quot;, user.getEmail(), e);</span>
+<span class="nc" id="L135">            return false;</span>
+        }
+    }
+
+    /**
+     * Update user information
+     */
+    @Transactional
+    public User updateUser(Long id, UserUpdateRequest request) {
+<span class="fc" id="L144">        User user = userRepository.findById(id)</span>
+<span class="fc" id="L145">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found: &quot; + id));</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        if (Boolean.TRUE.equals(user.getDeleted())) {</span>
+<span class="nc" id="L147">            throw new RuntimeException(&quot;User not found: &quot; + id);</span>
+        }
+
+<span class="pc bpc" id="L150" title="2 of 4 branches missed.">        if (request.getEmail() != null &amp;&amp; !request.getEmail().equals(user.getEmail())) {</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">            if (userRepository.existsByEmailAndDeletedFalse(request.getEmail())) {</span>
+<span class="fc" id="L152">                throw new RuntimeException(&quot;User with email &quot; + request.getEmail() + &quot; already exists&quot;);</span>
+            }
+<span class="fc" id="L154">            user.setEmail(request.getEmail());</span>
+        }
+
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (request.getCategoryIds() != null) {</span>
+<span class="nc" id="L158">            Set&lt;Category&gt; categories = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            for (Long categoryId : request.getCategoryIds()) {</span>
+<span class="nc" id="L160">                Category category = categoryService.findById(categoryId)</span>
+<span class="nc" id="L161">                        .orElseThrow(() -&gt; new RuntimeException(&quot;Category not found: &quot; + categoryId));</span>
+<span class="nc" id="L162">                categories.add(category);</span>
+<span class="nc" id="L163">            }</span>
+<span class="nc" id="L164">            user.setCategories(categories);</span>
+<span class="nc bnc" id="L165" title="All 4 branches missed.">            if (user.getRole() == User.Role.TRAINER || user.getRole() == User.Role.ADMIN) {</span>
+<span class="nc" id="L166">                java.util.Set&lt;Long&gt; newCategoryIds = new HashSet&lt;&gt;(request.getCategoryIds());</span>
+<span class="nc" id="L167">                List&lt;Category&gt; currentlyCoaching = categoryService.findByCoach(user.getId());</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                for (Category cat : currentlyCoaching) {</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">                    if (!newCategoryIds.contains(cat.getId())) {</span>
+<span class="nc" id="L170">                        categoryService.removeCoachFromCategory(cat.getId(), user.getId());</span>
+                    }
+<span class="nc" id="L172">                }</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                for (Long categoryId : newCategoryIds) {</span>
+<span class="nc" id="L174">                    Category cat = categoryService.findById(categoryId).orElse(null);</span>
+<span class="nc bnc" id="L175" title="All 6 branches missed.">                    if (cat != null &amp;&amp; (cat.getCoaches() == null || !cat.getCoaches().stream().anyMatch(c -&gt; c.getId().equals(user.getId())))) {</span>
+<span class="nc" id="L176">                        categoryService.assignCoach(categoryId, user.getId());</span>
+                    }
+<span class="nc" id="L178">                }</span>
+            }
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">        } else if (request.getCategoryId() != null) {</span>
+<span class="nc" id="L181">            Category category = categoryService.findById(request.getCategoryId())</span>
+<span class="nc" id="L182">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Category not found: &quot; + request.getCategoryId()));</span>
+<span class="nc" id="L183">            user.setCategoryId(request.getCategoryId());</span>
+<span class="nc" id="L184">            Set&lt;Category&gt; categories = user.getCategories();</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if (categories == null) {</span>
+<span class="nc" id="L186">                categories = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L187">                user.setCategories(categories);</span>
+            }
+<span class="nc" id="L189">            categories.clear();</span>
+<span class="nc" id="L190">            categories.add(category);</span>
+        }
+
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">        if (request.getName() != null) {</span>
+<span class="fc" id="L194">            user.setName(UserNames.normalize(request.getName()));</span>
+        }
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">        if (request.getSurname() != null) {</span>
+<span class="nc" id="L197">            user.setSurname(UserNames.normalize(request.getSurname()));</span>
+        }
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">        if (request.getRole() != null) {</span>
+<span class="nc" id="L200">            user.setRole(request.getRole());</span>
+        }
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">        if (request.getIsActive() != null) {</span>
+<span class="nc" id="L203">            user.setIsActive(request.getIsActive());</span>
+        }
+<span class="fc" id="L205">        user.setDateOfBirth(request.getDateOfBirth());</span>
+
+<span class="fc" id="L207">        return userRepository.save(user);</span>
+    }
+
+    /**
+     * Get user by ID (with categories loaded). Returns empty if user is deleted (hidden from API).
+     */
+    public Optional&lt;User&gt; findById(Long id) {
+<span class="fc" id="L214">        Optional&lt;User&gt; userOpt = userRepository.findById(id);</span>
+<span class="fc bfc" id="L215" title="All 2 branches covered.">        if (userOpt.isEmpty()) {</span>
+<span class="fc" id="L216">            return userOpt;</span>
+        }
+<span class="fc" id="L218">        User user = userOpt.get();</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">        if (Boolean.TRUE.equals(user.getDeleted())) {</span>
+<span class="fc" id="L220">            return Optional.empty();</span>
+        }
+        try {
+<span class="fc" id="L223">            user.getCategories().size();</span>
+<span class="nc" id="L224">        } catch (Exception e) {</span>
+<span class="nc" id="L225">            List&lt;User&gt; allUsers = findAll();</span>
+<span class="nc" id="L226">            return allUsers.stream()</span>
+<span class="nc" id="L227">                    .filter(u -&gt; u.getId().equals(id))</span>
+<span class="nc" id="L228">                    .findFirst();</span>
+<span class="fc" id="L229">        }</span>
+<span class="fc" id="L230">        return userOpt;</span>
+    }
+
+    /**
+     * Get all users
+     */
+    public List&lt;User&gt; findAll() {
+<span class="fc" id="L237">        return userRepository.findAllWithCategories();</span>
+    }
+
+    /**
+     * Search users by name or email
+     */
+    public List&lt;User&gt; searchUsers(String search) {
+<span class="pc bpc" id="L244" title="1 of 4 branches missed.">        if (search == null || search.trim().isEmpty()) {</span>
+<span class="fc" id="L245">            return findAll();</span>
+        }
+<span class="fc" id="L247">        return userRepository.searchByNameOrEmail(search.trim());</span>
+    }
+
+    /**
+     * Filter users by role
+     */
+    public List&lt;User&gt; findByRole(User.Role role) {
+<span class="fc" id="L254">        return userRepository.findByRole(role);</span>
+    }
+
+    /**
+     * Filter users by category (supports many-to-many: players with category in their categories,
+     * or trainers/admins who coach that category)
+     */
+    public List&lt;User&gt; findByCategory(Long categoryId) {
+<span class="fc" id="L262">        return userRepository.findByCategoryInCategoriesOrCoached(categoryId);</span>
+    }
+
+    /**
+     * Filter users by role and category (supports many-to-many relationship)
+     */
+    public List&lt;User&gt; findByRoleAndCategory(User.Role role, Long categoryId) {
+<span class="fc" id="L269">        return userRepository.findByRoleAndCategoryInCategoriesOrCoached(role, categoryId);</span>
+    }
+
+    /**
+     * Compute age structure for all players in the club.
+     * Returns a list of maps with label and count so the frontend
+     * can directly render chart labels and values.
+     */
+    public List&lt;Map&lt;String, Object&gt;&gt; getAgeStructure() {
+<span class="nc" id="L278">        List&lt;User&gt; players = findByRole(User.Role.PLAYER);</span>
+<span class="nc" id="L279">        java.time.LocalDate today = java.time.LocalDate.now();</span>
+
+        class AgeGroup {
+            final String label;
+            final int min;
+            final int max;
+
+<span class="nc" id="L286">            AgeGroup(String label, int min, int max) {</span>
+<span class="nc" id="L287">                this.label = label;</span>
+<span class="nc" id="L288">                this.min = min;</span>
+<span class="nc" id="L289">                this.max = max;</span>
+<span class="nc" id="L290">            }</span>
+        }
+
+<span class="nc" id="L293">        List&lt;AgeGroup&gt; groups = List.of(</span>
+                new AgeGroup(&quot;U10 (6-10)&quot;, 6, 10),
+                new AgeGroup(&quot;U12 (11-12)&quot;, 11, 12),
+                new AgeGroup(&quot;U14 (13-14)&quot;, 13, 14),
+                new AgeGroup(&quot;U16 (15-16)&quot;, 15, 16),
+                new AgeGroup(&quot;U18 (17-18)&quot;, 17, 18),
+                new AgeGroup(&quot;U22 (19-22)&quot;, 19, 22),
+                new AgeGroup(&quot;Muži (23+)&quot;, 23, 99)
+        );
+
+<span class="nc" id="L303">        List&lt;Map&lt;String, Object&gt;&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L305" title="All 2 branches missed.">        for (AgeGroup group : groups) {</span>
+<span class="nc" id="L306">            long count = players.stream()</span>
+<span class="nc bnc" id="L307" title="All 2 branches missed.">                    .filter(u -&gt; u.getDateOfBirth() != null)</span>
+<span class="nc" id="L308">                    .map(User::getDateOfBirth)</span>
+<span class="nc" id="L309">                    .map(dob -&gt; java.time.Period.between(dob, today).getYears())</span>
+<span class="nc bnc" id="L310" title="All 4 branches missed.">                    .filter(age -&gt; age &gt;= group.min &amp;&amp; age &lt;= group.max)</span>
+<span class="nc" id="L311">                    .count();</span>
+
+<span class="nc" id="L313">            Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L314">            map.put(&quot;label&quot;, group.label);</span>
+<span class="nc" id="L315">            map.put(&quot;count&quot;, count);</span>
+<span class="nc" id="L316">            result.add(map);</span>
+<span class="nc" id="L317">        }</span>
+
+<span class="nc" id="L319">        return result;</span>
+    }
+
+    /**
+     * Delete user: hide from lists and free email
+     */
+    @Transactional
+    public void deleteUser(Long id) {
+<span class="fc" id="L327">        User user = userRepository.findById(id)</span>
+<span class="fc" id="L328">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found: &quot; + id));</span>
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        if (Boolean.TRUE.equals(user.getDeleted())) {</span>
+<span class="fc" id="L330">            throw new RuntimeException(&quot;User not found: &quot; + id);</span>
+        }
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">        if (user.getRole() == User.Role.ADMIN) {</span>
+<span class="nc" id="L333">            throw new RuntimeException(&quot;Cannot delete administrator account&quot;);</span>
+        }
+<span class="fc" id="L335">        user.setDeleted(true);</span>
+<span class="fc" id="L336">        user.setIsActive(false);</span>
+<span class="fc" id="L337">        user.setEmail(&quot;__deleted_&quot; + id + &quot;_&quot; + System.currentTimeMillis() + &quot;@deleted.local&quot;);</span>
+<span class="fc" id="L338">        userRepository.save(user);</span>
+<span class="fc" id="L339">    }</span>
+
+    /**
+     * Hard delete user
+     */
+    @Transactional
+    public void hardDeleteUser(Long id) {
+<span class="fc bfc" id="L346" title="All 2 branches covered.">        if (!userRepository.existsById(id)) {</span>
+<span class="fc" id="L347">            throw new RuntimeException(&quot;User not found: &quot; + id);</span>
+        }
+<span class="fc" id="L349">        userRepository.deleteById(id);</span>
+<span class="fc" id="L350">    }</span>
+
+    /**
+     * Change user password (for first login or regular password change)
+     */
+    @Transactional
+    public void changePassword(Long userId, PasswordChangeRequest request) {
+<span class="fc" id="L357">        User user = userRepository.findById(userId)</span>
+<span class="fc" id="L358">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found: &quot; + userId));</span>
+<span class="pc bpc" id="L359" title="1 of 2 branches missed.">        if (Boolean.TRUE.equals(user.getDeleted())) {</span>
+<span class="nc" id="L360">            throw new RuntimeException(&quot;User not found: &quot; + userId);</span>
+        }
+
+<span class="pc bpc" id="L363" title="1 of 4 branches missed.">        boolean requiresCurrentPassword = user.getMustChangePassword() == null || !user.getMustChangePassword();</span>
+<span class="fc bfc" id="L364" title="All 2 branches covered.">        if (requiresCurrentPassword) {</span>
+<span class="pc bpc" id="L365" title="2 of 4 branches missed.">            if (request.getCurrentPassword() == null || request.getCurrentPassword().isBlank()) {</span>
+<span class="nc" id="L366">                throw new RuntimeException(&quot;Current password is required&quot;);</span>
+            }
+<span class="fc bfc" id="L368" title="All 2 branches covered.">            if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {</span>
+<span class="fc" id="L369">                throw new RuntimeException(&quot;Current password is incorrect&quot;);</span>
+            }
+        }
+
+<span class="fc bfc" id="L373" title="All 2 branches covered.">        if (!request.getNewPassword().equals(request.getConfirmPassword())) {</span>
+<span class="fc" id="L374">            throw new RuntimeException(&quot;New password and confirmation do not match&quot;);</span>
+        }
+
+<span class="fc" id="L377">        user.setPassword(passwordEncoder.encode(request.getNewPassword()));</span>
+<span class="fc" id="L378">        user.setMustChangePassword(false);</span>
+<span class="fc" id="L379">        userRepository.save(user);</span>
+<span class="fc" id="L380">    }</span>
+
+    /**
+     * Assign user to category
+     */
+    @Transactional
+    public User assignToCategory(Long userId, Long categoryId) {
+<span class="nc" id="L387">        User user = userRepository.findById(userId)</span>
+<span class="nc" id="L388">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found: &quot; + userId));</span>
+<span class="nc bnc" id="L389" title="All 2 branches missed.">        if (Boolean.TRUE.equals(user.getDeleted())) {</span>
+<span class="nc" id="L390">            throw new RuntimeException(&quot;User not found: &quot; + userId);</span>
+        }
+
+<span class="nc" id="L393">        categoryService.findById(categoryId)</span>
+<span class="nc" id="L394">                .orElseThrow(() -&gt; new RuntimeException(&quot;Category not found: &quot; + categoryId));</span>
+
+<span class="nc" id="L396">        user.setCategoryId(categoryId);</span>
+<span class="nc" id="L397">        return userRepository.save(user);</span>
+    }
+
+    /**
+     * Get current authenticated user
+     */
+    public User getCurrentUser() {
+<span class="nc" id="L404">        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="nc bnc" id="L405" title="All 4 branches missed.">        if (authentication == null || !authentication.isAuthenticated()) {</span>
+<span class="nc" id="L406">            throw new RuntimeException(&quot;User not authenticated&quot;);</span>
+        }
+<span class="nc" id="L408">        String email = authentication.getName();</span>
+<span class="nc" id="L409">        return userRepository.findByEmailAndDeletedFalse(email)</span>
+<span class="nc" id="L410">                .orElseThrow(() -&gt; new RuntimeException(&quot;Current user not found&quot;));</span>
+    }
+
+    /**
+     * Convert User entity to Map
+     */
+    public Map&lt;String, Object&gt; toUserMap(User user) {
+<span class="fc" id="L417">        Map&lt;String, Object&gt; userMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L418">        userMap.put(&quot;id&quot;, user.getId());</span>
+<span class="fc" id="L419">        userMap.put(&quot;name&quot;, user.getName());</span>
+<span class="fc" id="L420">        userMap.put(&quot;surname&quot;, user.getSurname());</span>
+<span class="fc" id="L421">        userMap.put(&quot;displayName&quot;, UserNames.getDisplayName(user));</span>
+<span class="fc" id="L422">        userMap.put(&quot;email&quot;, user.getEmail());</span>
+<span class="fc" id="L423">        userMap.put(&quot;role&quot;, user.getRole().name());</span>
+<span class="fc" id="L424">        userMap.put(&quot;categoryId&quot;, user.getCategoryId());</span>
+        
+        try {
+<span class="fc" id="L427">            Set&lt;Category&gt; categories = user.getCategories();</span>
+<span class="pc bpc" id="L428" title="2 of 4 branches missed.">            if (categories != null &amp;&amp; !categories.isEmpty()) {</span>
+<span class="nc" id="L429">                List&lt;Map&lt;String, Object&gt;&gt; categoriesList = categories.stream()</span>
+<span class="nc" id="L430">                        .map(cat -&gt; {</span>
+<span class="nc" id="L431">                            Map&lt;String, Object&gt; catMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L432">                            catMap.put(&quot;id&quot;, cat.getId());</span>
+<span class="nc" id="L433">                            catMap.put(&quot;name&quot;, cat.getName());</span>
+<span class="nc" id="L434">                            catMap.put(&quot;season&quot;, cat.getSeason());</span>
+<span class="nc" id="L435">                            return catMap;</span>
+                        })
+<span class="nc" id="L437">                        .collect(Collectors.toList());</span>
+<span class="nc" id="L438">                userMap.put(&quot;categoryIds&quot;, categories.stream()</span>
+<span class="nc" id="L439">                        .map(Category::getId)</span>
+<span class="nc" id="L440">                        .collect(Collectors.toList()));</span>
+<span class="nc" id="L441">                userMap.put(&quot;categories&quot;, categoriesList);</span>
+<span class="nc" id="L442">            } else {</span>
+<span class="fc" id="L443">                userMap.put(&quot;categoryIds&quot;, Collections.emptyList());</span>
+<span class="fc" id="L444">                userMap.put(&quot;categories&quot;, Collections.emptyList());</span>
+            }
+<span class="nc" id="L446">        } catch (Exception e) {</span>
+<span class="nc" id="L447">            userMap.put(&quot;categoryIds&quot;, Collections.emptyList());</span>
+<span class="nc" id="L448">            userMap.put(&quot;categories&quot;, Collections.emptyList());</span>
+<span class="fc" id="L449">        }</span>
+        
+<span class="pc bpc" id="L451" title="2 of 4 branches missed.">        if (user.getRole() == User.Role.TRAINER || user.getRole() == User.Role.ADMIN) {</span>
+            try {
+<span class="nc" id="L453">                List&lt;Category&gt; coachedCategories = categoryService.findByCoach(user.getId());</span>
+<span class="nc" id="L454">                List&lt;String&gt; coachedCategoryNames = coachedCategories.stream()</span>
+<span class="nc" id="L455">                        .map(Category::getName)</span>
+<span class="nc" id="L456">                        .collect(Collectors.toList());</span>
+<span class="nc" id="L457">                userMap.put(&quot;coachedCategories&quot;, coachedCategoryNames);</span>
+<span class="nc" id="L458">            } catch (Exception e) {</span>
+<span class="nc" id="L459">                userMap.put(&quot;coachedCategories&quot;, Collections.emptyList());</span>
+<span class="nc" id="L460">            }</span>
+        } else {
+<span class="fc" id="L462">            userMap.put(&quot;coachedCategories&quot;, Collections.emptyList());</span>
+        }
+        
+<span class="pc bpc" id="L465" title="1 of 2 branches missed.">        userMap.put(&quot;dateOfBirth&quot;, user.getDateOfBirth() != null ? user.getDateOfBirth().toString() : null);</span>
+<span class="fc" id="L466">        userMap.put(&quot;isActive&quot;, user.getIsActive());</span>
+<span class="fc" id="L467">        userMap.put(&quot;mustChangePassword&quot;, user.getMustChangePassword());</span>
+<span class="fc" id="L468">        userMap.put(&quot;createdAt&quot;, user.getCreatedAt());</span>
+<span class="fc" id="L469">        userMap.put(&quot;updatedAt&quot;, user.getUpdatedAt());</span>
+<span class="fc" id="L470">        return userMap;</span>
+    }
+
+    /**
+     * Primary category name for sorting.
+     */
+    public String getPrimaryCategoryNameForSort(User user) {
+        try {
+<span class="nc bnc" id="L478" title="All 4 branches missed.">            if (user.getCategories() != null &amp;&amp; !user.getCategories().isEmpty()) {</span>
+<span class="nc" id="L479">                return user.getCategories().stream()</span>
+<span class="nc" id="L480">                        .map(Category::getName)</span>
+<span class="nc bnc" id="L481" title="All 4 branches missed.">                        .filter(name -&gt; name != null &amp;&amp; !name.isEmpty())</span>
+<span class="nc" id="L482">                        .sorted(String.CASE_INSENSITIVE_ORDER)</span>
+<span class="nc" id="L483">                        .findFirst()</span>
+<span class="nc" id="L484">                        .orElse(&quot;&quot;);</span>
+            }
+<span class="nc bnc" id="L486" title="All 4 branches missed.">            if (user.getRole() == User.Role.TRAINER || user.getRole() == User.Role.ADMIN) {</span>
+<span class="nc" id="L487">                List&lt;Category&gt; coached = categoryService.findByCoach(user.getId());</span>
+<span class="nc bnc" id="L488" title="All 4 branches missed.">                if (coached != null &amp;&amp; !coached.isEmpty()) {</span>
+<span class="nc" id="L489">                    return coached.stream()</span>
+<span class="nc" id="L490">                            .map(Category::getName)</span>
+<span class="nc bnc" id="L491" title="All 4 branches missed.">                            .filter(name -&gt; name != null &amp;&amp; !name.isEmpty())</span>
+<span class="nc" id="L492">                            .sorted(String.CASE_INSENSITIVE_ORDER)</span>
+<span class="nc" id="L493">                            .findFirst()</span>
+<span class="nc" id="L494">                            .orElse(&quot;&quot;);</span>
+                }
+            }
+<span class="nc bnc" id="L497" title="All 2 branches missed.">            if (user.getCategoryId() != null) {</span>
+<span class="nc" id="L498">                return categoryService.findById(user.getCategoryId())</span>
+<span class="nc" id="L499">                        .map(Category::getName)</span>
+<span class="nc" id="L500">                        .orElse(&quot;&quot;);</span>
+            }
+<span class="nc" id="L502">        } catch (Exception e) {</span>
+<span class="nc" id="L503">        }</span>
+<span class="nc" id="L504">        return &quot;&quot;;</span>
+    }
+
+    /**
+     * Map for list views.
+     */
+    public Map&lt;String, Object&gt; toUserSummaryMap(User user) {
+<span class="nc" id="L511">        Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L512">        map.put(&quot;id&quot;, user.getId());</span>
+<span class="nc" id="L513">        map.put(&quot;name&quot;, user.getName());</span>
+<span class="nc" id="L514">        map.put(&quot;surname&quot;, user.getSurname());</span>
+<span class="nc" id="L515">        map.put(&quot;displayName&quot;, UserNames.getDisplayName(user));</span>
+<span class="nc" id="L516">        map.put(&quot;email&quot;, user.getEmail());</span>
+<span class="nc" id="L517">        map.put(&quot;role&quot;, user.getRole().name());</span>
+<span class="nc" id="L518">        map.put(&quot;categoryId&quot;, user.getCategoryId());</span>
+<span class="nc" id="L519">        map.put(&quot;isActive&quot;, user.getIsActive());</span>
+        try {
+<span class="nc bnc" id="L521" title="All 4 branches missed.">            if (user.getCategories() != null &amp;&amp; !user.getCategories().isEmpty()) {</span>
+<span class="nc" id="L522">                map.put(&quot;categoryIds&quot;, user.getCategories().stream()</span>
+<span class="nc" id="L523">                        .map(Category::getId)</span>
+<span class="nc" id="L524">                        .collect(Collectors.toList()));</span>
+            } else {
+<span class="nc" id="L526">                map.put(&quot;categoryIds&quot;, Collections.emptyList());</span>
+            }
+<span class="nc" id="L528">        } catch (Exception e) {</span>
+<span class="nc" id="L529">            map.put(&quot;categoryIds&quot;, Collections.emptyList());</span>
+<span class="nc" id="L530">        }</span>
+<span class="nc bnc" id="L531" title="All 4 branches missed.">        if (user.getRole() == User.Role.TRAINER || user.getRole() == User.Role.ADMIN) {</span>
+            try {
+<span class="nc" id="L533">                List&lt;String&gt; coachedCategoryNames = categoryService.findByCoach(user.getId()).stream()</span>
+<span class="nc" id="L534">                        .map(Category::getName)</span>
+<span class="nc" id="L535">                        .collect(Collectors.toList());</span>
+<span class="nc" id="L536">                map.put(&quot;coachedCategories&quot;, coachedCategoryNames);</span>
+<span class="nc" id="L537">            } catch (Exception e) {</span>
+<span class="nc" id="L538">                map.put(&quot;coachedCategories&quot;, Collections.emptyList());</span>
+<span class="nc" id="L539">            }</span>
+        } else {
+<span class="nc" id="L541">            map.put(&quot;coachedCategories&quot;, Collections.emptyList());</span>
+        }
+<span class="nc" id="L543">        return map;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

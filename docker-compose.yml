@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: chmelan_bc
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-chmelan_bc_db}
+      POSTGRES_USER: ${POSTGRES_USER:-chmelan_bc_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    volumes:
+      - chmelan_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-chmelan_bc_user} -d ${POSTGRES_DB:-chmelan_bc_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chmelan-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chmelan_bc_2026
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # Override .env localhost URL — app must reach the postgres service on the compose network
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-chmelan_bc_db}
+      DB_USERNAME: ${POSTGRES_USER:-chmelan_bc_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - chmelan-network
+    restart: unless-stopped
+
+networks:
+  chmelan-network:
+    driver: bridge
+
+volumes:
+  chmelan_postgres_data:
+
