@@ -1,5 +1,5 @@
 # MBK MTF AŠK Slávia Trnava – Webový informačný systém
-
+#Github URL: https://github.com/TomasCh1/bc_final.git
 Webová aplikácia pre správu basketbalového klubu.
 
 ---
